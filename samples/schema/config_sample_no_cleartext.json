@@ -1,0 +1,87 @@
+{
+  "headerRow": true,
+  "columns": [
+    {
+      "sourceHeader": "FirstName",
+      "targetHeader": "FirstName",
+      "type": "sealed",
+      "pad": {
+        "type": "none"
+      }
+    },
+    {
+      "sourceHeader": "LastName",
+      "targetHeader": "LastName",
+      "type": "sealed",
+      "pad": {
+        "type": "none"
+      }
+    },
+    {
+      "sourceHeader": "Address",
+      "targetHeader": "Address",
+      "type": "sealed",
+      "pad": {
+        "type": "max",
+        "length": 32
+      }
+    },
+    {
+      "sourceHeader": "City",
+      "targetHeader": "City",
+      "type": "sealed",
+      "pad": {
+        "type": "max",
+        "length": 16
+      }
+    },
+    {
+      "sourceHeader": "State",
+      "targetHeader": "State",
+      "type": "sealed",
+      "pad": {
+        "type": "max",
+        "length": 32
+      }
+    },
+    {
+      "sourceHeader": "PhoneNumber",
+      "targetHeader": "PhoneNumber_Sealed",
+      "type": "sealed",
+      "pad": {
+        "type": "none"
+      }
+    },
+    {
+      "sourceHeader": "PhoneNumber",
+      "targetHeader": "PhoneNumber_Fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "Title",
+      "targetHeader": "Title",
+      "type": "sealed",
+      "pad": {
+        "type": "fixed",
+        "length": 128
+      }
+    },
+    {
+      "sourceHeader": "Level",
+      "targetHeader": "Level",
+      "type": "sealed",
+      "pad": {
+        "type": "max",
+        "length": 32
+      }
+    },
+    {
+      "sourceHeader": "Notes",
+      "targetHeader": "Notes",
+      "type": "sealed",
+      "pad": {
+        "type": "none"
+      }
+    }
+  ]
+}

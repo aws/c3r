@@ -1,0 +1,204 @@
+/*
+ Applies core Gradle plugins, which are ones built into Gradle itself.
+*/
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+plugins {
+    // Java for compile and unit test of Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/java_plugin.html
+    id 'java'
+
+    // Checkstyle for style checks and reports on Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    id 'checkstyle'
+
+    // JaCoCo for coverage metrics and reports of Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/jacoco_plugin.html
+    id 'jacoco'
+
+    // Support using this application on the CLI
+    id 'application'
+
+    // Build jumbo jar for distribution
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+
+    // SpotBugs for quality checks and reports of source files. Read more at:
+    // https://spotbugs.readthedocs.io/en/stable/gradle.html
+    id "com.github.spotbugs" version "5.0.13"
+
+    // Vanilla code generation. Read more at:
+    // https://projectlombok.org/
+    id "io.freefair.lombok" version "6.6"
+
+    // Aggregate Javadoc generation. Read more at:
+    // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
+    id 'io.freefair.javadocs' version "6.6.1"
+}
+
+// SpotBugs for quality checks and reports of source files. Read more at:
+// https://spotbugs.readthedocs.io/en/stable/gradle.html
+apply plugin: 'com.github.spotbugs'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+/*
+ Configures the Checkstyle "checkstyle" plugin. Remove this and the plugin if
+ you want to skip these checks and report generation.
+*/
+checkstyle {
+    sourceSets = [sourceSets.main, sourceSets.test]
+    configFile = file('../config/checkstyle/checkstyle.xml')
+    configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
+    configDirectory.set(file('../config/checkstyle'))
+    ignoreFailures = false
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+/*
+ Configures the SpotBugs "com.github.spotbugs" plugin. Remove this and the
+ plugin to skip these checks and report generation.
+*/
+spotbugs {
+    ignoreFailures.set(false)
+    spotbugsTest.enabled = false
+    excludeFilter.set(file("../config/spotbugs/excludeFilter.xml"))
+}
+
+dependencies {
+    // AWS-C3R
+    implementation project(":c3r-sdk-core")
+    implementation project(":c3r-sdk-parquet")
+
+    implementation 'software.amazon.awssdk:cleanrooms:2.19.16'
+
+    // Logging
+    implementation 'org.apache.logging.log4j:log4j-api:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
+
+    // CLI
+    implementation 'info.picocli:picocli:4.6.3'
+
+    // Parsing - JSON
+    implementation 'com.google.code.gson:gson:2.9.1'
+
+    // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
+
+    // Testing
+
+    // Parsing - CSV
+    testImplementation 'com.univocity:univocity-parsers:2.9.1'
+
+    // Mocks
+    testImplementation 'org.mockito:mockito-core:4.8.0'
+
+    // Test infrastructure
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+
+    // Logging test tools
+    testImplementation 'io.github.hakky54:logcaptor:2.7.10'
+}
+
+application {
+    mainClass = "com.amazonaws.c3r.cli.Main"
+}
+
+test {
+    // Enable JUnit 5 (Gradle 4.6+).
+    useJUnitPlatform()
+
+    // Fake key for testing
+    environment "C3R_SHARED_SECRET", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+    filter {
+        excludeTestsMatching '*EnvVarKeyInvalidTest'
+    }
+
+    // Always run tests, even when nothing changed.
+    dependsOn 'cleanTest'
+
+    // Show test results.
+    testLogging {
+        events "failed"
+
+        showExceptions true
+        exceptionFormat "full"
+        showCauses true
+        showStackTraces true
+
+        showStandardStreams = false
+    }
+
+    finalizedBy jacocoTestReport
+}
+
+tasks.register('badEnvironmentVariableTest', Test) {
+    description = 'Runs unit tests which need an invalid shared secret in the env var C3R_SHARED_SECRET.'
+    group = 'verification'
+
+    useJUnitPlatform()
+
+    environment "C3R_SHARED_SECRET", "BadKey"
+    filter {
+        includeTestsMatching '*EnvVarKeyInvalidTest'
+    }
+    shouldRunAfter test
+}
+
+check.dependsOn badEnvironmentVariableTest
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+        csv.required = true
+        html.required = true
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.85
+            }
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.release = 11
+}
+
+jar {
+    manifest {
+        attributes('Multi-Release': true)
+    }
+}
+
+configurations {
+    testImplementation {
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+        exclude group: 'org.slf4j', module: 'slf4j-reload4j'
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+}
+
+shadowJar {
+    zip64 = true
+    mergeServiceFiles()
+}
+
+tasks.withType(Javadoc) {
+    options.addBooleanOption("Xdoclint:-missing", true)
+}

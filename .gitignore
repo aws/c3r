@@ -1,0 +1,35 @@
+# IntelliJ files
+**/*.iml
+**/*.idea/*
+**/*.attach_pid*
+
+# Compiled class files
+
+**/*.class
+/classes
+/annotation-generated-src/
+
+# Log files
+
+**/*.log
+logs/
+
+# Gradle files
+
+gradle/
+.gradle
+gradlew
+gradlew.bat
+**/*gradle.properties
+
+# Other temp files
+
+out/
+**/*.out
+**/*.db
+**/*.tmp
+**/*.out.csv
+**/*.out.parquet
+**/*.out.crc
+**/*.out.unknown
+build/

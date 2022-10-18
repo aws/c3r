@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+    commands:
+      - apt-get install -y python3
+      - pip3 install --upgrade botocore boto3
+  build:
+    commands:
+      - ./codebuild/build-and-test-release-artifacts.sh unsigned-artifacts
+      - mkdir signed-artifacts
+      - python3 codebuild/sign_artifacts.py
+artifacts:
+  files:
+    - '*.jar'
+  base-directory: signed-artifacts

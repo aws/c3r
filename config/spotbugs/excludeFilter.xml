@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  ~ // SPDX-License-Identifier: Apache-2.0
+  -->
+
+<FindBugsFilter>
+    <!--
+    ~ RCN: Nullcheck of value previously dereferenced (RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE)
+    ~ Allows @NonNull on child constructors that call super where the parent method already uses it.
+    -->
+    <Match>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    </Match>
+</FindBugsFilter>

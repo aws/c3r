@@ -1,0 +1,7 @@
+SKEY blfkGRwdbAOARRXZz9OlOgZPxKbdlqVr5XmRa7NvISg=
+PASS encrypt ../../../../samples/csv/data_sample_without_quotes.csv --schema=../../../../samples/schema/config_sample_no_cleartext.json --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=encrypted.csv.out --overwrite
+# Decryption works when the shared secret key is the same
+PASS decrypt encrypted.csv.out --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=decrypted.csv.out --overwrite  --fileFormat=csv
+SKEY vLO8H9rCFs4FO9b+K9xGERL1IhtgJBhe9OV5daaaxaM=
+# Decryption fails when we use a different key
+FAIL decrypt encrypted.csv.out --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=decrypted.csv.out --overwrite  --fileFormat=csv

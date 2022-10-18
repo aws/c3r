@@ -1,0 +1,38 @@
+name: JaCoCo Report
+on: [ pull_request ]
+
+jobs:
+
+  generate-jacoco:
+    strategy:
+      matrix:
+        package: [ 'c3r-sdk-core' , 'c3r-sdk-parquet' , 'c3r-cli' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+      - name: Build with Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build
+          gradle-version: 7.5.1
+      - name: jacoco-badge-generator
+        id: jacoco
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          generate-branches-badge: true
+          jacoco-csv-file: ${{ matrix.package }}/build/reports/jacoco/test/jacocoTestReport.csv
+          coverage-badge-filename: ${{ matrix.package }}_coverage.svg
+          coverage-label: coverage ${{ matrix.package }}
+          branches-badge-filename: ${{ matrix.package }}_branches.svg
+          branches-label: branches ${{ matrix.package }}
+
+      - name: Log coverage percentages to workflow output
+        run: |
+          echo "coverage = ${{ steps.jacoco.outputs.coverage }}"
+          echo "branches = ${{ steps.jacoco.outputs.branches }}"

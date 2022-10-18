@@ -1,0 +1,224 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+plugins {
+    // Java compilation, unit tests, and library distribution needs. Read more at:
+    // https://docs.gradle.org/current/userguide/java_library_plugin.html
+    id 'java-library'
+
+    // Checkstyle for style checks and reports on Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    id 'checkstyle'
+
+    // JaCoCo for coverage metrics and reports of Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/jacoco_plugin.html
+    id 'jacoco'
+
+    // Maven publishing needs
+    id 'maven-publish'
+
+    // Signing needs for Maven publishing
+    id 'signing'
+
+    // SpotBugs for quality checks and reports of source files. Read more at:
+    // https://spotbugs.readthedocs.io/en/stable/gradle.html
+    id "com.github.spotbugs" version "5.0.13"
+
+    // Vanilla code generation. Read more at:
+    // https://projectlombok.org/
+    id "io.freefair.lombok" version "6.6"
+}
+
+apply plugin: 'com.github.spotbugs'
+
+sourceSets {
+    examples {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        java {
+            srcDirs = ['src/examples']
+        }
+    }
+    // test needs to access classes in the examples directory so adding a dependency
+    test {
+        compileClasspath += sourceSets.main.output
+        compileClasspath += sourceSets.examples.output
+        runtimeClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.examples.output
+    }
+}
+
+/*
+ Configures the Checkstyle "checkstyle" plugin. Remove this and the plugin if
+ you want to skip these checks and report generation.
+*/
+checkstyle {
+    sourceSets = [sourceSets.main, sourceSets.examples, sourceSets.test]
+    configFile = file('../config/checkstyle/checkstyle.xml')
+    configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
+    configDirectory.set(file('../config/checkstyle'))
+    ignoreFailures = false
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+/*
+ Configures the SpotBugs "com.github.spotbugs" plugin. Remove this and the
+ plugin to skip these checks and report generation.
+*/
+spotbugs {
+    ignoreFailures.set(false)
+    spotbugsTest.enabled = false
+    excludeFilter.set(file("../config/spotbugs/excludeFilter.xml"))
+}
+
+dependencies {
+    // AWS-C3R
+    implementation project(":c3r-sdk-core")
+
+    // Logging
+    implementation 'org.apache.logging.log4j:log4j-api:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
+
+    // Parsing - Parquet
+    implementation 'org.apache.parquet:parquet-hadoop:1.12.3'
+    // Parsing - For Hadoop abstractions some Parquet APIs require (i.e.,
+    //           this code base doesn't really use them at all).
+    //           At some point if there's a way to avoid this that may
+    //           reduce dependency bloat quite a bit.
+    //           Classes requiring this dependency:
+    //           + org.apache.hadoop.conf.Configuration
+    //           + org.apache.hadoop.fs.Path
+    implementation 'org.apache.hadoop:hadoop-common:3.3.4'
+    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:3.3.4'
+
+    // Testing
+    testImplementation 'org.mockito:mockito-core:4.8.0'
+    testImplementation 'org.mockito:mockito-inline:4.9.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation project(path: ':c3r-sdk-core', configuration: 'testArtifacts')
+}
+
+configurations {
+    examples {
+        examplesImplementation.extendsFrom implementation
+    }
+}
+
+test {
+    useJUnitPlatform()
+
+    // Always run tests, even when nothing changed.
+    dependsOn 'cleanTest'
+
+    // Show test results.
+    testLogging {
+        events "failed"
+
+        showExceptions true
+        exceptionFormat "full"
+        showCauses true
+        showStackTraces true
+
+        showStandardStreams = false
+    }
+
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+        csv.required = true
+        html.required = true
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.85
+            }
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.release = 11
+}
+
+jar {
+    manifest {
+        attributes('Multi-Release': true)
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+// Maven Publishing
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            pom {
+                name = 'Amazon C3R SDK Parquet'
+                description = 'Cryptographic Computing for Clean Rooms SDK Parquet Support'
+                url = 'https://github.com/aws/c3r'
+                inceptionYear = '2022'
+                scm {
+                    url = 'https://github.com/aws/c3r/tree/main'
+                    connection = 'scm:git:ssh://git@github.com/aws/c3r.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/aws/c3r.git'
+                }
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven{
+            url = 'https://aws.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials(PasswordCredentials)
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.maven
+}
+
+tasks.withType(Javadoc) {
+    options.addBooleanOption("Xdoclint:-missing", true)
+}

@@ -1,0 +1,552 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+<!-- see: http://checkstyle.sourceforge.net/checks.html -->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- Filters to select which files a module should be applied to -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]src[\\/]test[\\/]"/>
+        <property name="id" value="SkipTestFiles"/>
+    </module>
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]src[\\/]main[\\/]"/>
+        <property name="id" value="SkipMainFiles"/>
+    </module>
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]src[\\/]examples[\\/]"/>
+        <property name="id" value="SkipExampleFiles"/>
+    </module>
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]src[\\/](examples|test)[\\/]"/>
+        <property name="id" value="MainFilesOnly"/>
+    </module>
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]src[\\/](examples|main)[\\/]"/>
+        <property name="id" value="TestFilesOnly"/>
+    </module>
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]src[\\/](main|test)[\\/]"/>
+        <property name="id" value="ExampleFilesOnly"/>
+    </module>
+
+    <!-- Files must not contain tabs. -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <module name="SuppressWithPlainTextCommentFilter">
+        <property name="offCommentFormat" value="CHECKSTYLE\:SUPPRESS\:([\w\|]+)"/>
+        <property name="onCommentFormat" value="CHECKSTYLE\:UNSUPPRESS\:([\w\|]+)$"/>
+        <property name="checkFormat" value="$1"/>
+    </module>
+
+    <!-- Files must contain a copyright header. -->
+    <module name="HeaderCheck">
+        <property name="headerFile" value="${config_loc}/license-header.txt"/>
+        <property name="ignoreLines" value="2"/>
+    </module>
+
+    <!-- Enforce maximum line lengths. -->
+    <module name="LineLength">
+        <property name="max" value="140"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="checkForWhiteLists" />
+        <property name="format" value=".*white[ _]*?list[s]?.*" />
+        <property name="ignoreCase" value="true" />
+        <property name="message" value="White list(s) term found, you can change it with: Safe list(s), Inclusion list(s), Approved or Allow list(s)" />
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="checkForBlackLists" />
+        <property name="format" value=".*black[ _]*?list[s]?.*" />
+        <property name="ignoreCase" value="true" />
+        <property name="message" value="Black list(s) term found, you can change it with: Block list(s), Exclusion list(s), Unapproved or Deny list(s)" />
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="checkForWhiteDays" />
+        <property name="format" value=".*white[ _]*?day[s]?.*" />
+        <property name="ignoreCase" value="true" />
+        <property name="message" value="White day(s) term found, you can change it with: Allowed day(s) or Clear day(s)" />
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="checkForBlackDays" />
+        <property name="format" value=".*black[ _]*?day[s]?.*" />
+        <property name="ignoreCase" value="true" />
+        <property name="message" value="Black day(s) term found, you can change it with: Blocked day(s)" />
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="checkForMaster" />
+        <property name="format" value=".*master(?!ed).*" />
+        <property name="ignoreCase" value="true" />
+        <property name="message" value="Master term found, you can change it with: Primary, Central, Leader, Coordinator, Active, Controller or Main" />
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="checkForSlave" />
+        <property name="format" value=".*slave.*" />
+        <property name="ignoreCase" value="true" />
+        <property name="message" value="Slave term found, you can change it with: Secondary, Replica, Follower, Responder, Standby" />
+    </module>
+
+    <module name="RegexpOnFilename">
+        <property name="folderPattern" value="[\\/]src[\\/]\w+[\\/]java[\\/]"/>
+        <property name="fileNamePattern" value="\.java$"/>
+        <property name="match" value="false"/>
+        <message key="regexp.filename.mismatch"
+                 value="Only java files should be located in the ''src/*/java'' folders."/>
+    </module>
+
+    <module name="RegexpOnFilename">
+        <property name="folderPattern" value="[\\/]src[\\/]test[\\/]java[\\/]"/>
+        <property name="fileNamePattern" value="(Test|TestInterface|TestUtility)\.java$"/>
+        <property name="match" value="false"/>
+        <message key="regexp.filename.mismatch"
+                 value="Test folder should only contain test classes, interfaces or utilities which have names that end in `Test`, `TestInterface` or `TestUtility` respectively."/>
+    </module>
+
+    <!-- [Size Violations] Check for long source files -->
+    <module name="FileLength">
+        <property name="fileExtensions" value="java"/>
+    </module>
+
+    <module name="JavadocPackage">
+        <!-- don't allow package.html files -->
+        <property name="allowLegacy" value="false" />
+        <property name="id" value="SkipTestFiles"/>
+    </module>
+
+    <!-- Checkstyle Modules to Apply to Sourcecode Tree -->
+    <module name="TreeWalker">
+        <!-- Allow suppressing rules via comments. -->
+        <module name="SuppressionCommentFilter"/>
+
+        <!-- Class names must match the file name in which they are defined. -->
+        <module name="OuterTypeFilename"/>
+
+        <!-- Only one class may be defined per file. -->
+        <module name="OneTopLevelClass"/>
+
+        <!-- Customized: Special escape sequences like \n and \t must be used over the octal or unicode equivalent. -->
+        <module name="IllegalTokenText">
+            <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
+            <property name="format"
+                      value="\\u00(08|09|0(a|A)|0(c|C)|0(d|D)|22|27|5(C|c))|\\(0(10|11|12|14|15|42|47)|134)"/>
+            <property name="message" value="Avoid using corresponding octal or Unicode escape."/>
+        </module>
+
+        <!-- Customized: Unicode escapes must not be used for printable characters. -->
+        <module name="AvoidEscapedUnicodeCharacters">
+            <property name="allowEscapesForControlCharacters" value="true"/>
+            <property name="allowByTailComment" value="true"/>
+            <property name="allowNonPrintableEscapes" value="true"/>
+        </module>
+
+        <!-- Don't allow .* imports -->
+        <module name="AvoidStarImport"/>
+
+        <!-- Remove unneeded imports -->
+        <module name="RedundantImport"/>
+
+        <!-- Customized: Format rules for how imports are ordered and grouped -->
+        <module name="ImportOrder">
+            <property name="groups" value="*,javax,java"/>
+            <property name="separated" value="true"/>
+            <property name="option" value="bottom"/>
+            <property name="separatedStaticGroups" value="true"/>
+            <property name="sortStaticImportsAlphabetically" value="true"/>
+        </module>
+        <module name="SuppressionXpathSingleFilter">
+            <property name="checks" value="ImportOrder"/>
+            <property name="message" value="^'java\..*'.*"/>
+        </module>
+
+        <!-- Checks for unused imports. -->
+        <module name="UnusedImports"/>
+
+        <!-- Checks for use of commonly shadowed libraries. -->
+        <module name="IllegalImport"/>
+
+        <!-- Package name and imports must not be wrapped. -->
+        <module name="NoLineWrap"/>
+
+        <!-- Braces must be used for all blocks. -->
+        <module name="NeedBraces"/>
+
+        <!-- Customized: Braces must not be empty for most language constructs. -->
+        <module name="EmptyBlock">
+            <!-- A comment or a code statement fulfill the non-empty block requriement -->
+            <property name="option" value="TEXT"/>
+            <!-- Only ARRAY_INIT missing so you can fill in values inside a loop -->
+            <property name="tokens" value="LITERAL_WHILE, LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_DO, LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, INSTANCE_INIT, STATIC_INIT, LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_CASE, LITERAL_DEFAULT"/>
+        </module>
+
+        <!-- Customized: For language constructs related to the previous statement (eg. "else" or "catch"), the keywords must
+             be defined on the same line as the right curly brace. -->
+        <module name="RightCurly">
+            <property name="id" value="RightCurlySame"/>
+            <property name="tokens"
+                      value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_DO, ANNOTATION_DEF"/>
+        </module>
+
+        <!-- Customized: For other language constructs, they must be defined on a separate line. -->
+        <module name="RightCurly">
+            <property name="id" value="RightCurlyAlone"/>
+            <property name="option" value="alone"/>
+            <property name="tokens"
+                      value="CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT, INSTANCE_INIT, ENUM_DEF, INTERFACE_DEF, RECORD_DEF, COMPACT_CTOR_DEF"/>
+        </module>
+
+        <!-- Language constructs like "if" and "while" must be followed by whitespace. -->
+        <module name="WhitespaceAfter"/>
+
+        <!-- Customized: Language constructs must be surrounded by whitespace. -->
+        <module name="WhitespaceAround">
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyTypes" value="true"/>
+            <property name="allowEmptyLoops" value="true"/>
+            <message key="ws.notFollowed"
+                     value="WhitespaceAround: ''{0}'' is not followed by whitespace. Empty blocks may only be represented as '{}' when not part of a multi-block statement."/>
+            <message key="ws.notPreceded"
+                     value="WhitespaceAround: ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <!-- When using an iterator in a for loop, specify how padding must be used on an empty statement (i.e., no increment step) -->
+        <module name="EmptyForIteratorPad"/>
+
+        <!-- Only one statement per line is permitted. -->
+        <module name="OneStatementPerLine"/>
+
+        <!-- Variables must be defined on different lines. -->
+        <module name="MultipleVariableDeclarations"/>
+
+        <!-- No C-style array declarations are permitted (eg. String args[]). -->
+        <module name="ArrayTypeStyle"/>
+
+        <!-- Defaults must always be included for switch statements, even if they are empty. -->
+        <module name="MissingSwitchDefault"/>
+
+        <!-- Case blocks with statements on them must include a break, return, etc. or the comment "fall through". -->
+        <module name="FallThrough"/>
+
+        <!-- When defining long literals, an upper L must be used. -->
+        <module name="UpperEll"/>
+
+        <!-- Modifiers like public, abstract, static, etc. must follow a consistent order. -->
+        <module name="ModifierOrder"/>
+
+        <!-- Customized: Empty lines must separate methods and constructors. -->
+        <module name="EmptyLineSeparator">
+            <property name="allowMultipleEmptyLines" value="false"/>
+            <property name="allowMultipleEmptyLinesInsideClassMembers" value="false"/>
+        </module>
+
+        <!-- New lines must happen before dots. -->
+        <module name="SeparatorWrap">
+            <property name="id" value="SeparatorWrapDot"/>
+            <property name="tokens" value="DOT"/>
+            <property name="option" value="nl"/>
+        </module>
+
+        <!-- Customized: New lines must happen after commas. -->
+        <module name="SeparatorWrap">
+            <property name="id" value="SeparatorWrapComma"/>
+            <property name="tokens" value="COMMA"/>
+            <property name="option" value="EOL"/>
+        </module>
+
+        <!-- Customized: Package names must follow a defined format. -->
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+
+        <!-- Type names must follow a defined format. -->
+        <module name="TypeName"/>
+
+        <!-- Non-constant fields must follow a defined format. -->
+        <module name="MemberName"/>
+
+        <!-- Customized: Constant fields must follow a defined format. -->
+        <module name="ConstantName">
+            <property name="format" value="^log?|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+
+        <!-- Method and lambda parameters must follow a defined format. -->
+        <module name="ParameterName"/>
+
+        <!-- Catch parameters must follow a defined format. -->
+        <module name="CatchParameterName"/>
+
+        <!-- Local variables must follow a defined format. -->
+        <module name="LocalVariableName">
+            <property name="allowOneCharVarInForLoop" value="true"/>
+        </module>
+
+        <!-- Check that variables that never have their value changed are made final -->
+        <module name="FinalLocalVariable"/>
+        <module name="FinalParameters"/>
+
+        <!-- Variable names must match a defined format -->
+        <module name="LocalFinalVariableName"/>
+        <module name="StaticVariableName"/>
+
+        <!-- Customized: Type parameters must follow a defined format. -->
+        <module name="ClassTypeParameterName">
+            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+        </module>
+        <module name="MethodTypeParameterName">
+            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+        </module>
+        <module name="InterfaceTypeParameterName">
+            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+        </module>
+
+        <!-- Method names must follow a defined format. Due to complexity, test files are allowed to use an '_' to break up names. -->
+        <module name="MethodName">
+            <property name="id" value="SkipTestFiles"/>
+        </module>
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9_]*$"/>
+            <property name="id" value="TestFilesOnly"/>
+        </module>
+
+        <!-- Checks that there is no method finalize with zero parameters. This overrides Java's garbage collection function and is generally a bad idea. -->
+        <module name="NoFinalizer"/>
+
+        <!-- Checks that class which has only private ctors is declared as final." -->
+        <module name="FinalClass"/>
+
+        <!-- Use Interfaces only to define types per Joshua Bloch, Effective Java, Item 17 -->
+        <module name="InterfaceIsType"/>
+
+        <!-- Only static final, immutable or items named `serialVersionUID` members may be public -->
+        <module name="VisibilityModifier">
+            <property name="allowPublicFinalFields" value="true"/>
+            <property name="allowPublicImmutableFields" value="true"/>
+            <property name="protectedAllowed" value="true"/>
+        </module>
+
+        <!-- Whitespace around generic tokens must follow a defined format. -->
+        <module name="GenericWhitespace"/>
+
+        <!-- No spaces after certain tokens except for line breaks (for tokens such as increment, decrement, dot operator, etc. -->
+        <module name="NoWhitespaceAfter"/>
+
+        <!-- No spaces before certain tokens including line breaks (for tokens such as comma, semicolon, post increment, post decrement, etc. -->
+        <module name="NoWhitespaceBefore"/>
+
+        <!-- Customized: Abbreviations must follow the same conventions as any other word (eg. use Aws, not AWS). -->
+        <module name="AbbreviationAsWordInName">
+            <property name="ignoreFinal" value="false"/>
+            <property name="allowedAbbreviationLength" value="1"/>
+            <property name="allowedAbbreviations" value="URL"/>
+        </module>
+
+        <!-- Class contents must be defined in the order suggested by Sun/Oracle:
+             http://www.oracle.com/technetwork/java/javase/documentation/codeconventions-141855.html#1852 -->
+        <module name="DeclarationOrder"/>
+
+        <!-- Customized: Variables must be declared near where they are used. -->
+        <module name="VariableDeclarationUsageDistance">
+            <property name="allowedDistance" value="10"/>
+        </module>
+
+        <!-- Method names must be specified on the same line as their parameter list. -->
+        <module name="MethodParamPad"/>
+
+        <!-- There must be no space between a method name and its parameter list. -->
+        <module name="ParenPad"/>
+
+        <!-- When doing a typecast, the parenthesis around the typecase should not have space between them and the class name. -->
+        <module name="TypecastParenPad"/>
+
+        <!-- Customized: Non-field annotations must be on separate lines, or in the case of single parameterless annotation can be
+             placed on the same line as the signature. -->
+        <module name="AnnotationLocation">
+            <property name="id" value="AnnotationLocationMostCases"/>
+            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF, RECORD_DEF, COMPACT_CTOR_DEF"/>
+        </module>
+
+        <!-- Customized: Fields can have multiple annotations applied on the same line. -->
+        <module name="AnnotationLocation">
+            <property name="id" value="AnnotationLocationVariables"/>
+            <property name="tokens" value="VARIABLE_DEF"/>
+            <property name="allowSamelineMultipleAnnotations" value="true"/>
+        </module>
+
+        <!-- Catch blocks must not be empty without a comment. -->
+        <module name="EmptyCatchBlock"/>
+
+        <!-- Comments must be placed at the same indentation level as the surrounding code. -->
+        <module name="CommentsIndentation"/>
+
+        <!-- Don't directly compare to a hash code -->
+        <module name="EqualsHashCode"/>
+
+        <!-- Checks for instantiations where a factor method is preferred.
+             Boolean.valueOf() is preferred over the constructor because it uses the predefined constants
+             and can significantly improve performance. -->
+        <module name="IllegalInstantiation"/>
+
+        <!-- Checks for assignment in subexpressions (i.e., String s = Integer.toString(i = 2)) -->
+        <module name="InnerAssignment"/>
+
+        <!-- Customized: Checks that numeric literals besides -1, 0, 1 and 2 are not used.
+             Otherwise, a constant should be used to describe the number.
+             This is only applied to main source files, not tests or examples. -->
+        <module name="MagicNumber">
+            <property name="id" value="MainFilesOnly"/>
+        </module>
+
+        <!-- Checks for boolean expressions that can be simplified (i.e. `foo != true` to `!foo`) -->
+        <module name="SimplifyBooleanExpression"/>
+
+        <!-- Checks for boolean return values that can be simplified,
+             such as `if (valid()) { return false; } else { return true; }` to `return !valid()` -->
+        <module name="SimplifyBooleanReturn"/>
+
+        <!-- Checks for imports of additional imports normally not used -->
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="org.apache.http.annotation,javax.annotation.Generated"/>
+        </module>
+
+        <!-- Checks that the override annotation is specified when using @inheritDoc javadoc. -->
+        <module name="MissingOverride"/>
+
+        <!-- Customized: Checks that we don't use System.out.print (allowed in tests) -->
+        <module name="Regexp">
+            <property name="format" value="System\s*\.\s*(out|err)\s*(\.|::)\s*print"/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="Don't use System console for logging, use a logger instead"/>
+            <property name="ignoreComments" value="true"/>
+            <property name="id" value="SkipTestFiles"/>
+        </module>
+
+        <!-- Checks that we don't use Objects.hash. Objects.hashCode is preferred-->
+        <module name="Regexp">
+            <property name="format" value="\bObjects.hash\b"/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="Don't use Objects.hash, use Objects.hashCode instead"/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+
+        <!-- Checks for redundant public modifier on interfaces and other redundant modifiers -->
+        <module name="RedundantModifier"/>
+
+        <!-- Checks for utility and constants classes to have private constructor-->
+        <module name="HideUtilityClassConstructor"/>
+
+        <!-- Checks for space after slashes for single line comments -->
+        <module name="TodoComment">
+            <property name="format" value="TODO|FIXME"/>
+        </module>
+
+        <!-- Customized: Checks for long methods and constructors to increase readability and comprehension of code -->
+        <module name="MethodLength">
+            <property name="max" value="100"/>
+        </module>
+
+        <!-- Customized: Checks for the number of parameters of a method, constructors are not limited -->
+        <module name="ParameterNumber">
+            <property name="tokens" value="METHOD_DEF"/>
+        </module>
+        <!-- Customized: Slight Hack: Builder factory instances are technically methods and not constructors.
+             This says not to apply the ParameterNumber rule to anything with the @Builder annotation -->
+        <module name="SuppressionXpathSingleFilter">
+            <property name="checks" value="ParameterNumber"/>
+            <property name="query" value="//*[MODIFIERS//*[@text='Builder']]/descendant-or-self::node()"/>
+        </module>
+
+
+        <!-- JAVADOC RULES: Only applies to main and example, not to test -->
+
+
+        <!-- Enforces that JavaDoc comments needs to start on the second line -->
+        <module name="JavadocContentLocationCheck"/>
+
+        <!-- Requires Checkstyle 8.32 or later -->
+        <!-- Enforces that JavaDoc comments have a whitespace after the asterisk -->
+        <module name="JavadocMissingWhitespaceAfterAsterisk"/>
+
+        <!-- Enforces that JavaDoc comments are in the correct location -->
+        <module name="InvalidJavadocPosition"/>
+
+        <!-- Enforces ordering of tags in javadocs -->
+        <module name="AtclauseOrder"/>
+
+        <!-- Enforces that Javadoc must start at the beginning of a line modulo whitespace -->
+        <module name="JavadocBlockTagLocation"/>
+
+        <!-- Customized: Enforces that Javadocs start from the same line -->
+        <module name="JavadocContentLocation">
+            <property name="location" value="second_line"/>
+        </module>
+
+        <!-- Customized: Enforces that methods have javadocs -->
+        <module name="MissingJavadocMethod">
+            <property name="id" value="SkipTestFiles"/>
+            <property name="scope" value="private"/>
+        </module>
+
+        <!-- Customized: Enforces package javadocs -->
+        <module name="MissingJavadocPackage">
+            <property name="id" value="SkipTestFiles"/>
+        </module>
+
+        <!-- Customized: Enforces that classes, enums, interfaces and annotation interfaces have definitions. -->
+        <module name="MissingJavadocType">
+            <property name="id" value="SkipTestFiles"/>
+            <property name="scope" value="private"/>
+        </module>
+
+        <!-- Prevents missing @ clauses (i.e., `@param str` and instead requires `@param str file location`) -->
+        <module name="NonEmptyAtclauseDescription"/>
+
+        <!-- Customized: Checks Javadocs for required components. -->
+        <module name="JavadocMethod">
+            <property name="validateThrows" value="true"/>
+        </module>
+
+        <!-- Customized: Checks format of javadocs -->
+        <module name="JavadocStyle">
+            <!-- Don't allow empty javadocs -->
+            <property name="checkEmptyJavadoc" value="true"/>
+        </module>
+
+        <!-- Checks javadoc for type definitions (no missing param tags, no unknown tags) -->
+        <module name="JavadocType"/>
+
+        <!-- Customized: Checks that the subset of ENUM_CONSTANT_DEF tokens have javadoc comments -->
+        <module name="JavadocVariable">
+            <property name="id" value="SkipTestFiles"/>
+        </module>
+
+        <!-- Customized: Makes sure there is a blank line between two javadoc paragraphs. -->
+        <module name="JavadocParagraph">
+            <!-- Non-obvious: This allows you to put the paragraph tag and then the text of the paragraph on a separate line -->
+            <property name="allowNewlineParagraph" value="false"/>
+        </module>
+
+        <!-- If a block tag needs more than one line, the second line is indented by 4 spaces to ease readability -->
+        <module name="JavadocTagContinuationIndentation"/>
+
+        <!-- Blank line required between description and block tags -->
+        <module name="RequireEmptyLineBeforeBlockTagGroup"/>
+
+        <!-- If there is a javadoc summary, otherwise the first sentence, makes sure non-recommended phrases aren't included,
+             and it follows javadoc syntax rules. -->
+        <module name="SummaryJavadoc"/>
+    </module>
+</module>

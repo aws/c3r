@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "sourceHeader": "cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "sealed_none",
+      "type": "sealed",
+      "pad": {
+        "type": "none"
+      }
+    },
+    {
+      "sourceHeader": "sealed_max",
+      "type": "sealed",
+      "pad": {
+        "type": "max",
+        "length": 42
+      }
+    },
+    {
+      "sourceHeader": "sealed_fixed",
+      "type": "sealed",
+      "pad": {
+        "type": "fixed",
+        "length": 42
+      }
+    },
+    {
+      "sourceHeader": "fingerprint_1",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "fingerprint_2",
+      "type": "fingerprint"
+    }
+  ]
+}

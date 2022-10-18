@@ -1,0 +1,5 @@
+# Simple round tripping of data should work
+SKEY blfkGRwdbAOARRXZz9OlOgZPxKbdlqVr5XmRa7NvISg=
+# Parquet round trip
+PASS encrypt ../../../../samples/parquet/data_sample.parquet --schema=../../../../samples/schema/config_sample_no_cleartext.json --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=encrypted.parquet.out --overwrite
+PASS decrypt encrypted.parquet.out --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=decrypted.parquet.out --overwrite  --fileFormat=parquet

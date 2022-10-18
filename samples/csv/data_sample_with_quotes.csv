@@ -1,0 +1,8 @@
+FirstName,LastName,Address,City,State,PhoneNumber,Title,Level,Notes
+John,Smith,"12345 Mills Rd",Charleston,SC,703-555-1234,CEO,10,
+Carl,Carlson,"0 Street",Bethesda,MD,404-555-111,CIO,9,"This is a really long note that could really be a paragraph"
+Jane,Kellog,"1 Two St","New York",NY,304-555-1324,COO,9,
+Mark,James,"4 N St",Richmond,VA,407-555-8888,EA,7,"Secret notes"
+Jake,Richards,"9 Hollows Rd",Richmond,VA,407-555-1222,"SDE I",4,null
+Sean,Hendrix,"8 Hollows Rd",Richmond,VA,407-555-4321,"SDE I",4,"Shana's younger brother"
+Shana,Hendrix,"8 Hollows Rd",Richmond,VA,407-555-4322,"SDE II",5,"Sean's older sister"

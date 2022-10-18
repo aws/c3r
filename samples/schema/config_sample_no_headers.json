@@ -1,0 +1,85 @@
+{
+  "headerRow": false,
+  "columns": [
+    [
+      {
+        "targetHeader": "FirstName",
+        "type": "cleartext"
+      }
+    ],
+    [
+      {
+        "targetHeader": "LastName",
+        "type": "cleartext"
+      }
+    ],
+    [
+      {
+        "targetHeader": "Address",
+        "type": "sealed",
+        "pad": {
+          "type": "max",
+          "length": 32
+        }
+      }
+    ],
+    [
+      {
+        "targetHeader": "City",
+        "type": "sealed",
+        "pad": {
+          "type": "max",
+          "length": 16
+        }
+      }
+    ],
+    [
+      {
+        "targetHeader": "State",
+        "type": "fingerprint"
+      }
+    ],
+    [
+      {
+        "targetHeader": "PhoneNumber_Cleartext",
+        "type": "cleartext"
+      },
+      {
+        "targetHeader": "PhoneNumber_Sealed",
+        "type": "sealed",
+        "pad": {
+          "type": "none"
+        }
+      },
+      {
+        "targetHeader": "PhoneNumber_Fingerprint",
+        "type": "fingerprint"
+      }
+    ],
+    [
+      {
+        "targetHeader": "Title",
+        "type": "sealed",
+        "pad": {
+          "type": "fixed",
+          "length": 128
+        }
+      }
+    ],
+    [
+      {
+        "targetHeader": "Level",
+        "type": "cleartext"
+      }
+    ],
+    [
+      {
+        "targetHeader": "Notes",
+        "type": "sealed",
+        "pad": {
+          "type": "none"
+        }
+      }
+    ]
+  ]
+}
