@@ -86,7 +86,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
 
     // CLI
-    implementation 'info.picocli:picocli:4.6.3'
+    implementation 'info.picocli:picocli:4.7.0'
 
     // Parsing - JSON
     implementation 'com.google.code.gson:gson:2.10.1'
