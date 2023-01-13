@@ -89,7 +89,7 @@ dependencies {
     implementation 'info.picocli:picocli:4.6.3'
 
     // Parsing - JSON
-    implementation 'com.google.code.gson:gson:2.9.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
