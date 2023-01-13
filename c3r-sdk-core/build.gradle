@@ -28,9 +28,6 @@ plugins {
     // Signing needs for Maven publishing
     id 'signing'
 
-    // Build jumbo jar for distribution
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-
     // SpotBugs for quality checks and reports of source files. Read more at:
     // https://spotbugs.readthedocs.io/en/stable/gradle.html
     id "com.github.spotbugs" version "5.0.13"
@@ -41,7 +38,6 @@ plugins {
 }
 
 apply plugin: 'com.github.spotbugs'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceSets {
     // main is automatically created by gradle and only need to be included here if we need to exclude files or change paths
@@ -183,12 +179,12 @@ jar {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier = "sources"
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier = "javadoc"
     from javadoc.destinationDir
 }
 
@@ -213,7 +209,11 @@ artifacts {
 publishing {
     publications {
         maven(MavenPublication) {
-            from components.java
+            version "1.0.0"
+            groupId 'software.amazon.c3r'
+            artifact jar
+            artifact sourcesJar
+            artifact javadocJar
             pom {
                 name = 'Amazon C3R SDK Core'
                 description = 'Cryptographic Computing for Clean Rooms SDK Core'
@@ -224,12 +224,17 @@ publishing {
                     connection = 'scm:git:ssh://git@github.com/aws/c3r.git'
                     developerConnection = 'scm:git:ssh://git@github.com/aws/c3r.git'
                 }
-
                 licenses {
                     license {
                         name = 'The Apache License, Version 2.0'
                         url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
                         distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id = "amazonwebservices"
+                        name = "Amazon Web Services"
                     }
                 }
             }
