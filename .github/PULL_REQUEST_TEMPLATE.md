@@ -8,7 +8,7 @@ A short description of what the problem is and why we need to fix it. Add reprod
 
 ### Solution:
 
-A description of the possible solution in terms of Encryption SDK architecture.
+A description of the possible solution in terms of the C3R architecture.
 
 ### Out of scope:
 
