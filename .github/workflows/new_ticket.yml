@@ -1,4 +1,4 @@
-name: Label issues
+name: New Ticket
 on:
   issues:
     types:
