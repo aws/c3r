@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.io.schema;
 
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -68,6 +70,12 @@ public final class InteractiveSchemaGenerator {
     private final int sourceColumnCount;
 
     /**
+     * Number of columns that cannot be supported (e.g., if the column cannot be
+     * encrypted and cleartext columns are disallowed).
+     */
+    private int unsupportedTypeColumnCount;
+
+    /**
      * Source column types (in the order they appear in the input file).
      */
     private final List<ClientDataType> sourceColumnTypes;
@@ -88,6 +96,11 @@ public final class InteractiveSchemaGenerator {
     private final PrintStream consoleOutput;
 
     /**
+     * Whether cleartext columns possible for this schema.
+     */
+    private final boolean allowCleartextColumns;
+
+    /**
      * Sets up the schema generator to run in interactive mode. Makes I/O connections to console, processes header information and
      * initializes preprocessing state.
      *
@@ -96,6 +109,7 @@ public final class InteractiveSchemaGenerator {
      * @param targetJsonFile    Where schema should be written
      * @param consoleInput      Connection to input stream (i.e., input from user)
      * @param consoleOutput     Connection to output stream (i.e., output for user)
+     * @param clientSettings    Collaboration's client settings if provided, else {@code null}
      * @throws C3rIllegalArgumentException If input sizes are inconsistent
      */
     @Builder
@@ -104,7 +118,8 @@ public final class InteractiveSchemaGenerator {
                                        @NonNull final List<ClientDataType> sourceColumnTypes,
                                        @NonNull final String targetJsonFile,
                                        final BufferedReader consoleInput,
-                                       final PrintStream consoleOutput) {
+                                       final PrintStream consoleOutput,
+                                       final ClientSettings clientSettings) {
         if (sourceHeaders != null && sourceHeaders.size() != sourceColumnTypes.size()) {
             throw new C3rIllegalArgumentException("Interactive schema generator given " + sourceHeaders.size() + " headers and " +
                     sourceColumnTypes.size() + " column data types.");
@@ -113,13 +128,14 @@ public final class InteractiveSchemaGenerator {
         this.headers = sourceHeaders == null ? null : List.copyOf(sourceHeaders);
         this.sourceColumnTypes = sourceColumnTypes;
         this.sourceColumnCount = sourceColumnTypes.size();
+        this.unsupportedTypeColumnCount = 0;
         this.targetJsonFile = targetJsonFile;
         this.consoleInput = (consoleInput == null)
                 ? new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))
                 : consoleInput;
         this.consoleOutput = (consoleOutput == null) ? new PrintStream(System.out, true, StandardCharsets.UTF_8)
                 : consoleOutput;
-
+        this.allowCleartextColumns = clientSettings == null || clientSettings.isAllowCleartext();
         generatedColumnSchemas = new ArrayList<>();
         usedColumnHeaders = new HashSet<>();
     }
@@ -140,13 +156,24 @@ public final class InteractiveSchemaGenerator {
      * @throws C3rRuntimeException If an I/O error occurs opening or creating the file
      */
     public void run() {
+        if (!allowCleartextColumns) {
+            consoleOutput.println();
+            consoleOutput.println("NOTE: Cleartext columns are not permitted for this collaboration");
+            consoleOutput.println("      and will not be provided as an option in prompts.");
+        }
         generateColumns();
         final List<ColumnSchema> flattenedColumnSchemas = generatedColumnSchemas.stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
         if (flattenedColumnSchemas.isEmpty()) {
-            consoleOutput.println("No target columns were specified.");
+            if (unsupportedTypeColumnCount >= sourceColumnCount) {
+                consoleOutput.println("No source columns could be considered for output:");
+                consoleOutput.println("  all columns were of an unsupported type and the");
+                consoleOutput.println("  specified collaboration does not allow cleartext.");
+            } else {
+                consoleOutput.println("No target columns were specified.");
+            }
             return;
         }
 
@@ -294,12 +321,16 @@ public final class InteractiveSchemaGenerator {
      */
     ColumnType promptColumnType() {
         final ColumnType type;
-        consoleOutput.print("Target column type: [c]leartext, [f]ingerprint, or [s]ealed? ");
+        if (allowCleartextColumns) {
+            consoleOutput.print("Target column type: [c]leartext, [f]ingerprint, or [s]ealed? ");
+        } else {
+            consoleOutput.print("Target column type: [f]ingerprint, or [s]ealed? ");
+        }
         final String userInput = readNextLineLowercase();
         if (userInput.isBlank()) {
             consoleOutput.println("Expected a column type, but found no input.");
             type = null;
-        } else if ("cleartext".startsWith(userInput)) {
+        } else if (allowCleartextColumns && "cleartext".startsWith(userInput)) {
             type = ColumnType.CLEARTEXT;
         } else if ("fingerprint".startsWith(userInput)) {
             type = ColumnType.FINGERPRINT;
@@ -310,6 +341,21 @@ public final class InteractiveSchemaGenerator {
             type = null;
         }
         return type;
+    }
+
+    /**
+     * Repeat an action until it is non-{@code null}, e.g. for repeating requests for valid input.
+     *
+     * @param supplier Function that supplies the (eventually) non-null value.
+     * @param <T> The type of value to be returned by the supplier.
+     * @return The non-{@code null} value eventually returned by the supplier.
+     */
+    static <T> T repeatUntilNotNull(final Supplier<T> supplier) {
+        T result = null;
+        while (result == null) {
+            result = supplier.get();
+        }
+        return result;
     }
 
     /**
@@ -337,10 +383,8 @@ public final class InteractiveSchemaGenerator {
             final String prompt = "Add suffix `"
                     + suggestedSuffix + "` to header to indicate how it was encrypted";
 
-            Boolean addSuffix = null;
-            while (addSuffix == null) {
-                addSuffix = promptYesOrNo(prompt, true);
-            }
+            final boolean addSuffix = repeatUntilNotNull(() ->
+                    promptYesOrNo(prompt, true));
             suffix = addSuffix ? suggestedSuffix : null;
         } else {
             suffix = null;
@@ -480,10 +524,9 @@ public final class InteractiveSchemaGenerator {
      * @see Pad
      */
     Pad promptPad(@NonNull final ColumnHeader targetHeader) {
-        PadType padType = null;
-        while (padType == null) {
-            padType = promptPadType(targetHeader, PadType.MAX);
-        }
+        final PadType padType = repeatUntilNotNull(() ->
+                promptPadType(targetHeader, PadType.MAX)
+        );
 
         if (padType == PadType.NONE) {
             return Pad.DEFAULT;
@@ -500,10 +543,9 @@ public final class InteractiveSchemaGenerator {
             basePrompt = "Byte-length beyond max length to pad cleartext to in `" + targetHeader + "`";
         }
 
-        Integer length = null;
-        while (length == null) {
-            length = promptNonNegativeInt(basePrompt, defaultLength, PadUtil.MAX_PAD_BYTES);
-        }
+        final int length = repeatUntilNotNull(() ->
+                promptNonNegativeInt(basePrompt, defaultLength, PadUtil.MAX_PAD_BYTES)
+        );
         return Pad.builder().type(padType).length(length).build();
 
     }
@@ -529,31 +571,23 @@ public final class InteractiveSchemaGenerator {
         consoleOutput.println("from source " + columnRef + ".");
 
         final ClientDataType dataType = getCurrentSourceColumnDataType();
-        ColumnType columnType = null;
+        final ColumnType columnType;
         if (!dataType.supportsCryptographicComputing()) {
             consoleOutput.println("Cryptographic computing is not supported for this column's data type.");
             consoleOutput.println("This column's data will be cleartext.");
             columnType = ColumnType.CLEARTEXT;
         } else {
-            while (columnType == null) {
-                columnType = promptColumnType();
-            }
+            columnType = repeatUntilNotNull(this::promptColumnType);
         }
 
-        ColumnHeader targetHeader = null;
-        while (targetHeader == null) {
-            targetHeader = promptTargetHeader(sourceHeader, columnType);
-        }
+        final ColumnHeader targetHeader = repeatUntilNotNull(() -> promptTargetHeader(sourceHeader, columnType));
 
         ColumnSchema.ColumnSchemaBuilder columnBuilder = ColumnSchema.builder()
                 .sourceHeader(sourceHeader)
                 .targetHeader(targetHeader)
                 .type(columnType);
         if (columnType == ColumnType.SEALED) {
-            Pad pad = null;
-            while (pad == null) {
-                pad = promptPad(targetHeader);
-            }
+            final Pad pad = repeatUntilNotNull(() -> promptPad(targetHeader));
             columnBuilder = columnBuilder.pad(pad);
         }
         return columnBuilder.build();
@@ -570,16 +604,29 @@ public final class InteractiveSchemaGenerator {
 
         final int defaultTargetColumnCount = 1;
         consoleOutput.println("\nExamining source " + columnReference + ".");
-        Integer targetColumnCount = null;
-        if (!getCurrentSourceColumnDataType().supportsCryptographicComputing()) {
-            consoleOutput.println(SchemaGeneratorUtils.unsupportedTypeWarning(sourceHeader, getCurrentSourceColumnPosition()));
+        final boolean isSupportedType = getCurrentSourceColumnDataType().supportsCryptographicComputing();
+
+        final int targetColumnCount;
+        if (isSupportedType || allowCleartextColumns) {
+            if (!isSupportedType) {
+                // Warn that this column can only appear as cleartext
+                consoleOutput.println(SchemaGeneratorUtils.unsupportedTypeWarning(sourceHeader, getCurrentSourceColumnPosition()));
+            }
+            targetColumnCount = repeatUntilNotNull(() ->
+                    promptNonNegativeInt(
+                            "Number of target columns from source " + columnReference,
+                            defaultTargetColumnCount,
+                            Limits.COLUMN_COUNT_MAX));
+        } else {
+            // This column cannot even appear as cleartext because of collaboration settings,
+            // so warn that it will be skipped
+            consoleOutput.println(SchemaGeneratorUtils.unsupportedTypeSkippingColumnWarning(
+                    sourceHeader,
+                    getCurrentSourceColumnPosition()));
+            unsupportedTypeColumnCount++;
+            targetColumnCount = 0;
         }
-        while (targetColumnCount == null) {
-            targetColumnCount = promptNonNegativeInt(
-                    "Number of target columns from source " + columnReference,
-                    defaultTargetColumnCount,
-                    Limits.COLUMN_COUNT_MAX);
-        }
+
         // schemas derived from the current source column are stored in this array
         final var targetSchemasFromSourceColumn = new ArrayList<ColumnSchema>(targetColumnCount);
         // 1-based indices since `i` is only used really to count and print user messages if `targetColumnCount > 1`

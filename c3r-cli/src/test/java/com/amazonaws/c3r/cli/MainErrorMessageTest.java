@@ -79,7 +79,7 @@ public class MainErrorMessageTest {
 
     private void schemaAndCheckErrorMessagePresent(final SchemaCliConfigTestUtility args, final boolean enableStackTraces,
                                                    final String message) {
-        final CommandLine cmd = SchemaMode.getApp();
+        final CommandLine cmd = SchemaMode.getApp(null);
         runAndCheckErrorMessagePresent(cmd, args.toArrayWithoutMode(), enableStackTraces, message, C3rIllegalArgumentException.class);
     }
 

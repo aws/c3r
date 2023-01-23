@@ -3,8 +3,11 @@
 
 package com.amazonaws.c3r.cli;
 
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.utils.FileUtil;
+import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SchemaModeArgsTest {
     private static final String INPUT_CSV_PATH = "../samples/csv/data_sample_without_quotes.csv";
@@ -42,16 +48,20 @@ public class SchemaModeArgsTest {
 
     private Path schemaUnknownExtensionPath;
 
+    private CleanRoomsDao cleanRoomsDao;
+
     @BeforeEach
     public void setup() throws IOException {
         outputFile = Files.createTempFile("schema", ".json");
         outputFile.toFile().deleteOnExit();
         schemaCliTestConfig = SchemaCliConfigTestUtility.builder().overwrite(true).input(INPUT_CSV_PATH)
                 .output(outputFile.toAbsolutePath().toString()).build();
-        main = new SchemaMode();
 
         schemaUnknownExtensionPath = Files.createTempFile("schema", ".unknown");
         schemaUnknownExtensionPath.toFile().deleteOnExit();
+        cleanRoomsDao = mock(CleanRoomsDao.class);
+        when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.lowAssuranceMode());
+        main = new SchemaMode(cleanRoomsDao);
     }
 
     @AfterEach
@@ -217,5 +227,19 @@ public class SchemaModeArgsTest {
         schemaCliTestConfig.setFileFormat(FileFormat.PARQUET);
         schemaCliTestConfig.setNoHeaders(true);
         runMainWithCliArgs(false);
+    }
+
+    @Test
+    public void testInvalidIdFormat() {
+        schemaCliTestConfig.setInput(INPUT_CSV_PATH);
+        schemaCliTestConfig.setCollaborationId("invalidCollaborationId");
+        runMainWithCliArgs(false);
+    }
+
+    @Test
+    public void testValidId() {
+        schemaCliTestConfig.setInput(INPUT_CSV_PATH);
+        schemaCliTestConfig.setCollaborationId(GeneralTestUtility.EXAMPLE_SALT.toString());
+        runMainWithCliArgs(true);
     }
 }

@@ -67,6 +67,11 @@ public class SchemaCliConfigTestUtility {
     private boolean noHeaders = false;
 
     /**
+     * Collaboration ID.
+     */
+    private String collaborationId;
+
+    /**
      * Converts the specified command line parameters to a list.
      *
      * @return List of command line parameters
@@ -95,6 +100,9 @@ public class SchemaCliConfigTestUtility {
         }
         if (noHeaders) {
             args.add("--noHeaders");
+        }
+        if (collaborationId != null) {
+            args.add("--id=" + collaborationId);
         }
         return args;
     }

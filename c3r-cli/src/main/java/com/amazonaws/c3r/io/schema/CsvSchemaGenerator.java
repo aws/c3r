@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.io.schema;
 
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.io.CsvRowReader;
 import com.amazonaws.c3r.utils.FileUtil;
@@ -42,13 +43,15 @@ public final class CsvSchemaGenerator extends SchemaGenerator {
      * @param targetJsonFile Where to save the schema
      * @param overwrite      If the {@code targetJsonFile} should be overwritten if it exists
      * @param hasHeaders     Does the first source row contain column headers?
+     * @param clientSettings Collaboration's client settings if provided, else {@code null}
      */
     @Builder
     private CsvSchemaGenerator(@NonNull final String inputCsvFile,
                                @NonNull final String targetJsonFile,
                                @NonNull final Boolean overwrite,
-                               @NonNull final Boolean hasHeaders) {
-        super(inputCsvFile, targetJsonFile, overwrite);
+                               @NonNull final Boolean hasHeaders,
+                               final ClientSettings clientSettings) {
+        super(inputCsvFile, targetJsonFile, overwrite, clientSettings);
         this.inputCsvFile = inputCsvFile;
         this.targetJsonFile = targetJsonFile;
         FileUtil.initFileIfNotExists(targetJsonFile);

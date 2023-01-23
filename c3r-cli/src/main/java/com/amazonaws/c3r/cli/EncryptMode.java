@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 import static com.amazonaws.c3r.cli.Main.generateCommandLine;
 
@@ -200,19 +199,6 @@ public class EncryptMode implements Callable<Integer> {
     public ClientSettings getClientSettings() {
         final ClientSettings settings = Objects.requireNonNullElseGet(cleanRoomsDao, CleanRoomsDao::new)
                 .getCollaborationDataEncryptionMetadata(requiredArgs.getId().toString());
-
-        final Function<Boolean, String> boolToYesNo = (b) -> b ? "yes" : "no";
-
-        log.debug("Cryptographic computing parameters found for collaboration {}:", requiredArgs.getId());
-        log.debug("  * Allow cleartext columns = {}",
-                boolToYesNo.apply(settings.isAllowCleartext()));
-        log.debug("  * Allow duplicates = {}",
-                boolToYesNo.apply(settings.isAllowDuplicates()));
-        log.debug("  * Allow JOIN of columns with different names = {}",
-                boolToYesNo.apply(settings.isAllowJoinsOnColumnsWithDifferentNames()));
-        log.debug("  * Preserve NULL values = {}",
-                boolToYesNo.apply(settings.isPreserveNulls()));
-
         return settings;
     }
 

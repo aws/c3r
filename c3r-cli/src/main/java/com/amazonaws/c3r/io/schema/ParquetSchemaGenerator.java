@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.io.schema;
 
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.io.ParquetRowReader;
 import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Builder;
@@ -19,12 +20,14 @@ public final class ParquetSchemaGenerator extends SchemaGenerator {
      * @param inputParquetFile Parquet file to read header information from
      * @param targetJsonFile   Where to save the schema
      * @param overwrite        Whether the {@code targetJsonFile} should be overwritten (if it exists)
+     * @param clientSettings   Collaboration's client settings if provided, else {@code null}
      */
     @Builder
     private ParquetSchemaGenerator(@NonNull final String inputParquetFile,
                                    @NonNull final String targetJsonFile,
-                                   @NonNull final Boolean overwrite) {
-        super(inputParquetFile, targetJsonFile, overwrite);
+                                   @NonNull final Boolean overwrite,
+                                   final ClientSettings clientSettings) {
+        super(inputParquetFile, targetJsonFile, overwrite, clientSettings);
         FileUtil.verifyReadableFile(inputParquetFile);
         final var reader = new ParquetRowReader(inputParquetFile);
         sourceHeaders = reader.getHeaders();
