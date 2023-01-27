@@ -1,0 +1,18 @@
+name: Repo Sync
+on:
+  schedule:
+    - cron: '0 0 * * *' # run at midnight every day
+  workflow_dispatch: # enable manual runs from GitHub UI
+
+jobs:
+  repo-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: repo-sync
+        uses: repo-sync/github-sync@v2
+        with:
+          source_repo: "https://github.com/aws/c3r.git"
+          source_branch: "main"
+          destination_branch: "main"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
