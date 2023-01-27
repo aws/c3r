@@ -7,6 +7,20 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+if [[ -z "$C3R_ALL_Y_TEST_COLLABORATION" ]]; then
+    echo "Expected env var C3R_ALL_Y_TEST_COLLABORATION to be set"
+    echo "to a collaboration ID where all cryptographic parameters"
+    echo "are set to 'Yes'."
+    exit 1
+fi
+
+if [[ -z "$C3R_ALL_N_TEST_COLLABORATION" ]]; then
+    echo "Expected env var C3R_ALL_N_TEST_COLLABORATION to be set"
+    echo "to a collaboration ID where all cryptographic parameters"
+    echo "are set to 'No'."
+    exit 1
+fi
+
 ARTIFACT_DIR=$1
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -25,10 +39,10 @@ echo "JAR version found: $C3R_VERSION"
 
 # Test CLI JAR
 # ./c3r-cli/src/integration-test/test_all.sh $C3R_CLI_DIR/c3r-cli-all.jar
-echo "!! WARNING !!"
-echo "AUTOMATIC INTEGRATION TESTING NOT YET ENABLED"
-echo "MANUALLY VERIFY CLI JAR USING ./c3r-cli/src/integration-test/test_all.sh"
-echo "!! END OF WARNING !!"
+python3 c3r-cli/src/integration-test/integration_tests.py \
+  --id-y $C3R_ALL_Y_TEST_COLLABORATION \
+  --id-n $C3R_ALL_N_TEST_COLLABORATION \
+  $C3R_CLI_DIR/c3r-cli-all.jar
 
 mkdir -p $ARTIFACT_DIR
 

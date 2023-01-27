@@ -1,5 +1,0 @@
-# Simple round tripping of data should work
-SKEY blfkGRwdbAOARRXZz9OlOgZPxKbdlqVr5XmRa7NvISg=
-# CSV round trip
-PASS encrypt ../../../../samples/csv/data_sample_without_quotes.csv --schema=../../../../samples/schema/config_sample_no_cleartext.json --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=encrypted.csv.out --fileFormat=csv --overwrite
-PASS decrypt encrypted.csv.out --id=ba3528b0-8e5e-44bc-b38d-a2246ffdd986 --output=decrypted.csv.out --overwrite --fileFormat=csv

@@ -1,4 +1,0 @@
-# Run it once with PASS to ensure things are working normally
-PASS schema input.csv --template --overwrite --output=schema.json.out
-# Then point it at a missing file
-FAIL schema missing.csv --template --overwrite
