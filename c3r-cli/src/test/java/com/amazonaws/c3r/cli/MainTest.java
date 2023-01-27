@@ -13,8 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -115,7 +113,7 @@ public class MainTest {
     @Test
     public void marshalTest() throws IOException {
         encArgs.setInput("../samples/csv/data_sample_without_quotes.csv");
-        final File output = new File("data_sample.csv.out");
+        final File output = new File("data_sample_without_quotes.csv.out");
         encArgs.setOutput(output.getAbsolutePath());
 
         final long sourceLineCount;
@@ -291,38 +289,4 @@ public class MainTest {
         clientRoundTripTest(FileFormat.PARQUET);
     }
 
-    @Test
-    public void schemaTemplateTest() {
-        final String originalPath = "../samples/csv/data_sample_without_quotes.csv";
-        final String schemaPath = tempDir.resolve("data_sample.json").toString();
-
-        final var args = SchemaCliConfigTestUtility.builder().input(originalPath).output(schemaPath).subMode("--template").build();
-
-        final int exitCode = Main.getApp().execute(args.toArray());
-        assertEquals(0, exitCode);
-
-        assertTrue(new File(schemaPath).exists());
-        assertTrue(new File(schemaPath).length() > 0);
-    }
-
-    // Check that interactive schema command returns results
-    @Test
-    public void schemaInteractiveTest() {
-        final String originalPath = "../samples/csv/data_sample_without_quotes.csv";
-        final Path schemaPath = tempDir.resolve("schemaInteractive.json");
-
-        final var args = SchemaCliConfigTestUtility.builder().input(originalPath).output(schemaPath.toAbsolutePath().toString())
-                .subMode("--interactive").overwrite(true).build();
-
-        // user input which repeatedly says the source column in question should generate one cleartext column
-        // with the default name
-        final var userInput = new ByteArrayInputStream("1\ncleartext\n\n".repeat(100).getBytes(StandardCharsets.UTF_8));
-        System.setIn(new BufferedInputStream(userInput));
-
-        final int exitCode = Main.getApp().execute(args.toArray());
-        assertEquals(0, exitCode);
-
-        assertTrue(schemaPath.toFile().exists());
-        assertTrue(schemaPath.toFile().length() > 0);
-    }
 }

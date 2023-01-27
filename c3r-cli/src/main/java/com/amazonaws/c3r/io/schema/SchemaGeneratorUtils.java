@@ -44,4 +44,21 @@ public final class SchemaGeneratorUtils {
                 "         used for cryptographic computing. Any target column(s) generated\n" +
                 "         from this column will be cleartext.";
     }
+
+    /**
+     * Returns a user-facing message stating the specified column cannot be encrypted in any way AND is being skipped.
+     *
+     * @param columnHeader The column header (if one exists)
+     * @param columnIndex  The column's 0-based index
+     * @return A warning string user facing I/O
+     */
+    public static String unsupportedTypeSkippingColumnWarning(final ColumnHeader columnHeader, final int columnIndex) {
+        final String columnName = columnReference(columnHeader, columnIndex);
+
+        final var sb = new StringBuilder();
+        sb.append("WARNING: " + columnName + " contains non-string data and cannot be\n");
+        sb.append("         used for cryptographic computing. This column is being skipped\n");
+        sb.append("         because the collaboration does not permit cleartext columns.");
+        return sb.toString();
+    }
 }

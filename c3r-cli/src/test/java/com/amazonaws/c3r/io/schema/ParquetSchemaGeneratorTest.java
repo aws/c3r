@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -48,6 +49,21 @@ public class ParquetSchemaGeneratorTest {
         assertEquals(
                 Collections.nCopies(GeneralTestUtility.DATA_SAMPLE_HEADERS.size(), ClientDataType.STRING),
                 getTestSchemaGenerator("../samples/parquet/data_sample.parquet").getSourceColumnTypes());
+    }
+
+    @Test
+    public void getSourceColumnTypesTest() {
+        assertEquals(
+                List.of(ClientDataType.UNKNOWN,
+                        ClientDataType.STRING,
+                        ClientDataType.UNKNOWN,
+                        ClientDataType.UNKNOWN,
+                        ClientDataType.UNKNOWN,
+                        ClientDataType.UNKNOWN,
+                        ClientDataType.UNKNOWN,
+                        ClientDataType.UNKNOWN,
+                        ClientDataType.UNKNOWN),
+                getTestSchemaGenerator("../samples/parquet/rows_100_groups_10_prim_data.parquet").getSourceColumnTypes());
     }
 
     @Test

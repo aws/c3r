@@ -124,7 +124,7 @@ public class ParquetRowReaderTest {
     }
 
     @Test
-    public void getParquetSchemaTest() {
+    public void getParquetSchemaSupportsCryptoComputingTest() {
         final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
         final var schema = pReader.getParquetSchema();
         ParquetTestUtility.PARQUET_TEST_DATA_TYPES.forEach((header, type) ->
@@ -211,4 +211,5 @@ public class ParquetRowReaderTest {
         writer.close();
         assertThrows(C3rRuntimeException.class, () -> new ParquetRowReader(output.toFile().getAbsolutePath()));
     }
+
 }

@@ -72,6 +72,18 @@ public class ParquetDataTypeTest {
     }
 
     @Test
+    public void supportsCryptoComputingTest() {
+        assertTrue(ParquetDataType.fromType(OPTIONAL_STRING_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertTrue(ParquetDataType.fromType(REQUIRED_STRING_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertFalse(ParquetDataType.fromType(REQUIRED_BINARY_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertFalse(ParquetDataType.fromType(REQUIRED_BOOLEAN_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertFalse(ParquetDataType.fromType(REQUIRED_DOUBLE_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertFalse(ParquetDataType.fromType(REQUIRED_FLOAT_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertFalse(ParquetDataType.fromType(REQUIRED_INT32_TYPE).getClientDataType().supportsCryptographicComputing());
+        assertFalse(ParquetDataType.fromType(REQUIRED_INT64_TYPE).getClientDataType().supportsCryptographicComputing());
+    }
+
+    @Test
     public void fromTypeTest() {
         assertEquals(
                 ParquetDataType.builder().parquetType(REQUIRED_STRING_TYPE).clientDataType(ClientDataType.STRING).build(),

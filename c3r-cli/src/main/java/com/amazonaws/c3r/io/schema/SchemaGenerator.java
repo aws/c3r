@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.io.schema;
 
 import com.amazonaws.c3r.cli.SchemaMode;
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
@@ -43,17 +44,27 @@ public abstract class SchemaGenerator {
     private final String targetJsonFile;
 
     /**
+     * Clean room cryptographic settings.
+     */
+    private final ClientSettings clientSettings;
+
+    /**
      * Setup common schema generator component.
      *
      * @param inputFile      Input data file for processing
      * @param targetJsonFile Schema file mapping input to output file data
      * @param overwrite      Whether to overwrite the output file if it already exists
+     * @param clientSettings       Collaboration settings if available, else {@code null}
      */
-    protected SchemaGenerator(@NonNull final String inputFile, @NonNull final String targetJsonFile, @NonNull final Boolean overwrite) {
+    protected SchemaGenerator(@NonNull final String inputFile,
+                              @NonNull final String targetJsonFile,
+                              @NonNull final Boolean overwrite,
+                              final ClientSettings clientSettings) {
         this.inputFile = inputFile;
         this.targetJsonFile = targetJsonFile;
         validate(overwrite);
         FileUtil.initFileIfNotExists(targetJsonFile);
+        this.clientSettings = clientSettings;
     }
 
     /**
@@ -84,6 +95,7 @@ public abstract class SchemaGenerator {
                     .targetJsonFile(targetJsonFile)
                     .consoleInput(new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)))
                     .consoleOutput(System.out)
+                    .clientSettings(clientSettings)
                     .build()
                     .run();
         } else if (subMode.isTemplateMode()) {
@@ -91,6 +103,7 @@ public abstract class SchemaGenerator {
                     .sourceHeaders(getSourceHeaders())
                     .sourceColumnTypes(getSourceColumnTypes())
                     .targetJsonFile(targetJsonFile)
+                    .clientSettings(clientSettings)
                     .build()
                     .run();
         } else {

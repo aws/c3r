@@ -172,8 +172,10 @@ public final class CsvRowReader extends RowReader<CsvValue> {
                 throw new C3rRuntimeException("Could not read a CSV line from the file " + csvFileName);
             }
             return firstLine.length;
-        } catch (TextParsingException | IOException e) {
-            throw new C3rRuntimeException("Could not get CSV column count from file " + csvFileName, e);
+        } catch (TextParsingException e) {
+            throw new C3rRuntimeException("Could not get column count: an error occurred while parsing " + csvFileName, e);
+        } catch (IOException e) {
+            throw new C3rRuntimeException("Could not get column count: an I/O error occurred while reading " + csvFileName, e);
         }
     }
 

@@ -6,6 +6,7 @@ package com.amazonaws.c3r.cleanrooms;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.cleanrooms.CleanRoomsClient;
 import software.amazon.awssdk.services.cleanrooms.model.AccessDeniedException;
 import software.amazon.awssdk.services.cleanrooms.model.CleanRoomsException;
@@ -16,10 +17,13 @@ import software.amazon.awssdk.services.cleanrooms.model.ResourceNotFoundExceptio
 import software.amazon.awssdk.services.cleanrooms.model.ThrottlingException;
 import software.amazon.awssdk.services.cleanrooms.model.ValidationException;
 
+import java.util.function.Function;
+
 /**
  * Create a connection to AWS Clean Rooms to get collaboration information.
  */
 @AllArgsConstructor
+@Slf4j
 public class CleanRoomsDao {
     /**
      * Create a connection to AWS Clean Rooms.
@@ -66,11 +70,25 @@ public class CleanRoomsDao {
                     "The collaboration with CollaborationID `" + collaborationId + "` was not created for use with " +
                             "C3R! C3R must be enabled on the collaboration when it's created in order to continue.");
         }
-        return ClientSettings.builder()
+        final var settings = ClientSettings.builder()
                 .allowJoinsOnColumnsWithDifferentNames(metadata.allowJoinsOnColumnsWithDifferentNames())
                 .allowCleartext(metadata.allowCleartext())
                 .allowDuplicates(metadata.allowDuplicates())
                 .preserveNulls(metadata.preserveNulls())
                 .build();
+
+        final Function<Boolean, String> boolToYesOrNo = (b) -> b ? "yes" : "no";
+
+        log.debug("Cryptographic computing parameters found for collaboration {}:", collaborationId);
+        log.debug("  * Allow cleartext columns = {}",
+                boolToYesOrNo.apply(settings.isAllowCleartext()));
+        log.debug("  * Allow duplicates = {}",
+                boolToYesOrNo.apply(settings.isAllowDuplicates()));
+        log.debug("  * Allow JOIN of columns with different names = {}",
+                boolToYesOrNo.apply(settings.isAllowJoinsOnColumnsWithDifferentNames()));
+        log.debug("  * Preserve NULL values = {}",
+                boolToYesOrNo.apply(settings.isPreserveNulls()));
+
+        return settings;
     }
 }
