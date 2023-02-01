@@ -12,6 +12,7 @@ import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
+import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
 import com.amazonaws.c3r.json.GsonUtil;
 import com.amazonaws.c3r.utils.FileUtil;
@@ -29,9 +30,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -246,6 +249,31 @@ public class InteractiveSchemaGeneratorTest {
     public void validateErrorWithMismatchedColumnCounts() {
         assertThrows(C3rIllegalArgumentException.class, () ->
                 setup("", headers, List.of(), null));
+    }
+
+    @Test
+    public void validateUnexpectedUserInputEndError() throws IOException {
+        final Path tempDir = Files.createTempDirectory("temp");
+        tempDir.toFile().deleteOnExit();
+        targetSchema = tempDir.resolve("schema.json");
+        targetSchema.toFile().deleteOnExit();
+
+        final List<String> incompleteUserInputs = List.of("", "0", "0\n", "0\n0", "0\n0\n");
+
+        final Consumer<String> schemaGenRunner = (userInput) ->
+                InteractiveSchemaGenerator.builder()
+                        .sourceHeaders(headers)
+                        .sourceColumnTypes(stringColumnTypes)
+                        .targetJsonFile(targetSchema.toAbsolutePath().toString())
+                        .consoleInput(new BufferedReader(new StringReader(userInput)))
+                        .consoleOutput(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8))
+                        .clientSettings(null)
+                        .build()
+                        .run();
+        for (var input : incompleteUserInputs) {
+            assertThrows(C3rRuntimeException.class, () -> schemaGenRunner.accept(input));
+        }
+        assertDoesNotThrow(() -> schemaGenRunner.accept("0\n0\n0"));
     }
 
     @Test
