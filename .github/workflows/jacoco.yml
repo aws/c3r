@@ -2,12 +2,27 @@ name: JaCoCo Report
 on: [ pull_request ]
 
 jobs:
+  # Adds the following filters:
+  # Only run when files that influence the build are updated.
+  # Don't run again if the same commit has already been run.
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5.3.0
+        with:
+          concurrent_skipping: 'same_content_newer'
+          paths: '["**/src/**", "**.gradle", "samples/**", "config/**"]'
 
   generate-jacoco:
     strategy:
       matrix:
         package: [ 'c3r-sdk-core' , 'c3r-sdk-parquet' , 'c3r-cli' ]
     runs-on: ubuntu-latest
+    needs: filter
+    if: ${{ needs.filter.outputs.should_skip != 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
