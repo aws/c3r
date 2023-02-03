@@ -6,7 +6,10 @@ package com.amazonaws.c3r.cleanrooms;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.cleanrooms.CleanRoomsClient;
 import software.amazon.awssdk.services.cleanrooms.model.AccessDeniedException;
 import software.amazon.awssdk.services.cleanrooms.model.CleanRoomsException;
@@ -28,6 +31,31 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class CleanRoomsDaoTest {
+
+    private String oldAwsRegion;
+
+    @BeforeEach
+    public void setup() {
+        oldAwsRegion = System.getProperty("aws.region");
+    }
+
+    @AfterEach
+    public void teardown() {
+        if (oldAwsRegion != null) {
+            System.setProperty("aws.region", oldAwsRegion);
+            oldAwsRegion = null;
+        } else {
+            System.clearProperty("aws.region");
+        }
+    }
+
+    @Test
+    public void constructorTest() throws CleanRoomsException {
+        // Check that the constructor throws an error when AWS_REGION is set to the empty string
+        System.setProperty("aws.region", "");
+        assertThrows(C3rRuntimeException.class, () -> new CleanRoomsDao());
+    }
+
     @Test
     public void getCollaborationDataEncryptionMetadataTest() throws CleanRoomsException {
         final ClientSettings expectedClientSettings = ClientSettings.builder()
@@ -83,7 +111,8 @@ public class CleanRoomsDaoTest {
                 AccessDeniedException.builder().message("AccessDeniedException").build(),
                 ThrottlingException.builder().message("ThrottlingException").build(),
                 ValidationException.builder().message("ValidationException").build(),
-                CleanRoomsException.builder().message("CleanRoomsException").build());
+                CleanRoomsException.builder().message("CleanRoomsException").build(),
+                SdkException.builder().message("SdkException").build());
         for (var exception : exceptions) {
             final var client = mock(CleanRoomsClient.class);
             final var cleanRoomsDaoDao = new CleanRoomsDao(client);
