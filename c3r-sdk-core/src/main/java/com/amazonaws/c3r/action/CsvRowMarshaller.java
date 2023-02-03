@@ -20,6 +20,7 @@ import com.amazonaws.c3r.io.RowReader;
 import com.amazonaws.c3r.io.RowWriter;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
  * except for creating the CSV file reader ({@link CsvRowReader}), writer ({@link CsvRowWriter}) and {@link CsvRowFactory} which is done
  * here.
  */
+@Slf4j
 public final class CsvRowMarshaller {
     /**
      * Utility class, hide default constructor.
@@ -66,14 +68,14 @@ public final class CsvRowMarshaller {
     /**
      * Creates an instance of the marshaller where each setting is specified individually.
      *
-     * @param sourceFile Input CSV data file location
-     * @param targetFile Where to write CSV data
-     * @param tempDir Where to write temporary files if needed
-     * @param inputNullValue What the CSV input file uses to indicate {@code null}
+     * @param sourceFile      Input CSV data file location
+     * @param targetFile      Where to write CSV data
+     * @param tempDir         Where to write temporary files if needed
+     * @param inputNullValue  What the CSV input file uses to indicate {@code null}
      * @param outputNullValue What the output CSV file should use to indicate {@code null}
-     * @param settings Cryptographic settings for the clean room
-     * @param schema Specification of how data in the input file will be transformed into encrypted data in the output file
-     * @param transforms Cryptographic transforms that are possible to use
+     * @param settings        Cryptographic settings for the clean room
+     * @param schema          Specification of how data in the input file will be transformed into encrypted data in the output file
+     * @param transforms      Cryptographic transforms that are possible to use
      * @return CSV data marshaller
      */
     @Builder
@@ -95,7 +97,7 @@ public final class CsvRowMarshaller {
                 .outputNullValue(outputNullValue)
                 .headers(targetHeaders)
                 .build();
-
+        validate(outputNullValue, schema);
         return RowMarshaller.<CsvValue>builder()
                 .settings(settings)
                 .schema(schema)
@@ -105,5 +107,24 @@ public final class CsvRowMarshaller {
                 .outputWriter(writer)
                 .transformers(transforms)
                 .build();
+    }
+
+    /**
+     * Verifies that settings are consistent.
+     * - Make sure that if csvOutputNULLValue is set, at least one cleartext target column exists
+     *
+     * @param outputNullValue What the output CSV file should use to indicate {@code null}
+     * @param schema          Specification of how data in the input file will be transformed into encrypted data in the output file
+     */
+    static void validate(final String outputNullValue, @NonNull final TableSchema schema) {
+        if (outputNullValue == null) {
+            return; // No custom null value was set
+        }
+        final boolean cleartextColumnExists = schema.getColumns().stream()
+                .anyMatch(columnSchema -> columnSchema.getType() == ColumnType.CLEARTEXT);
+        if (!cleartextColumnExists) {
+            log.warn("Received a custom output null value `" + outputNullValue + "`, but no cleartext columns were found. It will be " +
+                    "ignored.");
+        }
     }
 }
