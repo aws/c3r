@@ -300,9 +300,10 @@ public class RowMarshallerTest {
         rowMarshaller.close();
 
         final var originalData = CsvTestUtility.readRows(TEST_CONFIG_DATA_SAMPLE.getInput()).stream()
-                .sorted(Comparator.comparing(v -> v.get("firstname")))
+                .sorted(Comparator.comparing(v -> v.get("FirstName")))
                 .collect(Collectors.toList());
-        final var cipherData = CsvTestUtility.readRows(ciphertextFile).stream().sorted(Comparator.comparing(v -> v.get("firstname")))
+        final var cipherData = CsvTestUtility.readRows(ciphertextFile).stream()
+                .sorted(Comparator.comparing(v -> v.get("firstname")))
                 .collect(Collectors.toList());
 
         assertEquals(originalData.size(), cipherData.size());
@@ -310,9 +311,9 @@ public class RowMarshallerTest {
             final var originalLine = originalData.get(i);
             final var cipherLine = cipherData.get(i);
             assertEquals(originalLine.size() * 4, cipherLine.size());
-            for (String s : TEST_CONFIG_DATA_SAMPLE.getInputColumnHeaders()) {
+            for (String s : headers) {
                 final var original = originalLine.get(s);
-                final var cipherCleartext = cipherLine.get(s);
+                final var cipherCleartext = cipherLine.get(new ColumnHeader(s).toString());
                 assertTrue(CsvTestUtility.compareCsvValues(original, cipherCleartext));
                 final var cipherSealed = cipherLine.get(s + "_sealed");
                 assertNotEquals(original, cipherSealed);
@@ -343,17 +344,18 @@ public class RowMarshallerTest {
         assertEquals(originalData.size(), finalData.size());
         for (int i = 0; i < originalData.size(); i++) {
             final var originalLine = originalData.get(i);
-            final var plainLine = finalData.get(i);
-            assertEquals(originalLine.size() * 4, plainLine.size());
-            for (String s : TEST_CONFIG_DATA_SAMPLE.getInputColumnHeaders()) {
+            final var resultLine = finalData.get(i);
+            assertEquals(originalLine.size() * 4, resultLine.size());
+            for (String s : headers) {
+                final var resultHeader = new ColumnHeader(s).toString();
                 final var original = originalLine.get(s);
-                final var cipherCleartext = plainLine.get(s);
-                assertTrue(CsvTestUtility.compareCsvValues(original, cipherCleartext));
-                final var cipherSealed = plainLine.get(s + "_sealed");
+                final var result = resultLine.get(resultHeader);
+                assertTrue(CsvTestUtility.compareCsvValues(original, result));
+                final var cipherSealed = resultLine.get(resultHeader + "_sealed");
                 assertTrue(CsvTestUtility.compareCsvValues(original, cipherSealed));
-                final var cipherFixed = plainLine.get(s + "_fixed");
+                final var cipherFixed = resultLine.get(resultHeader + "_fixed");
                 assertTrue(CsvTestUtility.compareCsvValues(original, cipherFixed));
-                final var cipherMax = plainLine.get(s + "_max");
+                final var cipherMax = resultLine.get(resultHeader + "_max");
                 assertTrue(CsvTestUtility.compareCsvValues(original, cipherMax));
             }
         }
