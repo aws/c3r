@@ -540,7 +540,9 @@ public final class InteractiveSchemaGenerator {
         } else {
             // padType == PadType.MAX
             defaultLength = 0;
-            basePrompt = "Byte-length beyond max length to pad cleartext to in `" + targetHeader + "`";
+            consoleOutput.println("All values in `" + targetHeader + "` will be padded to the byte-length of the");
+            consoleOutput.println("longest value plus a specified number of additional padding bytes.");
+            basePrompt = "How many additional padding bytes should be used";
         }
 
         final int length = repeatUntilNotNull(() ->
