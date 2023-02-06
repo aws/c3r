@@ -7,9 +7,9 @@ import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.cleanrooms.CleanRoomsClient;
 import software.amazon.awssdk.services.cleanrooms.model.AccessDeniedException;
-import software.amazon.awssdk.services.cleanrooms.model.CleanRoomsException;
 import software.amazon.awssdk.services.cleanrooms.model.DataEncryptionMetadata;
 import software.amazon.awssdk.services.cleanrooms.model.GetCollaborationRequest;
 import software.amazon.awssdk.services.cleanrooms.model.GetCollaborationResponse;
@@ -32,9 +32,15 @@ public class CleanRoomsDao {
 
     /**
      * Construct an CleanRoomsDao using the default CleanRoomsClient.
+     *
+     * @throws C3rRuntimeException If a {@link SdkException} is raised connecting to AWS Clean Rooms
      */
     public CleanRoomsDao() {
-        client = CleanRoomsClient.create();
+        try {
+            client = CleanRoomsClient.create();
+        } catch (SdkException e) {
+            throw new C3rRuntimeException("Unable to connect to AWS Clean Rooms: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -61,7 +67,7 @@ public class CleanRoomsDao {
             throw new C3rRuntimeException(baseError + " Throttling. Please wait a moment before trying again.", e);
         } catch (ValidationException e) {
             throw new C3rRuntimeException(baseError + " CollaborationID could not be validated. " + endError, e);
-        } catch (CleanRoomsException e) {
+        } catch (SdkException e) {
             throw new C3rRuntimeException(baseError + " Unknown error: " + e.getMessage(), e);
         }
         final DataEncryptionMetadata metadata = response.collaboration().dataEncryptionMetadata();
