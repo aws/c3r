@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.amazonaws.c3r.examples;
+package com.amazonaws.c3r.examples.csv;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,11 +18,11 @@ public class CsvNoHeaderExampleTest {
         final Path encryptedCsv = Files.createTempFile("encrypted", ".csv");
         final Path decryptedCsv = Files.createTempFile("decrypted", ".csv");
 
-        com.amazonaws.c3r.examples.CsvNoHeaderExample.encrypt(inputCsv.toString(), encryptedCsv.toString());
+        CsvNoHeaderExample.encrypt(inputCsv.toString(), encryptedCsv.toString());
         assertTrue(Files.exists(encryptedCsv));
         assertTrue(Files.size(encryptedCsv) > 0);
 
-        com.amazonaws.c3r.examples.CsvNoHeaderExample.decrypt(encryptedCsv.toString(), decryptedCsv.toString());
+        CsvNoHeaderExample.decrypt(encryptedCsv.toString(), decryptedCsv.toString());
 
         assertTrue(Files.exists(decryptedCsv));
         assertTrue(Files.size(decryptedCsv) > 0);

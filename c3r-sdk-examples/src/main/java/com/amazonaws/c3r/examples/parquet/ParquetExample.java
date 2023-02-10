@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.amazonaws.c3r.examples;
+package com.amazonaws.c3r.examples.parquet;
 
 import com.amazonaws.c3r.action.ParquetRowMarshaller;
 import com.amazonaws.c3r.action.ParquetRowUnmarshaller;
