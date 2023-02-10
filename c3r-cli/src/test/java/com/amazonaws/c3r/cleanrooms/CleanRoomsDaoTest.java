@@ -6,9 +6,8 @@ package com.amazonaws.c3r.cleanrooms;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.cleanrooms.CleanRoomsClient;
 import software.amazon.awssdk.services.cleanrooms.model.AccessDeniedException;
@@ -22,6 +21,7 @@ import software.amazon.awssdk.services.cleanrooms.model.ThrottlingException;
 import software.amazon.awssdk.services.cleanrooms.model.ValidationException;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,28 +32,12 @@ import static org.mockito.Mockito.when;
 
 public class CleanRoomsDaoTest {
 
-    private String oldAwsRegion;
-
-    @BeforeEach
-    public void setup() {
-        oldAwsRegion = System.getProperty("aws.region");
-    }
-
-    @AfterEach
-    public void teardown() {
-        if (oldAwsRegion != null) {
-            System.setProperty("aws.region", oldAwsRegion);
-            oldAwsRegion = null;
-        } else {
-            System.clearProperty("aws.region");
-        }
-    }
-
     @Test
-    public void constructorTest() throws CleanRoomsException {
-        // Check that the constructor throws an error when AWS_REGION is set to the empty string
-        System.setProperty("aws.region", "");
-        assertThrows(C3rRuntimeException.class, () -> new CleanRoomsDao());
+    public void constructorSdkExceptionTest() throws CleanRoomsException {
+        final Supplier<CleanRoomsClient> faultySupplier = () -> {
+            throw SdkClientException.create("A crazy error occurred connecting to AWS Clean Rooms.");
+        };
+        assertThrows(C3rRuntimeException.class, () -> new CleanRoomsDao(faultySupplier));
     }
 
     @Test
