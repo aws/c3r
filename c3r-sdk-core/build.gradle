@@ -39,30 +39,12 @@ plugins {
 
 apply plugin: 'com.github.spotbugs'
 
-sourceSets {
-    // main is automatically created by gradle and only need to be included here if we need to exclude files or change paths
-    examples {
-        compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output
-        java {
-            srcDirs = ['src/examples']
-        }
-    }
-    // test needs to access classes in the examples directory so adding a dependency
-    test {
-        compileClasspath += sourceSets.main.output
-        compileClasspath += sourceSets.examples.output
-        runtimeClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.examples.output
-    }
-}
-
 /*
  Configures the Checkstyle "checkstyle" plugin. Remove this and the plugin if
  you want to skip these checks and report generation.
 */
 checkstyle {
-    sourceSets = [sourceSets.main, sourceSets.examples, sourceSets.test]
+    sourceSets = [sourceSets.main, sourceSets.test]
     configFile = file('../config/checkstyle/checkstyle.xml')
     configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
     configDirectory.set(file('../config/checkstyle'))

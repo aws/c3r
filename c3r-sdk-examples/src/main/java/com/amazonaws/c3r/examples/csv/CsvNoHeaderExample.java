@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.amazonaws.c3r.examples;
+package com.amazonaws.c3r.examples.csv;
 
 import com.amazonaws.c3r.action.CsvRowMarshaller;
 import com.amazonaws.c3r.action.CsvRowUnmarshaller;

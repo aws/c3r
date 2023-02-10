@@ -19,20 +19,12 @@
         <property name="id" value="SkipMainFiles"/>
     </module>
     <module name="SuppressionSingleFilter">
-        <property name="files" value=".*[\\/]src[\\/]examples[\\/]"/>
-        <property name="id" value="SkipExampleFiles"/>
-    </module>
-    <module name="SuppressionSingleFilter">
-        <property name="files" value=".*[\\/]src[\\/](examples|test)[\\/]"/>
+        <property name="files" value=".*[\\/]examples[\\/]|.*[\\/]src[\\/]test[\\/]"/>
         <property name="id" value="MainFilesOnly"/>
     </module>
     <module name="SuppressionSingleFilter">
-        <property name="files" value=".*[\\/]src[\\/](examples|main)[\\/]"/>
+        <property name="files" value=".*[\\/]examples[\\/]|.*[\\/]src[\\/]main[\\/]"/>
         <property name="id" value="TestFilesOnly"/>
-    </module>
-    <module name="SuppressionSingleFilter">
-        <property name="files" value=".*[\\/]src[\\/](main|test)[\\/]"/>
-        <property name="id" value="ExampleFilesOnly"/>
     </module>
 
     <!-- Files must not contain tabs. -->
@@ -186,7 +178,7 @@
 
         <!-- Customized: Braces must not be empty for most language constructs. -->
         <module name="EmptyBlock">
-            <!-- A comment or a code statement fulfill the non-empty block requriement -->
+            <!-- A comment or a code statement fulfill the non-empty block requirement -->
             <property name="option" value="TEXT"/>
             <!-- Only ARRAY_INIT missing so you can fill in values inside a loop -->
             <property name="tokens" value="LITERAL_WHILE, LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_DO, LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, INSTANCE_INIT, STATIC_INIT, LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_CASE, LITERAL_DEFAULT"/>
