@@ -4,13 +4,12 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,11 +41,7 @@ public class MainEnvVarKeyValidTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        final Path outputFile = Files.createTempFile(tempDir, "output", ".csv");
-        outputFile.toFile().deleteOnExit();
-        final String output = outputFile.toFile().getAbsolutePath();
+        final String output = FileTestUtility.createTempFile().toString();
         encArgs = EncryptCliConfigTestUtility.defaultDryRunTestArgs(ENC_INPUT_PATH, SCHEMA_PATH);
         encArgs.setOutput(output);
         final CleanRoomsDao cleanRoomsDao = mock(CleanRoomsDao.class);

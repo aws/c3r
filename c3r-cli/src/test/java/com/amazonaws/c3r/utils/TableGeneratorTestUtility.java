@@ -35,32 +35,6 @@ public final class TableGeneratorTestUtility {
     }
 
     /**
-     * Stores associated schema and CSV files.
-     */
-    public static class Paths {
-        /**
-         * Location of schema file.
-         */
-        public final Path schema;
-
-        /**
-         * Location of CSV file.
-         */
-        public final Path data;
-
-        /**
-         * Stores paths to associated schema and CSV files.
-         *
-         * @param schema Location of schema file
-         * @param data   Location of CSV file
-         */
-        public Paths(final Path schema, final Path data) {
-            this.schema = schema;
-            this.data = data;
-        }
-    }
-
-    /**
      * Generates unique column header names based on type.
      *
      * @param columnIndex Which column to create a header for
@@ -126,11 +100,10 @@ public final class TableGeneratorTestUtility {
      *
      * @param columnCount Number of columns in generated file
      * @param rowCount    Number of rows in generated file (used for naming file only)
-     * @param directory   Where to write the schema file
      * @return Path to schema file
      * @throws IOException If there was an error writing the schema to disk
      */
-    private static Path generateSchema(final int columnCount, final long rowCount, final Path directory) throws IOException {
+    public static Path generateSchema(final int columnCount, final long rowCount) throws IOException {
         final JsonArray columns = new JsonArray(columnCount);
         for (int i = 0; i < columnCount; i++) {
             columns.add(columnSchema(i));
@@ -138,7 +111,7 @@ public final class TableGeneratorTestUtility {
         final JsonObject content = new JsonObject();
         content.add("headerRow", new JsonPrimitive(true));
         content.add("columns", columns);
-        final Path path = directory.resolve(filePrefix(columnCount, rowCount) + ".json");
+        final Path path = FileTestUtility.resolve(filePrefix(columnCount, rowCount) + ".json");
         final var writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
         writer.write(content.toString());
         writer.close();
@@ -167,13 +140,12 @@ public final class TableGeneratorTestUtility {
      * @param entrySize   Number of characters in each entry
      * @param columnCount Number of columns in the output file
      * @param rowCount    Number of rows in te output file
-     * @param directory   Where to write the CSV file
      * @return Path to the generated file
      * @throws IOException If an error occurred while writing the file
      */
-    private static Path generateCsv(final int entrySize, final int columnCount, final long rowCount, final Path directory)
+    public static Path generateCsv(final int entrySize, final int columnCount, final long rowCount)
             throws IOException {
-        final Path path = directory.resolve(filePrefix(columnCount, rowCount) + ".csv");
+        final Path path = FileTestUtility.resolve(filePrefix(columnCount, rowCount) + ".csv");
         final var writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
         final var headers = IntStream.range(0, columnCount).boxed().map(TableGeneratorTestUtility::headerName)
                 .collect(Collectors.joining(","));
@@ -189,25 +161,5 @@ public final class TableGeneratorTestUtility {
         }
         writer.close();
         return path;
-    }
-
-    /**
-     * Generate a schema and file for use in tests.
-     *
-     * @param entrySize   How long each individual entry should be
-     * @param columnCount How many columns should be in the file
-     * @param rowCount    How many rows should be in the file
-     * @param directory   Where to put the file
-     * @return Paths to the schema file and the data file
-     * @throws IOException If there's an error writing to disk
-     */
-    public static Paths generateTestData(
-            final int entrySize,
-            final int columnCount,
-            final long rowCount,
-            final Path directory) throws IOException {
-        return new Paths(
-                generateSchema(columnCount, rowCount, directory),
-                generateCsv(entrySize, columnCount, rowCount, directory));
     }
 }

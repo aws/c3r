@@ -4,14 +4,13 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,12 +26,9 @@ public class DecryptModeArgsTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        final Path outputFile = Files.createTempFile(tempDir, "output", ".csv");
-        outputFile.toFile().deleteOnExit();
+        final String output = FileTestUtility.createTempFile().toString();
         decArgs = DecryptCliConfigTestUtility.defaultDryRunTestArgs(INPUT_PATH);
-        decArgs.setOutput(outputFile.toFile().getAbsolutePath());
+        decArgs.setOutput(output);
         main = new DecryptMode();
     }
 
@@ -89,10 +85,9 @@ public class DecryptModeArgsTest {
 
     @Test
     public void inputFileFormatTest() throws IOException {
-        final Path input = Files.createTempFile("input", ".unknown");
-        input.toFile().deleteOnExit();
+        final String input = FileTestUtility.createTempFile("input", ".unknown").toString();
 
-        decArgs.setInput(input.toString());
+        decArgs.setInput(input);
         assertNotEquals(0, runMainWithCliArgs());
         decArgs.setFileFormat(FileFormat.CSV);
         assertEquals(0, runMainWithCliArgs());

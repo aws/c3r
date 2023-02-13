@@ -5,6 +5,7 @@ package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.io.CsvTestUtility;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.TableGeneratorTestUtility;
 import com.amazonaws.c3r.utils.TimingResultTestUtility;
 import com.univocity.parsers.csv.CsvParser;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,26 +36,18 @@ public class MainPerfTest {
 
     public TimingResultTestUtility timeCsvRoundTrips(final int repetitions, final int entrySize, final int columnCount, final long rowCount)
             throws IOException {
-        final var testDir = Files.createTempDirectory("temp");
-        testDir.toFile().deleteOnExit();
-        final var paths = TableGeneratorTestUtility.generateTestData(entrySize, columnCount, rowCount, testDir);
-        final long inputSizeBytes = paths.data.toFile().length();
-        final Path marshalledPath = java.nio.file.Files.createTempFile(
-                testDir,
+        final String schemaPath = TableGeneratorTestUtility.generateSchema(columnCount, rowCount).toString();
+        final Path dataPath = TableGeneratorTestUtility.generateCsv(entrySize, columnCount, rowCount);
+        final long inputSizeBytes = dataPath.toFile().length();
+        final Path marshalledPath = FileTestUtility.createTempFile(
                 TableGeneratorTestUtility.filePrefix(columnCount, rowCount),
                 ".marshalled.csv");
-        final Path unmarshalledPath = java.nio.file.Files.createTempFile(
-                testDir,
+        final Path unmarshalledPath = FileTestUtility.createTempFile(
                 TableGeneratorTestUtility.filePrefix(columnCount, rowCount),
                 ".unmarshalled.csv");
 
-        paths.data.toFile().deleteOnExit();
-        paths.schema.toFile().deleteOnExit();
-        marshalledPath.toFile().deleteOnExit();
-        unmarshalledPath.toFile().deleteOnExit();
-
-        encArgs.setInput(paths.data.toString());
-        encArgs.setSchema(paths.schema.toString());
+        encArgs.setInput(dataPath.toString());
+        encArgs.setSchema(schemaPath);
         encArgs.setOutput(marshalledPath.toString());
 
         final CleanRoomsDao cleanRoomsDao = mock(CleanRoomsDao.class);

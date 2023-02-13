@@ -50,7 +50,7 @@ public abstract class FileTestUtility {
     }
 
     /**
-     * Resolves a temporary file with the prefix and suffix provided marked with deleteOnExit.
+     * Resolves a temporary file with the file name provided marked with deleteOnExit.
      *
      * @param fileName The name of the Path to resolve
      * @return A temporary Path

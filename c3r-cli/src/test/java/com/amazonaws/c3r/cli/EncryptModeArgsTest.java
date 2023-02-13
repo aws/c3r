@@ -5,21 +5,19 @@ package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,17 +34,8 @@ public class EncryptModeArgsTest {
     private CleanRoomsDao cleanRoomsDao;
 
     @BeforeEach
-    public void setup() {
-        String output = null;
-        try {
-            final Path tempDir = Files.createTempDirectory("temp");
-            tempDir.toFile().deleteOnExit();
-            final Path outputFile = Files.createTempFile(tempDir, "output", ".csv");
-            outputFile.toFile().deleteOnExit();
-            output = outputFile.toFile().getAbsolutePath();
-        } catch (IOException e) {
-            fail("Could not setup temp dir for tests.");
-        }
+    public void setup() throws IOException {
+        final String output = FileTestUtility.createTempFile().toString();
         encArgs = EncryptCliConfigTestUtility.defaultDryRunTestArgs(INPUT_PATH, SCHEMA_PATH);
         encArgs.setOutput(output);
         cleanRoomsDao = mock(CleanRoomsDao.class);
@@ -119,7 +108,6 @@ public class EncryptModeArgsTest {
     @Test
     public void allowCleartextFlagTest() {
         checkBooleans(b -> {
-            setup();
             encArgs.setAllowCleartext(b);
             when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
             runMainWithCliArgs();
@@ -130,7 +118,6 @@ public class EncryptModeArgsTest {
     @Test
     public void allowDuplicatesFlagTest() {
         checkBooleans(b -> {
-            setup();
             encArgs.setAllowDuplicates(b);
             when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
             runMainWithCliArgs();
@@ -141,7 +128,6 @@ public class EncryptModeArgsTest {
     @Test
     public void allowJoinsOnColumnsWithDifferentNamesFlagTest() {
         checkBooleans(b -> {
-            setup();
             encArgs.setAllowJoinsOnColumnsWithDifferentNames(b);
             when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
             runMainWithCliArgs();
@@ -153,7 +139,6 @@ public class EncryptModeArgsTest {
     @Test
     public void preserveNullsFlagTest() {
         checkBooleans(b -> {
-            setup();
             encArgs.setPreserveNulls(b);
             when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
             runMainWithCliArgs();
@@ -163,10 +148,9 @@ public class EncryptModeArgsTest {
 
     @Test
     public void inputFileFormatTest() throws IOException {
-        final Path input = Files.createTempFile("input", ".unknown");
-        input.toFile().deleteOnExit();
+        final String input = FileTestUtility.createTempFile("input", ".unknown").toString();
 
-        encArgs.setInput(input.toString());
+        encArgs.setInput(input);
         assertNotEquals(0, runMainWithCliArgs());
         encArgs.setFileFormat(FileFormat.CSV);
         assertEquals(0, runMainWithCliArgs());
