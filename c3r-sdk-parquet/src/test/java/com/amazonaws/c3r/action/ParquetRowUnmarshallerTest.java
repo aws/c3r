@@ -16,6 +16,7 @@ import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,20 +72,19 @@ public class ParquetRowUnmarshallerTest {
                             : cleartextColumn(h.toString()))
                     .collect(Collectors.toList()));
 
-    private Path tempDir;
+    private String tempDir;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        tempDir = FileTestUtility.createTempDir().toString();
     }
 
     @Test
-    public void validateRejectNonParquetFormatTest() {
-        final Path decOutput = tempDir.resolve("endToEndMarshalOut.unknown");
+    public void validateRejectNonParquetFormatTest() throws IOException {
+        final String output = FileTestUtility.resolve("endToEndMarshalOut.unknown").toString();
         final var configBuilder = DecryptConfig.builder()
                 .sourceFile(PARQUET_1_ROW_PRIM_DATA_PATH)
-                .targetFile(decOutput.toString())
+                .targetFile(output)
                 .fileFormat(FileFormat.CSV)
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
@@ -100,14 +100,14 @@ public class ParquetRowUnmarshallerTest {
                                            final TableSchema schema,
                                            final ClientSettings settings)
             throws IOException {
-        final Path encOutput = tempDir.resolve("endToEndMarshalOut.parquet");
+        final Path encOutput = FileTestUtility.resolve("endToEndMarshalOut.parquet");
 
         final var encConfig = EncryptConfig.builder()
                 .sourceFile(input)
                 .targetFile(encOutput.toString())
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
-                .tempDir(tempDir.toAbsolutePath().toString())
+                .tempDir(tempDir)
                 .settings(settings)
                 .tableSchema(schema)
                 .overwrite(true)
@@ -118,7 +118,7 @@ public class ParquetRowUnmarshallerTest {
         marshaller.close();
         assertNotEquals(0, Files.size(encOutput));
 
-        final Path decOutput = tempDir.resolve("endToEndUnmarshalOut.parquet");
+        final Path decOutput = FileTestUtility.resolve("endToEndUnmarshalOut.parquet");
 
         final var decConfig = DecryptConfig.builder()
                 .sourceFile(encOutput.toString())

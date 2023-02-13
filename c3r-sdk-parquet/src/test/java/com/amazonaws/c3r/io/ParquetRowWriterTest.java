@@ -3,11 +3,12 @@
 
 package com.amazonaws.c3r.io;
 
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.ParquetTestUtility;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 
 import static com.amazonaws.c3r.io.ParquetRowReaderTest.validateRowsGetValueContent;
 import static com.amazonaws.c3r.io.ParquetRowReaderTest.validateRowsGetValueNullContent;
@@ -15,25 +16,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ParquetRowWriterTest {
 
-    @Test
-    public void getTargetNameTest() throws IOException {
-        final var inReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
-        final var outPath = Files.createTempFile("1row_prim_data", ".parquet");
-        Files.deleteIfExists(outPath);
+    private String output;
 
-        final ParquetRowWriter writer =
-                ParquetRowWriter.builder().targetName(outPath.toString()).parquetSchema(inReader.getParquetSchema()).build();
-        assertEquals(outPath.toString(), writer.getTargetName());
+    @BeforeEach
+    public void setup() throws IOException {
+        output = FileTestUtility.resolve("output.parquet").toString();
     }
 
     @Test
-    public void getHeadersTest() throws IOException {
+    public void getTargetNameTest() throws IOException {
         final var inReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
-        final var outPath = Files.createTempFile("1row_prim_data", ".parquet");
-        Files.deleteIfExists(outPath);
 
         final ParquetRowWriter writer =
-                ParquetRowWriter.builder().targetName(outPath.toString()).parquetSchema(inReader.getParquetSchema()).build();
+                ParquetRowWriter.builder().targetName(output).parquetSchema(inReader.getParquetSchema()).build();
+        assertEquals(output, writer.getTargetName());
+    }
+
+    @Test
+    public void getHeadersTest() {
+        final var inReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+
+        final ParquetRowWriter writer =
+                ParquetRowWriter.builder().targetName(output).parquetSchema(inReader.getParquetSchema()).build();
         assertEquals(ParquetTestUtility.PARQUET_TEST_DATA_HEADERS, writer.getHeaders());
     }
 
@@ -48,12 +52,8 @@ public class ParquetRowWriterTest {
             validateRowsGetValueNullContent(inRows);
         }
 
-        final var outPath = Files.createTempFile(rowCount + "rows_prim_data", ".parquet");
-        outPath.toFile().deleteOnExit();
-        Files.deleteIfExists(outPath);
-
         final ParquetRowWriter writer =
-                ParquetRowWriter.builder().targetName(outPath.toString()).parquetSchema(inReader.getParquetSchema()).build();
+                ParquetRowWriter.builder().targetName(output).parquetSchema(inReader.getParquetSchema()).build();
 
         for (var row : inRows) {
             writer.writeRow(row);
@@ -62,7 +62,7 @@ public class ParquetRowWriterTest {
         writer.close();
         writer.flush();
 
-        final var outReader = new ParquetRowReader(outPath.toString());
+        final var outReader = new ParquetRowReader(output);
         final var outRows = ParquetTestUtility.readAllRows(outReader);
 
         assertEquals(rowCount, outRows.size());
@@ -72,7 +72,6 @@ public class ParquetRowWriterTest {
 
         outReader.close();
         inReader.close();
-        Files.deleteIfExists(outPath);
     }
 
     @Test
