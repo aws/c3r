@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.cleanrooms.model.ThrottlingException;
 import software.amazon.awssdk.services.cleanrooms.model.ValidationException;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Create a connection to AWS Clean Rooms to get collaboration information.
@@ -31,13 +32,23 @@ public class CleanRoomsDao {
     private final CleanRoomsClient client;
 
     /**
-     * Construct an CleanRoomsDao using the default CleanRoomsClient.
+     * Construct an CleanRoomsDao using the default {@link CleanRoomsClient}.
      *
      * @throws C3rRuntimeException If a {@link SdkException} is raised connecting to AWS Clean Rooms
      */
     public CleanRoomsDao() {
+        this(CleanRoomsClient::create);
+    }
+
+    /**
+     * Construct a CleanRoomsDao using a specified {@link CleanRoomsClient} supplier.
+     *
+     * @param clientSupplier Supplier for a {@link CleanRoomsClient}.
+     * @throws C3rRuntimeException If a {@link SdkException} is raised connecting to AWS Clean Rooms
+     */
+    CleanRoomsDao(final Supplier<CleanRoomsClient> clientSupplier) {
         try {
-            client = CleanRoomsClient.create();
+            client = clientSupplier.get();
         } catch (SdkException e) {
             throw new C3rRuntimeException("Unable to connect to AWS Clean Rooms: " + e.getMessage(), e);
         }
