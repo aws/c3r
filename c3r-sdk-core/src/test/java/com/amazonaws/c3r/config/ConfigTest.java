@@ -3,12 +3,12 @@
 
 package com.amazonaws.c3r.config;
 
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static com.amazonaws.c3r.config.Config.getDefaultTargetFile;
@@ -27,10 +27,7 @@ public class ConfigTest {
 
     @Test
     public void getDefaultTargetFileTest() throws IOException {
-        // Create a path to a file in a temp directory. Guaranteed not to be the working directory.
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        final Path sourceFile = tempDir.resolve("sourceFile.csv");
+        final Path sourceFile = FileTestUtility.resolve("sourceFile.csv");
 
         final String defaultTargetFile = Config.getDefaultTargetFile(sourceFile.toFile().getAbsolutePath());
 

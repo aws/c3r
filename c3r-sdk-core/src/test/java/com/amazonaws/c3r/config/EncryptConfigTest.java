@@ -8,6 +8,7 @@ import com.amazonaws.c3r.action.RowMarshaller;
 import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,17 +28,17 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EncryptConfigTest {
-    private Path tempDir;
+    private String tempDir;
 
-    private Path outputFile;
+    private String output;
 
     private EncryptConfig.EncryptConfigBuilder minimalConfigBuilder(final String sourceFile) {
         return EncryptConfig.builder()
                 .secretKey(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getKey())
                 .sourceFile(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getInput())
                 .sourceFile(sourceFile)
-                .targetFile(outputFile.toFile().getAbsolutePath())
-                .tempDir(tempDir.toFile().getAbsolutePath())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .salt(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getSalt())
                 .settings(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getSettings())
                 .tableSchema(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getSchema());
@@ -52,10 +53,8 @@ public class EncryptConfigTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        outputFile = tempDir.resolve("output.csv");
-        outputFile.toFile().deleteOnExit();
+        tempDir = FileTestUtility.createTempDir().toString();
+        output = FileTestUtility.resolve("output.csv").toString();
     }
 
     @Test
@@ -80,14 +79,14 @@ public class EncryptConfigTest {
 
     @Test
     public void validateNoOverwriteTest() throws IOException {
-        Files.createFile(outputFile);
+        output = FileTestUtility.createTempFile("output", ".csv").toString();
         assertThrows(C3rIllegalArgumentException.class, () -> minimalConfigBuilder(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getInput())
                 .overwrite(false).build());
     }
 
     @Test
     public void validateOverwriteTest() throws IOException {
-        Files.createFile(outputFile);
+        output = FileTestUtility.createTempFile("output", ".csv").toString();
         assertDoesNotThrow(() -> minimalConfigBuilder(TEST_CONFIG_ONE_ROW_NULL_SAMPLE_CLEARTEXT.getInput())
                 .overwrite(true).build());
     }
@@ -100,40 +99,37 @@ public class EncryptConfigTest {
 
     @Test
     public void unknownFileExtensionTest() throws IOException {
-        final Path pathWithUnknownExtension = Files.createTempFile("input", ".unknown");
-        pathWithUnknownExtension.toFile().deleteOnExit();
+        final String pathWithUnknownExtension = FileTestUtility.createTempFile("input", ".unknown").toString();
+
         // unknown extensions cause failure if no FileFormat is specified
         assertThrowsExactly(C3rIllegalArgumentException.class, () ->
-                minimalConfigBuilder(pathWithUnknownExtension.toString()).build());
+                minimalConfigBuilder(pathWithUnknownExtension).build());
 
         // specifying a FileFormat makes it work
         assertDoesNotThrow(() ->
-                minimalConfigBuilder(pathWithUnknownExtension.toString())
+                minimalConfigBuilder(pathWithUnknownExtension)
                         .fileFormat(FileFormat.CSV)
                         .build());
     }
 
     @Test
     public void csvOptionsNonCsvFileFormatTest() throws IOException {
-        final Path parquetPath = Files.createTempFile("input", ".parquet");
-        parquetPath.toFile().deleteOnExit();
+        final String parquetPath = FileTestUtility.createTempFile("input", ".parquet").toString();
         // parquet file is fine
         assertDoesNotThrow(() ->
-                minimalConfigBuilder(parquetPath.toString()).build());
+                minimalConfigBuilder(parquetPath).build());
 
         // parquet file with csvInputNullValue errors
         assertThrowsExactly(C3rIllegalArgumentException.class, () ->
-                minimalConfigBuilder(parquetPath.toString())
+                minimalConfigBuilder(parquetPath)
                         .csvInputNullValue("")
                         .build());
 
         // parquet file with csvOutputNullValue errors
         assertThrowsExactly(C3rIllegalArgumentException.class, () ->
-                minimalConfigBuilder(parquetPath.toString())
+                minimalConfigBuilder(parquetPath)
                         .csvOutputNullValue("")
                         .build());
-
-        Files.deleteIfExists(parquetPath);
     }
 
     // Make sure positional schema and file that are equivalent to file and schema with headers.
@@ -166,8 +162,8 @@ public class EncryptConfigTest {
 
         final EncryptConfig noHeadersConfig = EncryptConfig.builder()
                 .sourceFile(noHeadersFile)
-                .targetFile(outputFile.toFile().getAbsolutePath())
-                .tempDir(tempDir.toFile().getAbsolutePath())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .overwrite(true)
                 .csvInputNullValue(null)
                 .csvOutputNullValue(null)
@@ -180,8 +176,8 @@ public class EncryptConfigTest {
 
         final EncryptConfig headersConfig = EncryptConfig.builder()
                 .sourceFile(headersFile)
-                .targetFile(outputFile.toFile().getAbsolutePath())
-                .tempDir(tempDir.toFile().getAbsolutePath())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .overwrite(true)
                 .csvInputNullValue(null)
                 .csvOutputNullValue(null)
@@ -219,8 +215,8 @@ public class EncryptConfigTest {
         ));
         final EncryptConfig noHeadersConfig = EncryptConfig.builder()
                 .sourceFile(noHeadersFile)
-                .targetFile(outputFile.toFile().getAbsolutePath())
-                .tempDir(tempDir.toFile().getAbsolutePath())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .overwrite(true)
                 .csvInputNullValue("John")
                 .csvOutputNullValue("NULLJOHNNULL")
@@ -245,8 +241,8 @@ public class EncryptConfigTest {
         final TableSchema schema = new MappedTableSchema(List.of(GeneralTestUtility.cleartextColumn("cleartext")));
         final var config = EncryptConfig.builder()
                 .sourceFile(noHeadersFile)
-                .targetFile(outputFile.toFile().getAbsolutePath())
-                .tempDir(tempDir.toFile().getAbsolutePath())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .overwrite(true)
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())

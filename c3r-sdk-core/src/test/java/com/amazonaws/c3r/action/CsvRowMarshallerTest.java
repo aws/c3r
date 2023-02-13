@@ -13,16 +13,13 @@ import com.amazonaws.c3r.config.Pad;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import nl.altindag.log.LogCaptor;
 import nl.altindag.log.model.LogEvent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,24 +29,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CsvRowMarshallerTest {
-    private Path tempDir;
-
-    @BeforeEach
-    public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-    }
 
     @Test
-    public void validateRejectNonCsvFormatTest() {
-        final File encOutput = tempDir.resolve("endToEndMarshalOut.unknown").toFile();
-        encOutput.deleteOnExit();
+    public void validateRejectNonCsvFormatTest() throws IOException {
+        final String tempDir = FileTestUtility.createTempDir().toString();
+        final String output = FileTestUtility.resolve("endToEndMarshalOut.unknown").toString();
         final var configBuilder = EncryptConfig.builder()
                 .sourceFile(TEST_CONFIG_DATA_SAMPLE.getInput())
-                .targetFile(encOutput.getAbsolutePath())
+                .targetFile(output)
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
-                .tempDir(tempDir.toAbsolutePath().toString())
+                .tempDir(tempDir)
                 .settings(ClientSettings.lowAssuranceMode())
                 .tableSchema(GeneralTestUtility.CONFIG_SAMPLE)
                 .overwrite(true);

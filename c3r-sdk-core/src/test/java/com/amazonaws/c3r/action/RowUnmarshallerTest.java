@@ -12,13 +12,13 @@ import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.encryption.Encryptor;
 import com.amazonaws.c3r.encryption.providers.SymmetricStaticProvider;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,14 +31,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RowUnmarshallerTest {
-    private Path tempDir;
+    private String output;
 
     private Map<ColumnType, Transformer> transformers;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        output = FileTestUtility.resolve("output.csv").toString();
         final Encryptor encryptor = Encryptor.getInstance(new SymmetricStaticProvider(TEST_CONFIG_MARSHALLED_DATA_SAMPLE.getKey(),
                 TEST_CONFIG_MARSHALLED_DATA_SAMPLE.getSalt().getBytes(StandardCharsets.UTF_8)));
         transformers = new HashMap<>();
@@ -50,7 +49,6 @@ public class RowUnmarshallerTest {
 
     @Test
     public void unmarshalTransformerFailureTest() {
-        final String output = tempDir.resolve("unmarshalTransformerFailureOut.csv").toString();
         final SealedTransformer badCleartextTransformer = mock(SealedTransformer.class);
         when(badCleartextTransformer.unmarshal(any())).thenThrow(new C3rRuntimeException("error"));
         transformers.put(ColumnType.CLEARTEXT, badCleartextTransformer);
@@ -65,7 +63,6 @@ public class RowUnmarshallerTest {
 
     @Test
     public void endToEndUnmarshalTest() {
-        final String output = tempDir.resolve("endToEndUnmarshalOut.csv").toString();
         final RowUnmarshaller<CsvValue> unmarshaller = CsvRowUnmarshaller.builder()
                 .sourceFile(TEST_CONFIG_MARSHALLED_DATA_SAMPLE.getInput())
                 .targetFile(output)

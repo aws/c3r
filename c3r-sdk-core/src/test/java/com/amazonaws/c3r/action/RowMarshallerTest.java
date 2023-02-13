@@ -30,6 +30,7 @@ import com.amazonaws.c3r.io.RowReader;
 import com.amazonaws.c3r.io.RowReaderTestUtility;
 import com.amazonaws.c3r.io.RowWriter;
 import com.amazonaws.c3r.io.SqlRowReader;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +38,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,14 +66,16 @@ public class RowMarshallerTest {
     private static final String NOTES_COLUMN_LONGEST_VALUE =
             "This is a really long note that could really be a paragraph";
 
-    private Path tempDir;
+    private String tempDir;
+
+    private String output;
 
     private Map<ColumnType, Transformer> transformers;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        tempDir = FileTestUtility.createTempDir().toString();
+        output = FileTestUtility.resolve("output.csv").toString();
         final Encryptor encryptor = Encryptor.getInstance(new SymmetricStaticProvider(TEST_CONFIG_DATA_SAMPLE.getKey(),
                 TEST_CONFIG_DATA_SAMPLE.getSalt().getBytes(StandardCharsets.UTF_8)));
         transformers = new HashMap<>();
@@ -86,11 +87,10 @@ public class RowMarshallerTest {
 
     @Test
     public void csvRowMarshallerNewInstanceTest() {
-        final String output = tempDir.resolve("csvRowMarshallerNewInstanceOut.csv").toString();
         final var marshaller = CsvRowMarshaller.builder()
                 .sourceFile(TEST_CONFIG_DATA_SAMPLE.getInput())
                 .targetFile(output)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .settings(TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .schema(TEST_CONFIG_DATA_SAMPLE.getSchema())
                 .transforms(transformers).build();
@@ -122,7 +122,7 @@ public class RowMarshallerTest {
                 .rowFactory(new CsvRowFactory())
                 .outputWriter(rowWriter)
                 .transformers(transformers)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .build();
         marshaller.loadInput();
 
@@ -139,11 +139,10 @@ public class RowMarshallerTest {
 
     @Test
     public void loadInputTest() {
-        final String output = tempDir.resolve("loadInputOut.csv").toString();
         final RowMarshaller<CsvValue> marshaller = CsvRowMarshaller.builder()
                 .sourceFile(TEST_CONFIG_DATA_SAMPLE.getInput())
                 .targetFile(output)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .settings(ClientSettings.lowAssuranceMode())
                 .schema(TEST_CONFIG_DATA_SAMPLE.getSchema())
                 .transforms(transformers).build();
@@ -178,11 +177,10 @@ public class RowMarshallerTest {
         final List<ColumnSchema> columnSchemas = new ArrayList<>(TEST_CONFIG_DATA_SAMPLE.getSchema().getColumns());
         columnSchemas.remove(toOmit);
         final TableSchema tableSchema = new MappedTableSchema(columnSchemas);
-        final String output = tempDir.resolve("loadInputOmitsColumnsNotInConfigOut.csv").toString();
         final RowMarshaller<CsvValue> marshaller = CsvRowMarshaller.builder()
                 .sourceFile(TEST_CONFIG_DATA_SAMPLE.getInput())
                 .targetFile(output)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .settings(ClientSettings.lowAssuranceMode())
                 .schema(tableSchema)
                 .transforms(transformers).build();
@@ -208,11 +206,10 @@ public class RowMarshallerTest {
         columnSchemas.add(missingCol);
 
         final TableSchema tableSchema = new MappedTableSchema(columnSchemas);
-        final String output = tempDir.resolve("missingInputColumnsThrowsOut.csv").toString();
         assertThrows(C3rRuntimeException.class, () -> CsvRowMarshaller.builder()
                 .sourceFile(TEST_CONFIG_DATA_SAMPLE.getInput())
                 .targetFile(output)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .settings(TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .schema(tableSchema)
                 .transforms(transformers).build());
@@ -224,7 +221,6 @@ public class RowMarshallerTest {
         when(badSealedTransformer.marshal(any(), any())).thenThrow(new C3rRuntimeException("error"));
         transformers.put(ColumnType.SEALED, badSealedTransformer);
 
-        final String output = tempDir.resolve("marshalTransformerFailureOut.csv").toString();
         final RowWriter<CsvValue> rowWriter = CsvRowWriter.builder()
                 .targetName(output)
                 .headers(CONFIG_SAMPLE.getColumns().stream().map(ColumnSchema::getTargetHeader).collect(Collectors.toList()))
@@ -236,14 +232,13 @@ public class RowMarshallerTest {
                 .rowFactory(new CsvRowFactory())
                 .outputWriter(rowWriter)
                 .transformers(transformers)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .build();
         assertThrows(C3rRuntimeException.class, marshaller::marshal);
     }
 
     @Test
     public void endToEndMarshallingTest() {
-        final String output = tempDir.resolve("endToEndMarshallingOut.csv").toString();
         final RowWriter<CsvValue> rowWriter = CsvRowWriter.builder()
                 .targetName(output)
                 .headers(TEST_CONFIG_DATA_SAMPLE.getSchema().getColumns().stream().map(ColumnSchema::getTargetHeader)
@@ -256,7 +251,7 @@ public class RowMarshallerTest {
                 .rowFactory(new CsvRowFactory())
                 .outputWriter(rowWriter)
                 .transformers(transformers)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .build();
         marshaller.marshal();
         final String file = FileUtil.readBytes(output);
@@ -265,7 +260,7 @@ public class RowMarshallerTest {
     }
 
     @Test
-    public void roundTripCsvTest() {
+    public void roundTripCsvTest() throws IOException {
         final var headers = List.of("FirstName", "LastName", "Address", "City", "State", "PhoneNumber", "Title", "Level", "Notes");
         final var columnSchemas = new ArrayList<ColumnSchema>();
         for (var header : headers) {
@@ -275,14 +270,14 @@ public class RowMarshallerTest {
             columnSchemas.add(sealedColumn(header, header + "_max", PadType.MAX, 50));
         }
         final TableSchema schema = new MappedTableSchema(columnSchemas);
-        final String ciphertextFile = tempDir.resolve("roundTripCsvCipherOut.csv").toString();
-        final String cleartextFile = tempDir.resolve("roundTripCsvPlainOut.csv").toString();
+        final String ciphertextFile = FileTestUtility.resolve("roundTripCsvCipherOut.csv").toString();
+        final String cleartextFile = FileTestUtility.resolve("roundTripCsvPlainOut.csv").toString();
 
         final EncryptConfig encryptConfig = EncryptConfig.builder()
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .sourceFile(TEST_CONFIG_DATA_SAMPLE.getInput())
                 .targetFile(ciphertextFile)
-                .tempDir(tempDir.toString())
+                .tempDir(tempDir)
                 .overwrite(true)
                 .csvInputNullValue(null)
                 .csvOutputNullValue(null)

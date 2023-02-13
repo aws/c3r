@@ -9,6 +9,7 @@ import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.CsvTestUtility;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,12 +47,14 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
 
     private static final ColumnSchema CS_5 = GeneralTestUtility.sealedColumn(null, "t5", PadType.MAX, 100);
 
-    private Path tempDir;
+    private String tempDir;
+
+    private String output;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        tempDir = FileTestUtility.createTempDir().toString();
+        output = FileTestUtility.resolve("output.csv").toString();
     }
 
     /*
@@ -60,7 +63,7 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
      */
     @Test
     public void tooManyRowsPositionalSchemaTest() throws IOException {
-        final var csvFile = tempDir.resolve("tooManyRows.csv");
+        final Path csvFile = FileTestUtility.resolve("tooManyRows.csv");
         Files.writeString(csvFile, "1,2,3\n4,5,6");
         final var schema = new PositionalTableSchema(List.of(
                 List.of(GeneralTestUtility.cleartextColumn(null, "t1")),
@@ -68,12 +71,11 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
                 List.of(GeneralTestUtility.cleartextColumn(null, "t3")),
                 List.of(GeneralTestUtility.cleartextColumn(null, "t4"))
         ));
-        final Path targetFile = tempDir.resolve("tooManyRowsPositionalSchema.csv");
         final EncryptConfig config = EncryptConfig.builder()
                 .secretKey(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getKey())
                 .sourceFile(csvFile.toString())
-                .targetFile(targetFile.toString())
-                .tempDir(tempDir.toString())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .salt("1234")
                 .settings(ClientSettings.lowAssuranceMode())
                 .tableSchema(schema)
@@ -89,18 +91,17 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
      */
     @Test
     public void tooFewRowsPositionalSchemaTest() throws IOException {
-        final var csvFile = tempDir.resolve("tooManyRows.csv");
+        final Path csvFile = FileTestUtility.resolve("tooManyRows.csv");
         Files.writeString(csvFile, "1,2,3\n4,5,6");
         final var schema = new PositionalTableSchema(List.of(
                 List.of(GeneralTestUtility.cleartextColumn(null, "t1")),
                 List.of(GeneralTestUtility.cleartextColumn(null, "t2"))
         ));
-        final Path targetFile = tempDir.resolve("tooFewRowsPositionalSchema.csv");
         final EncryptConfig config = EncryptConfig.builder()
                 .secretKey(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getKey())
                 .sourceFile(csvFile.toString())
-                .targetFile(targetFile.toString())
-                .tempDir(tempDir.toString())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .salt("1234")
                 .settings(ClientSettings.lowAssuranceMode())
                 .tableSchema(schema)
@@ -257,12 +258,11 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
                 List.of(GeneralTestUtility.cleartextColumn(null, "t5"))
 
         ));
-        final Path targetFile = tempDir.resolve("verifyColumnsInResultsTest.csv");
         final EncryptConfig config = EncryptConfig.builder()
                 .secretKey(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getKey())
                 .sourceFile("../samples/csv/data_sample_no_headers.csv")
-                .targetFile(targetFile.toString())
-                .tempDir(tempDir.toString())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .salt(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getSalt())
                 .settings(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .tableSchema(schema)
@@ -272,7 +272,7 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
         rowMarshaller.marshal();
         rowMarshaller.close();
 
-        final List<Map<String, String>> results = CsvTestUtility.readRows(targetFile.toString());
+        final List<Map<String, String>> results = CsvTestUtility.readRows(output);
         final Map<String, Map<String, String>> lookupMap = new HashMap<>();
         for (var row : results) {
             lookupMap.put(row.get("t1"), row);

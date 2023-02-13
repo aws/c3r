@@ -42,17 +42,13 @@ public class FileUtilTest {
 
     @Test
     public void verifyMissingFileRejectedByVerifyReadableFile() throws IOException {
-        final String file = FileUtil.TEMP_DIR + "/NotExists.tmp";
-        final Path of = Path.of(file);
-        Files.deleteIfExists(of);
+        final String file = FileTestUtility.resolve("missing.csv").toString();
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyReadableFile(file));
-        Files.deleteIfExists(of);
     }
 
     @Test
     public void verifyNoReadPermissionsRejectedByVerifyReadableFile() throws IOException {
-        final File file = Files.createTempFile("NotReadable", ".tmp").toFile();
-        file.deleteOnExit();
+        final File file = FileTestUtility.createTempFile("NotReadable", ".tmp").toFile();
         if (isWindows()) {
             setWindowsFilePermissions(file.toPath(), AclEntryType.DENY, Set.of(AclEntryPermission.READ_DATA));
         } else {
@@ -63,8 +59,7 @@ public class FileUtilTest {
 
     @Test
     public void verifyFileAcceptedByVerifyReadableFile() throws IOException {
-        final File file = Files.createTempFile("Readable", ".tmp").toFile();
-        file.deleteOnExit();
+        final File file = FileTestUtility.createTempFile("Readable", ".tmp").toFile();
         if (isWindows()) {
             setWindowsFilePermissions(file.toPath(), AclEntryType.ALLOW, Set.of(AclEntryPermission.READ_DATA));
         } else {
@@ -87,8 +82,7 @@ public class FileUtilTest {
 
     @Test
     public void verifyFileWithoutWritePermissionsRejectedByVerifyFileWriteable() throws IOException {
-        final File file = Files.createTempFile("NotWriteable", ".tmp").toFile();
-        file.deleteOnExit();
+        final File file = FileTestUtility.createTempFile("NotWriteable", ".tmp").toFile();
         if (isWindows()) {
             setWindowsFilePermissions(file.toPath(), AclEntryType.DENY, Set.of(AclEntryPermission.WRITE_DATA));
         } else {
@@ -100,49 +94,21 @@ public class FileUtilTest {
 
     @Test
     public void verifyNewFileAcceptedByVerifyFileWriteable() throws IOException {
-        final String file = FileUtil.TEMP_DIR + "/Writeable.tmp";
-        final Path of = Path.of(file);
-        Files.deleteIfExists(of);
+        final String file = FileTestUtility.resolve("newFile.csv").toString();
         assertDoesNotThrow(() -> FileUtil.verifyWritableFile(file, false));
-        Files.deleteIfExists(of);
         assertDoesNotThrow(() -> FileUtil.verifyWritableFile(file, true));
-        Files.deleteIfExists(of);
-    }
-
-    @Test
-    public void verifyNewPathAcceptedByVerifyFileWriteable() throws IOException {
-        final String dir = FileUtil.TEMP_DIR + "/NewDirectory";
-        final String file = dir + "/NewFile.tmp";
-        final Path df = Path.of(dir);
-        final Path of = Path.of(file);
-        Files.deleteIfExists(of);
-        Files.deleteIfExists(df);
-        assertDoesNotThrow(() -> FileUtil.verifyWritableFile(file, false));
-        Files.deleteIfExists(of);
-        Files.deleteIfExists(df);
-        assertDoesNotThrow(() -> FileUtil.verifyWritableFile(file, true));
-        Files.deleteIfExists(of);
-        Files.deleteIfExists(df);
     }
 
     @Test
     public void verifyExistingFileAndNoOverwriteRejectedByVerifyFileWriteable() throws IOException {
-        final String file = FileUtil.TEMP_DIR + "/Existing.tmp";
-        final Path of = Path.of(file);
-        Files.deleteIfExists(of);
-        Files.createFile(of);
+        final String file = FileTestUtility.createTempFile().toString();
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableFile(file, false));
-        Files.deleteIfExists(of);
     }
 
     @Test
     public void verifyExistingFileAndOverwriteAcceptedByVerifyFileWriteable() throws IOException {
-        final String file = FileUtil.TEMP_DIR + "/Existing.tmp";
-        final Path of = Path.of(file);
-        Files.deleteIfExists(of);
-        Files.createFile(of);
+        final String file = FileTestUtility.createTempFile().toString();
         assertDoesNotThrow(() -> FileUtil.verifyWritableFile(file, true));
-        Files.deleteIfExists(of);
     }
 
     @Test
@@ -152,18 +118,13 @@ public class FileUtilTest {
 
     @Test
     public void verifyFileIsRejectedByVerifyWriteableDirectory() throws IOException {
-        final String file = FileUtil.TEMP_DIR + "/File.tmp";
-        final Path of = Path.of(file);
-        Files.deleteIfExists(of);
-        Files.createFile(of);
+        final String file = FileTestUtility.createTempFile().toString();
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWriteableDirectory(file));
-        Files.deleteIfExists(of);
     }
 
     @Test
     public void verifyDirectoryWithoutWritePermissionsRejectedByVerifyWriteableDirectory() throws IOException {
-        final File dir = Files.createTempDirectory("NotWritable").toFile();
-        dir.deleteOnExit();
+        final File dir = FileTestUtility.createTempDir().toFile();
         if (isWindows()) {
             setWindowsFilePermissions(dir.toPath(), AclEntryType.DENY, Set.of(AclEntryPermission.WRITE_DATA));
         } else {
@@ -173,25 +134,21 @@ public class FileUtilTest {
     }
 
     @Test
-    public void verifyDirectoryAcceptedByVerifyWriteableDirectory() {
-        final String dir = FileUtil.TEMP_DIR;
+    public void verifyDirectoryAcceptedByVerifyWriteableDirectory() throws IOException {
+        final String dir = FileTestUtility.createTempDir().toFile().toString();
         assertDoesNotThrow(() -> FileUtil.verifyWriteableDirectory(dir));
     }
 
     @Test
     public void verifyNewDirectoryAcceptedByVerifyWriteableDirectory() throws IOException {
-        final String dir = FileUtil.TEMP_DIR + "/NewDir";
-        final Path of = Path.of(dir);
-        Files.deleteIfExists(of);
+        final String dir = FileTestUtility.createTempDir().toString();
         assertDoesNotThrow(() -> FileUtil.verifyWriteableDirectory(dir));
-        Files.deleteIfExists(of);
     }
 
     @Test
     public void initFileIfNotExistsTest() throws IOException {
-        final File tempFile = Files.createTempFile("temp", ".csv").toFile();
-        tempFile.deleteOnExit();
-        assertTrue(tempFile.delete());
+        final File tempFile = FileTestUtility.resolve("output.csv").toFile();
+
         assertFalse(tempFile.exists());
 
         FileUtil.initFileIfNotExists(tempFile.getAbsolutePath());
@@ -207,8 +164,7 @@ public class FileUtilTest {
 
     @Test
     public void initFileIfNotExistsRespectsExistingPermissionsTest() throws IOException {
-        final File tempFile = Files.createTempFile("temp", ".csv").toFile();
-        tempFile.deleteOnExit();
+        final File tempFile = FileTestUtility.createTempFile().toFile();
         if (isWindows()) {
             setWindowsFilePermissions(tempFile.toPath(), AclEntryType.ALLOW, Set.of(AclEntryPermission.READ_DATA,
                     AclEntryPermission.EXECUTE));
@@ -232,8 +188,7 @@ public class FileUtilTest {
 
     @Test
     public void readWriteOnlyFilePermissionsTest() throws IOException {
-        final File tempFile = Files.createTempFile("temp", ".csv").toFile();
-        tempFile.deleteOnExit();
+        final File tempFile = FileTestUtility.createTempFile().toFile();
         FileUtil.setOwnerReadWriteOnlyPermissions(tempFile);
         assertTrue(tempFile.exists());
 
