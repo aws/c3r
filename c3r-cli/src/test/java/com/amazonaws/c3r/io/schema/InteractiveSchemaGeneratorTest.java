@@ -15,7 +15,9 @@ import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
 import com.amazonaws.c3r.json.GsonUtil;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -24,7 +26,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -223,22 +224,22 @@ public class InteractiveSchemaGeneratorTest {
 
     private ByteArrayOutputStream consoleOutput;
 
+    @BeforeEach
+    public void setup() throws IOException {
+        targetSchema = FileTestUtility.resolve("schema.json");
+    }
+
     // Set up the interactive generator.
-    private void setup(final String simulatedUserInput,
-                       final List<ColumnHeader> headers,
-                       final List<ClientDataType> types,
-                       final ClientSettings clientSettings)
-            throws IOException {
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        targetSchema = tempDir.resolve("schema.json");
-        targetSchema.toFile().deleteOnExit();
+    private void createInteractiveSchemaGenerator(final String simulatedUserInput,
+                                                  final List<ColumnHeader> headers,
+                                                  final List<ClientDataType> types,
+                                                  final ClientSettings clientSettings) {
         final var userInput = new BufferedReader(new StringReader(simulatedUserInput + "\n"));
         consoleOutput = new ByteArrayOutputStream();
         schemaGen = InteractiveSchemaGenerator.builder()
                 .sourceHeaders(headers)
                 .sourceColumnTypes(types)
-                .targetJsonFile(targetSchema.toAbsolutePath().toString())
+                .targetJsonFile(targetSchema.toString())
                 .consoleInput(userInput)
                 .consoleOutput(new PrintStream(consoleOutput, true, StandardCharsets.UTF_8))
                 .clientSettings(clientSettings)
@@ -248,23 +249,18 @@ public class InteractiveSchemaGeneratorTest {
     @Test
     public void validateErrorWithMismatchedColumnCounts() {
         assertThrows(C3rIllegalArgumentException.class, () ->
-                setup("", headers, List.of(), null));
+                createInteractiveSchemaGenerator("", headers, List.of(), null));
     }
 
     @Test
-    public void validateUnexpectedUserInputEndError() throws IOException {
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        targetSchema = tempDir.resolve("schema.json");
-        targetSchema.toFile().deleteOnExit();
-
+    public void validateUnexpectedUserInputEndError() {
         final List<String> incompleteUserInputs = List.of("", "0", "0\n", "0\n0", "0\n0\n");
 
         final Consumer<String> schemaGenRunner = (userInput) ->
                 InteractiveSchemaGenerator.builder()
                         .sourceHeaders(headers)
                         .sourceColumnTypes(stringColumnTypes)
-                        .targetJsonFile(targetSchema.toAbsolutePath().toString())
+                        .targetJsonFile(targetSchema.toString())
                         .consoleInput(new BufferedReader(new StringReader(userInput)))
                         .consoleOutput(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8))
                         .clientSettings(null)
@@ -277,10 +273,10 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptNonnegativeIntValidTest() throws IOException {
+    public void promptNonnegativeIntValidTest() {
         final List<String> validInputs = List.of("42", "0", "100");
         for (var input : validInputs) {
-            setup(input, headers, stringColumnTypes, null);
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, null);
             assertEquals(
                     Integer.valueOf(input),
                     schemaGen.promptNonNegativeInt("", null, 100));
@@ -289,20 +285,20 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptNonnegativeIntInvalidTest() throws IOException {
+    public void promptNonnegativeIntInvalidTest() {
         final List<String> validInputs = List.of("", "NotANumber", "-1", "101");
         for (var input : validInputs) {
-            setup(input, headers, stringColumnTypes, null);
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, null);
             assertNull(schemaGen.promptNonNegativeInt("", null, 100));
             assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
         }
     }
 
     @Test
-    public void promptNonNegativeIntValidDefaultTest() throws IOException {
+    public void promptNonNegativeIntValidDefaultTest() {
         final List<String> validInputs = List.of("1", "", "3");
         for (var input : validInputs) {
-            setup(input, headers, stringColumnTypes, null);
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, null);
             assertEquals(
                     input.isBlank() ? 2 : Integer.parseInt(input),
                     schemaGen.promptNonNegativeInt("", 2, 100));
@@ -311,13 +307,13 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptYesOrNoValidTest() throws IOException {
+    public void promptYesOrNoValidTest() {
         final List<Boolean> defaultBooleanAnswers = Arrays.asList(null, true, false);
         final List<String> validYesStrings = List.of("y", "yes", "Y", "YES");
 
         for (var input : validYesStrings) {
             for (var answer : defaultBooleanAnswers) {
-                setup(input, headers, stringColumnTypes, null);
+                createInteractiveSchemaGenerator(input, headers, stringColumnTypes, null);
                 assertTrue(schemaGen.promptYesOrNo("", answer));
                 assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
             }
@@ -326,14 +322,14 @@ public class InteractiveSchemaGeneratorTest {
         final List<String> validNoStrings = List.of("n", "no", "N", "NO");
         for (var input : validNoStrings) {
             for (var answer : defaultBooleanAnswers) {
-                setup(input, headers, stringColumnTypes, null);
+                createInteractiveSchemaGenerator(input, headers, stringColumnTypes, null);
                 assertFalse(schemaGen.promptYesOrNo("", answer));
                 assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
             }
         }
 
         for (var answer : defaultBooleanAnswers) {
-            setup("", headers, stringColumnTypes, null);
+            createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
             assertEquals(answer, schemaGen.promptYesOrNo("", answer));
             if (answer == null) {
                 assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
@@ -344,43 +340,43 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptYesOrNoInvalidTest() throws IOException {
-        setup("", headers, stringColumnTypes, null);
+    public void promptYesOrNoInvalidTest() {
+        createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptYesOrNo("", null));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("ja", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("ja", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptYesOrNo("", null));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("nein", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("nein", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptYesOrNo("", null));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
     }
 
     @Test
-    public void promptColumnTypeValidTest() throws IOException {
+    public void promptColumnTypeValidTest() {
         final List<String> validCleartextInputs = List.of("c", "C", "cleartext", "CLEARTEXT");
         final List<ClientSettings> permissiveSettings = new ArrayList<>();
         permissiveSettings.add(null);
         permissiveSettings.add(ClientSettings.lowAssuranceMode());
         for (var settings : permissiveSettings) {
             for (var input : validCleartextInputs) {
-                setup(input, headers, stringColumnTypes, settings);
+                createInteractiveSchemaGenerator(input, headers, stringColumnTypes, settings);
                 assertEquals(ColumnType.CLEARTEXT, schemaGen.promptColumnType());
                 assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
             }
 
             final List<String> validFingerprintInputs = List.of("f", "F", "fingerprint", "FINGERPRINT");
             for (var input : validFingerprintInputs) {
-                setup(input, headers, stringColumnTypes, settings);
+                createInteractiveSchemaGenerator(input, headers, stringColumnTypes, settings);
                 assertEquals(ColumnType.FINGERPRINT, schemaGen.promptColumnType());
                 assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
             }
 
             final List<String> validSealedInputs = List.of("s", "S", "sealed", "SEALED");
             for (var input : validSealedInputs) {
-                setup(input, headers, stringColumnTypes, settings);
+                createInteractiveSchemaGenerator(input, headers, stringColumnTypes, settings);
                 assertEquals(ColumnType.SEALED, schemaGen.promptColumnType());
                 assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
             }
@@ -388,104 +384,104 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptColumnTypeRestrictiveSettingsTest() throws IOException {
+    public void promptColumnTypeRestrictiveSettingsTest() {
         final List<String> validCleartextInputs = List.of("c", "C", "cleartext", "CLEARTEXT");
         for (var input : validCleartextInputs) {
-            setup(input, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
             assertNull(schemaGen.promptColumnType());
             assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
         }
 
         final List<String> validFingerprintInputs = List.of("f", "F", "fingerprint", "FINGERPRINT");
         for (var input : validFingerprintInputs) {
-            setup(input, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
             assertEquals(ColumnType.FINGERPRINT, schemaGen.promptColumnType());
             assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
         }
 
         final List<String> validSealedInputs = List.of("s", "S", "sealed", "SEALED");
         for (var input : validSealedInputs) {
-            setup(input, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
             assertEquals(ColumnType.SEALED, schemaGen.promptColumnType());
             assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
         }
     }
 
     @Test
-    public void promptColumnTypeInvalidTest() throws IOException {
+    public void promptColumnTypeInvalidTest() {
         final List<String> validCleartextInputs = List.of("", "a", "unrostricted", "solekt", "joyn");
         for (var input : validCleartextInputs) {
-            setup(input, headers, stringColumnTypes, null);
+            createInteractiveSchemaGenerator(input, headers, stringColumnTypes, null);
             assertNull(schemaGen.promptColumnType());
             assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
         }
     }
 
     @Test
-    public void promptTargetHeaderSuffixTest() throws IOException {
-        setup("", headers, stringColumnTypes, null);
+    public void promptTargetHeaderSuffixTest() {
+        createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeaderSuffix(ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("y", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("y", headers, stringColumnTypes, null);
         assertEquals("_sealed", schemaGen.promptTargetHeaderSuffix(ColumnType.SEALED));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("n", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("n", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeaderSuffix(ColumnType.SEALED));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
         assertEquals("_fingerprint", schemaGen.promptTargetHeaderSuffix(ColumnType.FINGERPRINT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("n", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("n", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeaderSuffix(ColumnType.FINGERPRINT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
     }
 
     @Test
-    public void promptTargetHeaderTest() throws IOException {
-        setup("", headers, stringColumnTypes, null);
+    public void promptTargetHeaderTest() {
+        createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
         assertEquals(new ColumnHeader("a"), schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("b", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("b", headers, stringColumnTypes, null);
         assertEquals(new ColumnHeader("b"), schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
         assertFalse(consoleOutput.toString().toLowerCase().contains("normalized"));
 
-        setup("B", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("B", headers, stringColumnTypes, null);
         assertEquals(new ColumnHeader("b"), schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
         assertTrue(consoleOutput.toString().toLowerCase().contains("normalized"));
 
-        setup("b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH) + 1, headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH) + 1, headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.CLEARTEXT));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
     }
 
     @Test
-    public void promptTargetHeaderWithoutSourceHeadersTest() throws IOException {
+    public void promptTargetHeaderWithoutSourceHeadersTest() {
         // empty input does _not_ give you a default target header when no source headers exist
-        setup("", null, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("", null, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeader(null, ColumnType.CLEARTEXT));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
 
         // providing input for a target header when source headers are null remains unchanged
-        setup("b", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("b", headers, stringColumnTypes, null);
         assertEquals(new ColumnHeader("b"), schemaGen.promptTargetHeader(null, ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("B", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("B", headers, stringColumnTypes, null);
         assertEquals(new ColumnHeader("b"), schemaGen.promptTargetHeader(null, ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
         assertTrue(consoleOutput.toString().toLowerCase().contains("normalized"));
     }
 
     @Test
-    public void promptTargetHeaderAlreadyUsedHeaderTest() throws IOException {
-        setup("\n", headers, stringColumnTypes, null);
+    public void promptTargetHeaderAlreadyUsedHeaderTest() {
+        createInteractiveSchemaGenerator("\n", headers, stringColumnTypes, null);
         assertEquals(new ColumnHeader("header"), schemaGen.promptTargetHeader(new ColumnHeader("header"), ColumnType.CLEARTEXT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
@@ -494,15 +490,15 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptTargetHeaderWithSuffixTest() throws IOException {
+    public void promptTargetHeaderWithSuffixTest() {
         final String suffix = ColumnHeader.DEFAULT_FINGERPRINT_SUFFIX;
-        setup("\n", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("\n", headers, stringColumnTypes, null);
         assertEquals(
                 new ColumnHeader("a_fingerprint"),
                 schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.FINGERPRINT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH - suffix.length())
+        createInteractiveSchemaGenerator("b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH - suffix.length())
                 + "\n", headers, stringColumnTypes, null);
         assertEquals(
                 new ColumnHeader(
@@ -513,70 +509,70 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptTargetHeaderCannotAddSuffixTest() throws IOException {
-        setup("a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH)
+    public void promptTargetHeaderCannotAddSuffixTest() {
+        createInteractiveSchemaGenerator("a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH)
                 + "\n", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.FINGERPRINT));
         assertTrue(consoleOutput.toString().toLowerCase().contains("unable to add header suffix"));
     }
 
     @Test
-    public void promptPadTypeTest() throws IOException {
+    public void promptPadTypeTest() {
         final var header = new ColumnHeader("a");
         final PadType nullDefaultType = null;
-        setup("", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptPadType(header, nullDefaultType));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("", headers, stringColumnTypes, null);
         assertEquals(PadType.MAX, schemaGen.promptPadType(header, PadType.MAX));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("n", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("n", headers, stringColumnTypes, null);
         assertEquals(PadType.NONE, schemaGen.promptPadType(header, nullDefaultType));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("none", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("none", headers, stringColumnTypes, null);
         assertEquals(PadType.NONE, schemaGen.promptPadType(header, nullDefaultType));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("f", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("f", headers, stringColumnTypes, null);
         assertEquals(PadType.FIXED, schemaGen.promptPadType(header, nullDefaultType));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("fixed", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("fixed", headers, stringColumnTypes, null);
         assertEquals(PadType.FIXED, schemaGen.promptPadType(header, nullDefaultType));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("m", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("m", headers, stringColumnTypes, null);
         assertEquals(PadType.MAX, schemaGen.promptPadType(header, nullDefaultType));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("max", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("max", headers, stringColumnTypes, null);
         assertEquals(PadType.MAX, schemaGen.promptPadType(header, nullDefaultType));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("unknown", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("unknown", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptPadType(header, nullDefaultType));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
     }
 
     @Test
-    public void promptPadTest() throws IOException {
+    public void promptPadTest() {
         final var header = new ColumnHeader("a");
-        setup("n", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("n", headers, stringColumnTypes, null);
         assertEquals(
                 Pad.DEFAULT,
                 schemaGen.promptPad(header));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("f\n42", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("f\n42", headers, stringColumnTypes, null);
         assertEquals(
                 Pad.builder().type(PadType.FIXED).length(42).build(),
                 schemaGen.promptPad(header));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        setup("m\n42", headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("m\n42", headers, stringColumnTypes, null);
         assertEquals(
                 Pad.builder().type(PadType.MAX).length(42).build(),
                 schemaGen.promptPad(header));
@@ -584,12 +580,12 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptColumnInfoWithSourceHeadersTest() throws IOException {
+    public void promptColumnInfoWithSourceHeadersTest() {
         final String columnType = "sealed";
         final String targetName = "target";
         final String useSuffix = "no";
         final String paddingType = "none";
-        setup(String.join("\n",
+        createInteractiveSchemaGenerator(String.join("\n",
                         columnType,
                         targetName,
                         useSuffix,
@@ -608,8 +604,8 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptColumnInfoWithSourceHeadersAndUnknownTypeTest() throws IOException {
-        setup("target", headers, unknownColumnTypes, null);
+    public void promptColumnInfoWithSourceHeadersAndUnknownTypeTest() {
+        createInteractiveSchemaGenerator("target", headers, unknownColumnTypes, null);
         assertEquals(
                 ColumnSchema.builder()
                         .sourceHeader(new ColumnHeader("source"))
@@ -622,13 +618,13 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptColumnInfoWithoutSourceHeadersTest() throws IOException {
-        setup("", null, stringColumnTypes, null);
+    public void promptColumnInfoWithoutSourceHeadersTest() {
+        createInteractiveSchemaGenerator("", null, stringColumnTypes, null);
         final String columnType = "sealed";
         final String targetName = "target";
         final String useSuffix = "no";
         final String paddingType = "none";
-        setup(String.join("\n",
+        createInteractiveSchemaGenerator(String.join("\n",
                         columnType,
                         targetName,
                         useSuffix,
@@ -647,8 +643,8 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void promptColumnInfoWithoutSourceHeadersAndUnknownTypeTest() throws IOException {
-        setup("target", null, unknownColumnTypes, null);
+    public void promptColumnInfoWithoutSourceHeadersAndUnknownTypeTest() {
+        createInteractiveSchemaGenerator("target", null, unknownColumnTypes, null);
         assertEquals(
                 ColumnSchema.builder()
                         .targetHeader(new ColumnHeader("target"))
@@ -660,16 +656,16 @@ public class InteractiveSchemaGeneratorTest {
     }
 
     @Test
-    public void runGenerateNoSchemaTest() throws IOException {
+    public void runGenerateNoSchemaTest() {
         // 0 target columns to generate for each source column
-        setup("0\n".repeat(headers.size()), headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("0\n".repeat(headers.size()), headers, stringColumnTypes, null);
         schemaGen.run();
         assertTrue(consoleOutput.toString().contains("No target columns were specified."));
         assertEquals(0, targetSchema.toFile().length());
     }
 
     @Test
-    public void runGenerateSchemaWithSourceHeadersTest() throws IOException {
+    public void runGenerateSchemaWithSourceHeadersTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -696,17 +692,17 @@ public class InteractiveSchemaGeneratorTest {
                         "max", // header3, column 1 padding type
                         "" // header3, column 1 padding length (default 0)
                 );
-        setup(userInput, headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator(userInput, headers, stringColumnTypes, null);
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(exampleMappedSchemaString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runGenerateSchemaWithSourceHeadersUnknownTypesTest() throws IOException {
+    public void runGenerateSchemaWithSourceHeadersUnknownTypesTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -727,17 +723,17 @@ public class InteractiveSchemaGeneratorTest {
                         // type is cleartext due to unknown client type
                         "" // header3, column 1 target header (default)
                 );
-        setup(userInput, headers, unknownColumnTypes, null);
+        createInteractiveSchemaGenerator(userInput, headers, unknownColumnTypes, null);
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(exampleMappedSchemaAllCleartextString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runGenerateSchemaWithoutSourceHeadersTest() throws IOException {
+    public void runGenerateSchemaWithoutSourceHeadersTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -764,17 +760,17 @@ public class InteractiveSchemaGeneratorTest {
                         "max", // header3, column 1 padding type
                         "" // header3, column 1 padding length (default 0)
                 );
-        setup(userInput, null, stringColumnTypes, null);
+        createInteractiveSchemaGenerator(userInput, null, stringColumnTypes, null);
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(examplePositionalSchemaString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runGenerateSchemaWithoutSourceHeadersUnknownTypesTest() throws IOException {
+    public void runGenerateSchemaWithoutSourceHeadersUnknownTypesTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -795,17 +791,17 @@ public class InteractiveSchemaGeneratorTest {
                         // type is cleartext due to unknown client type
                         "targetHeader3" // header3, column 1 target header (default)
                 );
-        setup(userInput, null, unknownColumnTypes, null);
+        createInteractiveSchemaGenerator(userInput, null, unknownColumnTypes, null);
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(examplePositionalSchemaAllCleartextString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runTestWithBadInputsMixedIn() throws IOException {
+    public void runTestWithBadInputsMixedIn() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -847,12 +843,12 @@ public class InteractiveSchemaGeneratorTest {
                         "zero", // header3, column 1 padding length (default 0)
                         "" // header3, column 1 padding length (default 0)
                 );
-        setup(userInput, headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator(userInput, headers, stringColumnTypes, null);
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final TableSchema expectedSchema = GsonUtil.fromJson(exampleMappedSchemaString, TableSchema.class);
-        final TableSchema actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final TableSchema actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson(actualSchema));
     }
 
@@ -861,7 +857,7 @@ public class InteractiveSchemaGeneratorTest {
         // no headers
         assertThrows(NullPointerException.class, () -> CsvSchemaGenerator.builder()
                 .inputCsvFile("../samples/csv/data_sample_without_quotes.csv")
-                .targetJsonFile(targetSchema.toFile().getAbsolutePath())
+                .targetJsonFile(targetSchema.toString())
                 .overwrite(true).build());
         // no target
         assertThrows(NullPointerException.class, () -> CsvSchemaGenerator.builder()
@@ -871,18 +867,18 @@ public class InteractiveSchemaGeneratorTest {
         // no input
         assertThrows(NullPointerException.class,
                 () -> CsvSchemaGenerator.builder()
-                        .targetJsonFile(targetSchema.toFile().getAbsolutePath())
+                        .targetJsonFile(targetSchema.toString())
                         .overwrite(true)
                         .hasHeaders(true).build());
         // no overwrite
         assertThrows(NullPointerException.class, () -> CsvSchemaGenerator.builder()
                 .inputCsvFile("../samples/csv/data_sample_without_quotes.csv")
-                .targetJsonFile(targetSchema.toFile().getAbsolutePath())
+                .targetJsonFile(targetSchema.toString())
                 .hasHeaders(true).build());
     }
 
     @Test
-    public void runGenerateSchemaWithSourceHeadersPermissiveSettingsTest() throws IOException {
+    public void runGenerateSchemaWithSourceHeadersPermissiveSettingsTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -909,17 +905,17 @@ public class InteractiveSchemaGeneratorTest {
                         "max", // header3, column 1 padding type
                         "" // header3, column 1 padding length (default 0)
                 );
-        setup(userInput, headers, stringColumnTypes, ClientSettings.lowAssuranceMode());
+        createInteractiveSchemaGenerator(userInput, headers, stringColumnTypes, ClientSettings.lowAssuranceMode());
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(exampleMappedSchemaString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runGenerateSchemaWithSourceHeadersRestrictiveSettingsTest() throws IOException {
+    public void runGenerateSchemaWithSourceHeadersRestrictiveSettingsTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -948,17 +944,17 @@ public class InteractiveSchemaGeneratorTest {
                         "max", // header3, column 1 padding type
                         "" // header3, column 1 padding length (default 0)
                 );
-        setup(userInput, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
+        createInteractiveSchemaGenerator(userInput, headers, stringColumnTypes, ClientSettings.highAssuranceMode());
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(exampleMappedSchemaNoCleartextString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runGenerateSchemaWithSourceHeadersUnknownTypesPermissiveSettingsTest() throws IOException {
+    public void runGenerateSchemaWithSourceHeadersUnknownTypesPermissiveSettingsTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -979,17 +975,17 @@ public class InteractiveSchemaGeneratorTest {
                         // type is cleartext due to unknown client type
                         "" // header3, column 1 target header (default)
                 );
-        setup(userInput, headers, unknownColumnTypes, ClientSettings.lowAssuranceMode());
+        createInteractiveSchemaGenerator(userInput, headers, unknownColumnTypes, ClientSettings.lowAssuranceMode());
         schemaGen.run();
         assertNotEquals(0, targetSchema.toFile().length());
 
         final var expectedSchema = GsonUtil.fromJson(exampleMappedSchemaAllCleartextString, TableSchema.class);
-        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toAbsolutePath().toString()), TableSchema.class);
+        final var actualSchema = GsonUtil.fromJson(FileUtil.readBytes(targetSchema.toString()), TableSchema.class);
         assertEquals(GsonUtil.toJson(expectedSchema), GsonUtil.toJson((actualSchema)));
     }
 
     @Test
-    public void runGenerateSchemaWithSourceHeadersUnknownTypesRestrictiveSettingsTest() throws IOException {
+    public void runGenerateSchemaWithSourceHeadersUnknownTypesRestrictiveSettingsTest() {
         final String userInput =
                 String.join("\n",
                         // source header1
@@ -1010,7 +1006,7 @@ public class InteractiveSchemaGeneratorTest {
                         // type is cleartext due to unknown client type
                         "" // header3, column 1 target header (default)
                 );
-        setup(userInput, headers, unknownColumnTypes, ClientSettings.highAssuranceMode());
+        createInteractiveSchemaGenerator(userInput, headers, unknownColumnTypes, ClientSettings.highAssuranceMode());
 
         schemaGen.run();
         assertTrue(consoleOutput.toString().contains("No source columns could be considered for output"));

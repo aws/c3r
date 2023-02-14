@@ -7,6 +7,7 @@ import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,10 +25,7 @@ public class TemplateSchemaGeneratorTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        tempSchema = tempDir.resolve("schema.json");
-        tempSchema.toFile().deleteOnExit();
+        tempSchema = FileTestUtility.resolve("schema.json");
     }
 
     @Test
@@ -36,7 +34,7 @@ public class TemplateSchemaGeneratorTest {
                 TemplateSchemaGenerator.builder()
                         .sourceHeaders(List.of(new ColumnHeader("Column 1")))
                         .sourceColumnTypes(List.of())
-                        .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                        .targetJsonFile(tempSchema.toString())
                         .build());
     }
 
@@ -73,7 +71,7 @@ public class TemplateSchemaGeneratorTest {
         final var generator = TemplateSchemaGenerator.builder()
                 .sourceHeaders(headers)
                 .sourceColumnTypes(types)
-                .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                .targetJsonFile(tempSchema.toString())
                 .build();
         generator.run();
         final String content = Files.readString(tempSchema, StandardCharsets.UTF_8);
@@ -112,7 +110,7 @@ public class TemplateSchemaGeneratorTest {
         TemplateSchemaGenerator.builder()
                 .sourceHeaders(null)
                 .sourceColumnTypes(types)
-                .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                .targetJsonFile(tempSchema.toString())
                 .build()
                 .run();
         final String content = Files.readString(tempSchema);
@@ -153,7 +151,7 @@ public class TemplateSchemaGeneratorTest {
         final var generator = TemplateSchemaGenerator.builder()
                 .sourceHeaders(headers)
                 .sourceColumnTypes(types)
-                .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                .targetJsonFile(tempSchema.toString())
                 .clientSettings(ClientSettings.lowAssuranceMode())
                 .build();
         generator.run();
@@ -193,7 +191,7 @@ public class TemplateSchemaGeneratorTest {
         TemplateSchemaGenerator.builder()
                 .sourceHeaders(null)
                 .sourceColumnTypes(types)
-                .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                .targetJsonFile(tempSchema.toString())
                 .clientSettings(ClientSettings.lowAssuranceMode())
                 .build()
                 .run();
@@ -230,7 +228,7 @@ public class TemplateSchemaGeneratorTest {
         final var generator = TemplateSchemaGenerator.builder()
                 .sourceHeaders(headers)
                 .sourceColumnTypes(types)
-                .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                .targetJsonFile(tempSchema.toString())
                 .clientSettings(ClientSettings.highAssuranceMode())
                 .build();
         generator.run();
@@ -265,7 +263,7 @@ public class TemplateSchemaGeneratorTest {
         TemplateSchemaGenerator.builder()
                 .sourceHeaders(null)
                 .sourceColumnTypes(types)
-                .targetJsonFile(tempSchema.toAbsolutePath().toString())
+                .targetJsonFile(tempSchema.toString())
                 .clientSettings(ClientSettings.highAssuranceMode())
                 .build()
                 .run();

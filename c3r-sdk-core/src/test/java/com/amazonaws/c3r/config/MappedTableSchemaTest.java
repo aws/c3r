@@ -8,6 +8,7 @@ import com.amazonaws.c3r.action.RowMarshaller;
 import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.CsvTestUtility;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,8 +16,6 @@ import org.mockito.internal.util.reflection.ReflectionMemberAccessor;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,18 +40,20 @@ public class MappedTableSchemaTest implements TableSchemaCommonTestInterface {
     private static final ColumnSchema CS_S_1_TO_UNNAMED_SEALED = GeneralTestUtility.sealedColumn("S1", null, PadType.FIXED, 50);
 
     private static final ColumnSchema CS_S_1_TO_UNNAMED_SEALED_FINAL = GeneralTestUtility.sealedColumn("S1", "s1" +
-                    ColumnHeader.DEFAULT_SEALED_SUFFIX, PadType.FIXED, 50);
+            ColumnHeader.DEFAULT_SEALED_SUFFIX, PadType.FIXED, 50);
 
     private static final ColumnSchema CS_S_1_TO_T_1 = GeneralTestUtility.cleartextColumn("S1", "T1");
 
     private static final ColumnSchema CS_S_2_TO_T_1 = GeneralTestUtility.cleartextColumn("S2", "T1");
 
-    private Path tempDir;
+    private String tempDir;
+
+    private String output;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        tempDir = FileTestUtility.createTempDir().toString();
+        output = FileTestUtility.resolve("output.csv").toString();
     }
 
     // Verify that target headers are created automatically when unspecified in the schema
@@ -135,12 +136,11 @@ public class MappedTableSchemaTest implements TableSchemaCommonTestInterface {
     @Test
     public void verifyColumnsInResultsTest() {
         final MappedTableSchema schema = new MappedTableSchema(List.of(GeneralTestUtility.cleartextColumn("firstname")));
-        final Path targetFile = tempDir.resolve("verifyGetColumnsReturnValue.csv");
         final EncryptConfig config = EncryptConfig.builder()
                 .secretKey(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getKey())
                 .sourceFile(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getInput())
-                .targetFile(targetFile.toString())
-                .tempDir(tempDir.toString())
+                .targetFile(output)
+                .tempDir(tempDir)
                 .salt(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getSalt())
                 .settings(GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .tableSchema(schema)
@@ -149,7 +149,7 @@ public class MappedTableSchemaTest implements TableSchemaCommonTestInterface {
         final RowMarshaller<CsvValue> rowMarshaller = CsvRowMarshaller.newInstance(config);
         rowMarshaller.marshal();
         rowMarshaller.close();
-        final var values = CsvTestUtility.readRows(targetFile.toString());
+        final var values = CsvTestUtility.readRows(output);
         for (var r : values) {
             assertEquals(1, r.size());
             assertTrue(r.containsKey("firstname"));

@@ -6,6 +6,7 @@ package com.amazonaws.c3r.cli;
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import nl.altindag.log.LogCaptor;
 import nl.altindag.log.model.LogEvent;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +31,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MainErrorMessageTest {
-    private Path tempDir;
-
     private final String config = "../samples/schema/config_sample.json";
 
     private final String input = "../samples/csv/data_sample_without_quotes.csv";
@@ -44,11 +43,7 @@ public class MainErrorMessageTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        final Path outputPath = Files.createTempFile(tempDir, "MainTestSchemaAllowsFileOverwrite", ".out");
-        outputPath.toFile().deleteOnExit();
-        final String output = outputPath.toFile().getAbsolutePath();
+        final String output = FileTestUtility.createTempFile().toString();
         encArgs = EncryptCliConfigTestUtility.defaultTestArgs();
         encArgs.setSchema(config);
         encArgs.setAllowDuplicates(true);
@@ -107,9 +102,9 @@ public class MainErrorMessageTest {
     }
 
     @Test
-    public void encryptInputIllegalArgumentExceptionTest() {
-        final Path missingInput = tempDir.resolve("missingEncryptInputIllegalArgument.csv");
-        encArgs.setInput(missingInput.toAbsolutePath().toString());
+    public void encryptInputIllegalArgumentExceptionTest() throws IOException {
+        final String missingInput = FileTestUtility.resolve("missingEncryptInputIllegalArgument.csv").toString();
+        encArgs.setInput(missingInput);
 
         encArgs.setEnableStackTraces(true);
         encryptAndCheckErrorMessagePresent(encArgs, true, "File does not exist", C3rIllegalArgumentException.class);
@@ -118,9 +113,9 @@ public class MainErrorMessageTest {
     }
 
     @Test
-    public void decryptInputIllegalArgumentExceptionTest() {
-        final Path missingInput = tempDir.resolve("missingDecryptInputIllegalArgument.csv");
-        decArgs.setInput(missingInput.toAbsolutePath().toString());
+    public void decryptInputIllegalArgumentExceptionTest() throws IOException {
+        final String missingInput = FileTestUtility.resolve("missingDecryptInputIllegalArgument.csv").toString();
+        decArgs.setInput(missingInput);
 
         decArgs.setEnableStackTraces(true);
         decryptAndCheckErrorMessagePresent(decArgs, true, "File does not exist", C3rIllegalArgumentException.class);
@@ -129,9 +124,9 @@ public class MainErrorMessageTest {
     }
 
     @Test
-    public void schemaValidateIllegalArgumentExceptionTest() {
-        final Path missingInput = tempDir.resolve("missingSchemaValidateIllegalArgument.csv");
-        schemaCliTestConfig.setInput(missingInput.toAbsolutePath().toString());
+    public void schemaValidateIllegalArgumentExceptionTest() throws IOException {
+        final String missingInput = FileTestUtility.resolve("missingSchemaValidateIllegalArgument.csv").toString();
+        schemaCliTestConfig.setInput(missingInput);
         schemaCliTestConfig.setSubMode("--template");
 
         schemaCliTestConfig.setEnableStackTraces(true);
@@ -152,8 +147,7 @@ public class MainErrorMessageTest {
 
     @Test
     public void encryptPadFailureRuntimeExceptionTest() throws IOException {
-        final Path badSample = tempDir.resolve("bad_data_sample.csv");
-        badSample.toFile().deleteOnExit();
+        final Path badSample = FileTestUtility.resolve("bad_data_sample.csv");
         final Path sample = new File(input).toPath();
         Files.copy(sample, badSample, StandardCopyOption.REPLACE_EXISTING);
         final byte[] bits = new byte[150];
@@ -161,7 +155,7 @@ public class MainErrorMessageTest {
         final String badValue = new String(bits, StandardCharsets.UTF_8);
         final String unpaddableRow = "Shana,Hendrix,8 Hollows Rd,Richmond,VA,407-555-4322," + badValue + ",5,Sean's older sister\n";
         Files.write(badSample, unpaddableRow.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
-        encArgs.setInput(badSample.toAbsolutePath().toString());
+        encArgs.setInput(badSample.toString());
 
         encArgs.setEnableStackTraces(true);
         encryptAndCheckErrorMessagePresent(encArgs, true, "No room for padding", C3rRuntimeException.class);
@@ -225,7 +219,7 @@ public class MainErrorMessageTest {
 
     @Test
     public void encryptUnrecognizedFileFormatTest() throws IOException {
-        final Path unknownInputFormat = Files.createTempFile(tempDir, "unknownInputFormat", "unknown");
+        final Path unknownInputFormat = FileTestUtility.createTempFile("unknownInputFormat", ".unknown");
         unknownInputFormat.toFile().deleteOnExit();
         encArgs.setInput(unknownInputFormat.toFile().getAbsolutePath());
 
@@ -237,7 +231,7 @@ public class MainErrorMessageTest {
 
     @Test
     public void decryptUnrecognizedFileFormatTest() throws IOException {
-        final Path unknownInputFormat = Files.createTempFile(tempDir, "unknownInputFormat", "unknown");
+        final Path unknownInputFormat = FileTestUtility.createTempFile("unknownInputFormat", ".unknown");
         unknownInputFormat.toFile().deleteOnExit();
         decArgs.setInput(unknownInputFormat.toFile().getAbsolutePath());
 
@@ -251,7 +245,7 @@ public class MainErrorMessageTest {
     public void schemaUnrecognizedFileFormatTest() throws IOException {
         schemaCliTestConfig.setSubMode("--interactive");
 
-        final Path unknownInputFormat = Files.createTempFile(tempDir, "unknownInputFormat", "unknown");
+        final Path unknownInputFormat = FileTestUtility.createTempFile("unknownInputFormat", ".unknown");
         unknownInputFormat.toFile().deleteOnExit();
         schemaCliTestConfig.setInput(unknownInputFormat.toFile().getAbsolutePath());
 
@@ -263,7 +257,7 @@ public class MainErrorMessageTest {
 
     @Test
     public void encryptEmptySchemaTest() throws IOException {
-        final Path emptySchema = Files.createTempFile(tempDir, "emptySchema", ".json");
+        final Path emptySchema = FileTestUtility.createTempFile("emptySchema", ".json");
         emptySchema.toFile().deleteOnExit();
         encArgs.setSchema(emptySchema.toAbsolutePath().toString());
 

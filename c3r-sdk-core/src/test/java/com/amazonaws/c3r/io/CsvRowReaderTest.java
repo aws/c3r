@@ -9,6 +9,7 @@ import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,17 +71,12 @@ public class CsvRowReaderTest {
 
     private CsvRowReader cReader;
 
-    private Path tempDir;
-
-    private Path csvValuesPath;
+    private Path input;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        csvValuesPath = Files.createTempFile(tempDir, "csv-values", ".csv");
-        csvValuesPath.toFile().deleteOnExit();
-        writeTestData(csvValuesPath, exampleCsvEntries);
+        input = FileTestUtility.createTempFile("input", ".csv");
+        writeTestData(input, exampleCsvEntries);
     }
 
     private void writeTestData(final Path path, final Map<String, String> data) throws IOException {
@@ -89,7 +85,8 @@ public class CsvRowReaderTest {
         Files.writeString(path,
                 String.join("\n",
                         headerRow,
-                        valueRow));
+                        valueRow),
+                StandardCharsets.UTF_8);
     }
 
     @AfterEach
@@ -114,11 +111,10 @@ public class CsvRowReaderTest {
 
     @Test
     public void missingHeadersThrowsTest() throws IOException {
-        final Path file = Files.createTempFile(tempDir, "data-without-headers", ".csv");
-        file.toFile().deleteOnExit();
+        final String input = FileTestUtility.createTempFile("headerless", ".csv").toString();
         assertThrowsExactly(
                 C3rRuntimeException.class,
-                () -> CsvRowReader.builder().sourceName(file.toFile().getAbsolutePath()).build());
+                () -> CsvRowReader.builder().sourceName(input).build());
     }
 
     @Test
@@ -152,7 +148,7 @@ public class CsvRowReaderTest {
     }
 
     private Row<CsvValue> readCsvValuesPathRow(final String inputNullValue) {
-        cReader = CsvRowReader.builder().sourceName(csvValuesPath.toString()).inputNullValue(inputNullValue).build();
+        cReader = CsvRowReader.builder().sourceName(input.toString()).inputNullValue(inputNullValue).build();
         final List<Row<CsvValue>> rows = new ArrayList<>();
         while (cReader.hasNext()) {
             rows.add(cReader.next());
@@ -290,9 +286,9 @@ public class CsvRowReaderTest {
         for (int i = 0; i <= CsvRowReader.MAX_COLUMN_COUNT; i++) {
             columns.put("column" + i, "value" + i);
         }
-        writeTestData(csvValuesPath, columns);
+        writeTestData(input, columns);
         // header row is enough to throw error on MAX_COLUMN_COUNT
-        assertThrowsExactly(C3rRuntimeException.class, () -> CsvRowReader.builder().sourceName(csvValuesPath.toString()).build());
+        assertThrowsExactly(C3rRuntimeException.class, () -> CsvRowReader.builder().sourceName(input.toString()).build());
     }
 
     @Test
@@ -303,8 +299,8 @@ public class CsvRowReaderTest {
         final String oversizedVarchar = new String(varcharBytes, StandardCharsets.UTF_8);
         columns.put(oversizedVarchar, "value");
 
-        writeTestData(csvValuesPath, columns);
-        assertThrowsExactly(C3rIllegalArgumentException.class, () -> CsvRowReader.builder().sourceName(csvValuesPath.toString()).build());
+        writeTestData(input, columns);
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> CsvRowReader.builder().sourceName(input.toString()).build());
     }
 
     @Test
@@ -324,21 +320,19 @@ public class CsvRowReaderTest {
                 "a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH + 1) + ",,,,,"
         );
         for (var content : fileContentWith6Columns) {
-            final Path nullsCsv = Files.createTempFile("nulls", ".csv");
-            nullsCsv.toFile().deleteOnExit();
+            final Path nullsCsv = FileTestUtility.createTempFile();
             Files.writeString(nullsCsv, content, StandardCharsets.UTF_8);
             // ensure even when the first row has invalid headers, this method works as expected (i.e., that we're not using
             // ColumnHeader on accident somewhere when we don't need to)
             assertEquals(
                     6,
                     CsvRowReader.getCsvColumnCount(nullsCsv.toString(), StandardCharsets.UTF_8));
-            Files.delete(nullsCsv);
         }
     }
 
     @Test
     public void getCsvColumnCountEmptyFileTest() throws IOException {
-        final Path emptyFile = Files.createTempFile("missing", ".csv");
+        final Path emptyFile = FileTestUtility.createTempFile("missing", ".csv");
         assertEquals(0, Files.size(emptyFile));
         assertThrows(C3rRuntimeException.class, () ->
                 CsvRowReader.getCsvColumnCount(emptyFile.toString(), StandardCharsets.UTF_8));
@@ -346,10 +340,9 @@ public class CsvRowReaderTest {
 
     @Test
     public void getCsvColumnCountMissingFileTest() throws IOException {
-        final Path missingFile = Files.createTempFile(tempDir, "missing", ".csv");
-        Files.deleteIfExists(missingFile);
+        final String missingFile = FileTestUtility.resolve("missing.csv").toString();
         assertThrows(C3rRuntimeException.class, () ->
-                CsvRowReader.getCsvColumnCount(missingFile.toString(), StandardCharsets.UTF_8));
+                CsvRowReader.getCsvColumnCount(missingFile, StandardCharsets.UTF_8));
     }
 
     @Test

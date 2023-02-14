@@ -6,9 +6,9 @@ package com.amazonaws.c3r.cli;
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
@@ -44,30 +44,16 @@ public class SchemaModeArgsTest {
 
     private SchemaMode main;
 
-    private Path outputFile;
-
-    private Path schemaUnknownExtensionPath;
-
     private CleanRoomsDao cleanRoomsDao;
 
     @BeforeEach
     public void setup() throws IOException {
-        outputFile = Files.createTempFile("schema", ".json");
-        outputFile.toFile().deleteOnExit();
+        final String output = FileTestUtility.createTempFile("schema", ".json").toString();
         schemaCliTestConfig = SchemaCliConfigTestUtility.builder().overwrite(true).input(INPUT_CSV_PATH)
-                .output(outputFile.toAbsolutePath().toString()).build();
-
-        schemaUnknownExtensionPath = Files.createTempFile("schema", ".unknown");
-        schemaUnknownExtensionPath.toFile().deleteOnExit();
+                .output(output).build();
         cleanRoomsDao = mock(CleanRoomsDao.class);
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.lowAssuranceMode());
         main = new SchemaMode(cleanRoomsDao);
-    }
-
-    @AfterEach
-    public void teardown() throws IOException {
-        Files.deleteIfExists(outputFile);
-        Files.deleteIfExists(schemaUnknownExtensionPath);
     }
 
     public void runMainWithCliArgs(final boolean passes) {
@@ -186,8 +172,9 @@ public class SchemaModeArgsTest {
     }
 
     @Test
-    public void unknownFileFormatTest() {
-        schemaCliTestConfig.setInput(schemaUnknownExtensionPath.toString());
+    public void unknownFileFormatTest() throws IOException {
+        final String schemaUnknownExtensionPath = FileTestUtility.createTempFile("schema", ".unknown").toString();
+        schemaCliTestConfig.setInput(schemaUnknownExtensionPath);
         schemaCliTestConfig.setFileFormat(null);
         runMainWithCliArgs(false);
     }
@@ -200,8 +187,9 @@ public class SchemaModeArgsTest {
     }
 
     @Test
-    public void unsupportedFileFormatFlagTest() {
-        schemaCliTestConfig.setInput(schemaUnknownExtensionPath.toString());
+    public void unsupportedFileFormatFlagTest() throws IOException {
+        final String schemaUnsupportedExtensionPath = FileTestUtility.createTempFile("schema", ".unsupported").toString();
+        schemaCliTestConfig.setInput(schemaUnsupportedExtensionPath);
         schemaCliTestConfig.setFileFormat(FileFormat.PARQUET);
         runMainWithCliArgs(false);
     }

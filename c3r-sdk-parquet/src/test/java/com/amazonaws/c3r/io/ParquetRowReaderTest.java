@@ -10,6 +10,7 @@ import com.amazonaws.c3r.data.ParquetSchema;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.ParquetTestUtility;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
@@ -20,8 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -197,19 +196,16 @@ public class ParquetRowReaderTest {
         final var messageType = new MessageType("Oversized", types);
         final ParquetSchema parquetSchema = new ParquetSchema(messageType);
 
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        final Path output = Files.createTempFile(tempDir, "output", ".parquet");
-        output.toFile().deleteOnExit();
+        final String output = FileTestUtility.createTempFile("output", ".parquet").toString();
         final ParquetRowWriter writer = ParquetRowWriter.builder()
-                .targetName(output.toFile().getAbsolutePath())
+                .targetName(output)
                 .parquetSchema(parquetSchema)
                 .build();
         final Row<ParquetValue> row = new ParquetRow(columnTypes);
         writer.writeRow(row);
         writer.flush();
         writer.close();
-        assertThrows(C3rRuntimeException.class, () -> new ParquetRowReader(output.toFile().getAbsolutePath()));
+        assertThrows(C3rRuntimeException.class, () -> new ParquetRowReader(output));
     }
 
 }

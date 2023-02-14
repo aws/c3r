@@ -17,6 +17,7 @@ import com.amazonaws.c3r.config.PositionalTableSchema;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.CsvTestUtility;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,7 +114,7 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
         }
     }
 
-    private Path tempDir;
+    private Path schema;
 
     // Write out a pretty print formatted version of a positional column schema.
     private static String writePrettyPrintJson(final String targetHeader, final String type, final String padding, final String length) {
@@ -180,8 +181,7 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        schema = FileTestUtility.createTempFile("schema", ".json");
     }
 
     // Parse a positional schema with rows that have no or multiple values and verify expected schema is read
@@ -225,7 +225,6 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
         final String tempJson = FileUtil.readBytes("../samples/schema/config_sample_no_headers.json");
         final int closeOuter = tempJson.lastIndexOf("]");
         final String json = tempJson.substring(0, closeOuter - 1) + ", [] ] }";
-        final Path schema = tempDir.resolve("tooManyRowsPositionalSchema.json");
         Files.writeString(schema, json);
 
         final EncryptCliConfigTestUtility args =
@@ -245,7 +244,6 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
         final String tempJson = FileUtil.readBytes("../samples/schema/config_sample_no_headers.json");
         final int lastElementStart = tempJson.lastIndexOf("],");
         final String json = tempJson.substring(0, lastElementStart - 1) + "]]}";
-        final Path schema = tempDir.resolve("tooManyRowsPositionalSchema.json");
         Files.writeString(schema, json);
 
         final var args = EncryptCliConfigTestUtility.defaultDryRunTestArgs("../samples/csv/data_sample_no_headers.csv", schema.toString());
@@ -272,12 +270,12 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
                 "[]," +
                 "[]" +
                 "]}";
-        final Path schema = tempDir.resolve("notAllRowsUsed.json");
         Files.writeString(schema, json);
 
         final EncryptCliConfigTestUtility args =
                 EncryptCliConfigTestUtility.defaultDryRunTestArgs("../samples/csv" + "/data_sample_without_quotes.csv", schema.toString());
-        args.setOutput(tempDir.resolve("notAllRowsUsed.csv").toString());
+        final String output = FileTestUtility.createTempFile().toString();
+        args.setOutput(output);
         args.setDryRun(false);
 
         assertEquals(Main.SUCCESS, CliTestUtility.runWithoutCleanRooms(args));

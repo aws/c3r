@@ -17,6 +17,7 @@ import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -76,25 +77,26 @@ public class ParquetRowMarshallerTest {
                     .allowCleartext(true)
                     .build();
 
-    private Path tempDir;
+    private String tempDir;
+
+    private Path output;
 
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        tempDir = FileTestUtility.createTempDir().toString();
+        output = FileTestUtility.resolve("output.parquet");
     }
 
     @Test
-    public void validateRejectNonParquetFormatTest() {
-        final Path encOutput = tempDir.resolve("endToEndMarshalOut.unknown");
-        encOutput.toFile().deleteOnExit();
+    public void validateRejectNonParquetFormatTest() throws IOException {
+        final String output = FileTestUtility.resolve("endToEndMarshalOut.unknown").toString();
         final var configBuilder = EncryptConfig.builder()
                 .sourceFile(PARQUET_1_ROW_PRIM_DATA_PATH)
-                .targetFile(encOutput.toString())
+                .targetFile(output)
                 .fileFormat(FileFormat.CSV)
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
-                .tempDir(tempDir.toAbsolutePath().toString())
+                .tempDir(tempDir)
                 .settings(lowSecurityEncryptNull)
                 .tableSchema(identitySchema)
                 .overwrite(true);
@@ -109,13 +111,12 @@ public class ParquetRowMarshallerTest {
         final String inputFile = isDataNull
                 ? PARQUET_NULL_1_ROW_PRIM_DATA_PATH
                 : PARQUET_1_ROW_PRIM_DATA_PATH;
-        final Path encOutput = tempDir.resolve("endToEndMarshalOut.parquet");
         final var config = EncryptConfig.builder()
                 .sourceFile(inputFile)
-                .targetFile(encOutput.toString())
+                .targetFile(output.toString())
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
-                .tempDir(tempDir.toAbsolutePath().toString())
+                .tempDir(tempDir)
                 .settings(settings)
                 .tableSchema(schema)
                 .overwrite(true)
@@ -124,10 +125,10 @@ public class ParquetRowMarshallerTest {
 
         marshaller.marshal();
         marshaller.close();
-        assertNotEquals(0, Files.size(encOutput));
+        assertNotEquals(0, Files.size(output));
 
         final Row<ParquetValue> inRow = readAllRows(inputFile).get(0);
-        final List<Row<ParquetValue>> marshalledRows = readAllRows(encOutput.toString());
+        final List<Row<ParquetValue>> marshalledRows = readAllRows(output.toString());
 
         // The input file had one row - ensure the output does
         assertEquals(1, marshalledRows.size());
@@ -176,13 +177,12 @@ public class ParquetRowMarshallerTest {
     }
 
     private RowMarshaller<ParquetValue> buildRowMarshallerWithSchema(final TableSchema schema) {
-        final Path encOutput = tempDir.resolve("endToEndMarshalOut.parquet");
         final var config = EncryptConfig.builder()
                 .sourceFile(PARQUET_1_ROW_PRIM_DATA_PATH)
-                .targetFile(encOutput.toString())
+                .targetFile(output.toString())
                 .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
                 .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
-                .tempDir(tempDir.toAbsolutePath().toString())
+                .tempDir(tempDir)
                 .settings(lowSecurityEncryptNull)
                 .tableSchema(schema)
                 .overwrite(true)

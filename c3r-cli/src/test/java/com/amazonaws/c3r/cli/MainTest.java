@@ -7,6 +7,7 @@ import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.io.CsvTestUtility;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.io.ParquetTestUtility;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,8 +37,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MainTest {
-    private Path tempDir;
-
     private final String config = "../samples/schema/config_sample.json";
 
     private EncryptCliConfigTestUtility encArgs;
@@ -46,11 +45,13 @@ public class MainTest {
 
     private CleanRoomsDao cleanRoomsDao;
 
+    private Path output;
+
     // Reset encryption and decryption command line arguments before each test
     @BeforeEach
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
+        output = FileTestUtility.resolve("output.csv");
+
         encArgs = EncryptCliConfigTestUtility.defaultTestArgs();
         encArgs.setSchema(config);
         encArgs.setAllowDuplicates(true);
@@ -113,8 +114,7 @@ public class MainTest {
     @Test
     public void marshalTest() throws IOException {
         encArgs.setInput("../samples/csv/data_sample_without_quotes.csv");
-        final File output = new File("data_sample_without_quotes.csv.out");
-        encArgs.setOutput(output.getAbsolutePath());
+        encArgs.setOutput(output.toString());
 
         final long sourceLineCount;
         try (Stream<String> source = Files.lines(Paths.get(encArgs.getInput()), StandardCharsets.UTF_8)) {
@@ -131,7 +131,7 @@ public class MainTest {
         assertFalse(outputData.isBlank());
 
         final long targetLineCount;
-        try (Stream<String> target = Files.lines(output.toPath(), StandardCharsets.UTF_8)) {
+        try (Stream<String> target = Files.lines(output, StandardCharsets.UTF_8)) {
             targetLineCount = target.count();
         }
         assertEquals(sourceLineCount, targetLineCount);
@@ -154,7 +154,6 @@ public class MainTest {
     @Test
     public void unmarshalTest() {
         decArgs.setInput("../samples/csv/marshalled_data_sample.csv");
-        final Path output = tempDir.resolve("marshalled_data_sample.csv.out");
         decArgs.setOutput(output.toString());
 
         final File outputFile = new File(decArgs.getOutput());
@@ -201,7 +200,7 @@ public class MainTest {
      * - Columns `[ColumnA, ...]` are transformed into
      * - columns `[ColumnA_cleartext, ColumnA_sealed, fingerprint, ...]` in the output.
      */
-    public void clientRoundTripTest(final FileFormat fileFormat) {
+    public void clientRoundTripTest(final FileFormat fileFormat) throws IOException {
         // NOTE: We use a version of the sample data with enough quotes to make round trip
         // equalities work more simply
         final String originalPath;
@@ -210,8 +209,8 @@ public class MainTest {
         } else {
             originalPath = "../samples/parquet/data_sample.parquet";
         }
-        final Path marshalledPath = tempDir.resolve("clientRoundTripTest.marshalled." + fileFormat);
-        final Path unmarshalledPath = tempDir.resolve("clientRoundTripTest.unmarshalled." + fileFormat);
+        final Path marshalledPath = FileTestUtility.resolve("clientRoundTripTest.marshalled." + fileFormat);
+        final Path unmarshalledPath = FileTestUtility.resolve("clientRoundTripTest.unmarshalled." + fileFormat);
         final String marshalledStr = marshalledPath.toString();
         final String unmarshalledStr = unmarshalledPath.toString();
 
@@ -280,12 +279,12 @@ public class MainTest {
 
     // Make sure non-interactive schema returns results
     @Test
-    public void csvRoundTripTest() {
+    public void csvRoundTripTest() throws IOException {
         clientRoundTripTest(FileFormat.CSV);
     }
 
     @Test
-    public void parquetRoundTripTest() {
+    public void parquetRoundTripTest() throws IOException {
         clientRoundTripTest(FileFormat.PARQUET);
     }
 

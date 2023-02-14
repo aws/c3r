@@ -15,9 +15,8 @@ import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.CsvTestUtility;
 import com.amazonaws.c3r.json.GsonUtil;
-import com.amazonaws.c3r.utils.FileUtil;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,7 +67,7 @@ public class MainCsvSingleRowRoundTripTest {
             Map.entry("quoted-1space", "\" \"")
     );
 
-    private Path csvValuesPath;
+    private Path input;
 
     private ColumnSchema createColumn(final String headerName, final ColumnType type, final Pad pad) {
         final var columnBuilder = ColumnSchema.builder()
@@ -95,11 +94,10 @@ public class MainCsvSingleRowRoundTripTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        csvValuesPath = Files.createTempFile("csv-values", ".csv");
-        csvValuesPath.toFile().deleteOnExit();
+        input = FileTestUtility.createTempFile("csv-values", ".csv");
         final String headerRow = exampleCsvEntries.stream().map(Map.Entry::getKey).collect(Collectors.joining(","));
         final String valueRow = exampleCsvEntries.stream().map(Map.Entry::getValue).collect(Collectors.joining(","));
-        Files.writeString(csvValuesPath,
+        Files.writeString(input,
                 String.join("\n",
                         headerRow,
                         valueRow));
@@ -113,27 +111,21 @@ public class MainCsvSingleRowRoundTripTest {
         decCsvOutputNull = null;
     }
 
-    @AfterEach
-    public void shutdown() throws IOException {
-        Files.deleteIfExists(csvValuesPath);
-    }
-
-    private Path encrypt(final ColumnType type, final Pad pad) throws IOException {
-        final Path outPath = Files.createTempFile(Path.of(FileUtil.CURRENT_DIR), "encrypted", ".csv");
-        outPath.toFile().deleteOnExit();
-        final Path schemaPath = Files.createTempFile("schema", ".json");
+    private String encrypt(final ColumnType type, final Pad pad) throws IOException {
+        final String output = FileTestUtility.createTempFile("encrypted", ".csv").toString();
+        final Path schemaPath = FileTestUtility.createTempFile("schema", ".json");
         schemaPath.toFile().deleteOnExit();
 
-        final var writer = java.nio.file.Files.newBufferedWriter(schemaPath, StandardCharsets.UTF_8);
+        final var writer = Files.newBufferedWriter(schemaPath, StandardCharsets.UTF_8);
         writer.write(GsonUtil.toJson(createMonoSchema(type, pad)));
         writer.close();
 
-        encArgs.setInput(csvValuesPath.toString());
+        encArgs.setInput(input.toString());
         encArgs.setAllowCleartext(true);
         encArgs.setEnableStackTraces(true);
         encArgs.setSchema(schemaPath.toString());
         encArgs.setCollaborationId(GeneralTestUtility.EXAMPLE_SALT.toString());
-        encArgs.setOutput(outPath.toString());
+        encArgs.setOutput(output);
         encArgs.setOverwrite(true);
         if (encCsvInputNull != null) {
             encArgs.setCsvInputNullValue(encCsvInputNull);
@@ -147,30 +139,29 @@ public class MainCsvSingleRowRoundTripTest {
         final int exitCode = EncryptMode.getApp(cleanRoomsDao).execute(encArgs.toArrayWithoutMode());
         assertEquals(0, exitCode);
 
-        return outPath;
+        return output;
     }
 
-    private Path encryptAllColumnsCleartext() throws IOException {
+    private String encryptAllColumnsCleartext() throws IOException {
         return encrypt(ColumnType.CLEARTEXT, null);
     }
 
-    private Path encryptAllColumnsSealed() throws IOException {
+    private String encryptAllColumnsSealed() throws IOException {
         return encrypt(ColumnType.SEALED, Pad.DEFAULT);
     }
 
-    private Path encryptAllColumnsFingerprint() throws IOException {
+    private String encryptAllColumnsFingerprint() throws IOException {
         return encrypt(ColumnType.FINGERPRINT, null);
     }
 
-    private Path decrypt(final Path inPath) throws IOException {
-        final Path outPath = Files.createTempFile(Path.of(FileUtil.CURRENT_DIR), "decrypted", ".csv");
-        outPath.toFile().deleteOnExit();
+    private String decrypt(final String inPath) throws IOException {
+        final String output = FileTestUtility.createTempFile("decrypted", ".csv").toString();
 
-        decArgs.setInput(inPath.toString());
+        decArgs.setInput(inPath);
         decArgs.setFailOnFingerprintColumns(false);
         decArgs.setEnableStackTraces(true);
         decArgs.setCollaborationId(GeneralTestUtility.EXAMPLE_SALT.toString());
-        decArgs.setOutput(outPath.toString());
+        decArgs.setOutput(output);
         decArgs.setOverwrite(true);
         if (decCsvInputNull != null) {
             decArgs.setCsvInputNullValue(decCsvInputNull);
@@ -182,33 +173,33 @@ public class MainCsvSingleRowRoundTripTest {
         final int exitCode = Main.getApp().execute(decArgs.toArray());
         assertEquals(0, exitCode);
 
-        return outPath;
+        return output;
     }
 
-    private Map<String, String> readSingleCsvRow(final Path path) {
-        final var rows = CsvTestUtility.readRows(path.toString());
+    private Map<String, String> readSingleCsvRow(final String path) {
+        final var rows = CsvTestUtility.readRows(path);
         assertEquals(1, rows.size());
         return rows.get(0);
     }
 
     public void validateCleartextRoundTripEncDecRowContent(final Map<String, Predicate<String>> expectedEncRow,
                                                            final Map<String, Predicate<String>> expectedDecRow) throws IOException {
-        final Path encryptedPath = encryptAllColumnsCleartext();
+        final String encryptedPath = encryptAllColumnsCleartext();
         final var rowPostEncryption = readSingleCsvRow(encryptedPath);
         GeneralTestUtility.assertRowEntryPredicates(rowPostEncryption, expectedEncRow);
 
-        final Path decryptedPath = decrypt(encryptedPath);
+        final String decryptedPath = decrypt(encryptedPath);
         final var rowPostDecryption = readSingleCsvRow(decryptedPath);
         GeneralTestUtility.assertRowEntryPredicates(rowPostDecryption, expectedDecRow);
     }
 
     public void validateSealedRoundTripDecRowContent(final Map<String, Predicate<String>> expectedDecRow) throws IOException {
-        final Path encryptedPath = encryptAllColumnsSealed();
+        final String encryptedPath = encryptAllColumnsSealed();
         final var rowPostEncryption = readSingleCsvRow(encryptedPath);
         assertTrue(rowPostEncryption.values().stream().map((val) -> val.startsWith(SealedTransformer.DESCRIPTOR_PREFIX_STRING))
                 .dropWhile((val) -> val).collect(Collectors.toSet()).isEmpty());
 
-        final Path decryptedPath = decrypt(encryptedPath);
+        final String decryptedPath = decrypt(encryptedPath);
         final var rowPostDecryption = readSingleCsvRow(decryptedPath);
         GeneralTestUtility.assertRowEntryPredicates(rowPostDecryption, expectedDecRow);
     }
@@ -425,7 +416,7 @@ public class MainCsvSingleRowRoundTripTest {
 
     public void defaultNull_EncDec_Fingerprint(final boolean allowJoinsOnColumnsWithDifferentNames) throws IOException {
         encArgs.setAllowJoinsOnColumnsWithDifferentNames(allowJoinsOnColumnsWithDifferentNames);
-        final Path encryptedPath = encryptAllColumnsFingerprint();
+        final String encryptedPath = encryptAllColumnsFingerprint();
         final var rowPostEncryption = readSingleCsvRow(encryptedPath);
         final Predicate<String> isFingerprintEncrypted = (val) -> val.startsWith(FingerprintTransformer.DESCRIPTOR_PREFIX_STRING);
         GeneralTestUtility.assertRowEntryPredicates(rowPostEncryption,
@@ -460,7 +451,7 @@ public class MainCsvSingleRowRoundTripTest {
                 rowPostEncryption.get("quoted-blank"));
 
         // fingerprint values don't get decrypted
-        final Path decryptedPath = decrypt(encryptedPath);
+        final String decryptedPath = decrypt(encryptedPath);
         final var rowPostDecryption = readSingleCsvRow(decryptedPath);
         GeneralTestUtility.assertRowEntryPredicates(rowPostDecryption,
                 entry("foo", isFingerprintEncrypted),
@@ -487,7 +478,7 @@ public class MainCsvSingleRowRoundTripTest {
         encCsvInputNull = "";
         encArgs.setAllowJoinsOnColumnsWithDifferentNames(allowJoinsOnColumnsWithDifferentNames);
 
-        final Path encryptedPath = encryptAllColumnsFingerprint();
+        final String encryptedPath = encryptAllColumnsFingerprint();
         final var rowPostEncryption = readSingleCsvRow(encryptedPath);
         final Predicate<String> isFingerprintEncrypted = (val) -> val.startsWith(FingerprintTransformer.DESCRIPTOR_PREFIX_STRING);
         GeneralTestUtility.assertRowEntryPredicates(rowPostEncryption,
@@ -527,7 +518,7 @@ public class MainCsvSingleRowRoundTripTest {
     @Test
     public void emptyQuotesEncNull_FingerprintTest() throws IOException {
         encCsvInputNull = "\"\"";
-        final Path encryptedPath = encryptAllColumnsFingerprint();
+        final String encryptedPath = encryptAllColumnsFingerprint();
         final var rowPostEncryption = readSingleCsvRow(encryptedPath);
         final Predicate<String> isFingerprintEncrypted = (val) -> val.startsWith(FingerprintTransformer.DESCRIPTOR_PREFIX_STRING);
         GeneralTestUtility.assertRowEntryPredicates(rowPostEncryption,

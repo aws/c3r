@@ -6,6 +6,7 @@ package com.amazonaws.c3r.cli;
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnType;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import com.amazonaws.c3r.utils.StringTestUtility;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,10 +45,7 @@ public class SchemaModeTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        final Path tempDir = Files.createTempDirectory("temp");
-        tempDir.toFile().deleteOnExit();
-        schemaPath = tempDir.resolve("schema.json");
-        schemaPath.toFile().deleteOnExit();
+        schemaPath = FileTestUtility.resolve("schema.json");
     }
 
     // Generate a template without settings and shallowly check content contains expected entries

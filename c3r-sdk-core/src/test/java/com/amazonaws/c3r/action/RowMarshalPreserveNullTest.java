@@ -8,6 +8,7 @@ import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.CsvTestUtility;
+import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.FileUtil;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,8 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -31,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 // Black-box testing for how the encryption client handles NULL entries in data.
 public class RowMarshalPreserveNullTest {
-    private Path targetFile;
+    private String output;
 
     private EncryptConfig.EncryptConfigBuilder configBuilder;
 
@@ -39,8 +38,7 @@ public class RowMarshalPreserveNullTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        targetFile = Files.createTempFile("null5by6.csv", ".out");
-        targetFile.toFile().deleteOnExit();
+        output = FileTestUtility.createTempFile("output", ".csv").toString();
         settingsBuilder = ClientSettings.builder()
                 .allowCleartext(true)
                 .allowDuplicates(false)
@@ -51,7 +49,7 @@ public class RowMarshalPreserveNullTest {
                 .overwrite(true)
                 .salt("collaboration1234")
                 .secretKey(new SecretKeySpec(GeneralTestUtility.EXAMPLE_KEY_BYTES, KeyUtil.KEY_ALG))
-                .targetFile(targetFile.toString())
+                .targetFile(output)
                 .tempDir(FileUtil.TEMP_DIR)
                 .settings(settingsBuilder.build());
 
@@ -73,7 +71,7 @@ public class RowMarshalPreserveNullTest {
         marshaller.marshal();
         marshaller.close();
 
-        final List<String[]> encryptedRows = CsvTestUtility.readContentAsArrays(targetFile.toString(), false);
+        final List<String[]> encryptedRows = CsvTestUtility.readContentAsArrays(output, false);
 
         final String[] expectedHeaders =
                 new String[]{"cleartext", "sealed_none", "sealed_max", "sealed_fixed", "fingerprint_1", "fingerprint_2"};
@@ -283,8 +281,6 @@ public class RowMarshalPreserveNullTest {
         settingsBuilder.allowDuplicates(false);
         final var config = configBuilder.settings(settingsBuilder.build()).build();
 
-        targetFile.toFile().deleteOnExit();
-
         final var marshaller = CsvRowMarshaller.newInstance(config);
         assertDoesNotThrow(marshaller::marshal);
         marshaller.close();
@@ -345,8 +341,6 @@ public class RowMarshalPreserveNullTest {
         settingsBuilder.preserveNulls(true);
         settingsBuilder.allowDuplicates(false);
         final var config = configBuilder.settings(settingsBuilder.build()).build();
-
-        targetFile.toFile().deleteOnExit();
 
         final var marshaller = CsvRowMarshaller.newInstance(config);
         assertDoesNotThrow(marshaller::marshal);

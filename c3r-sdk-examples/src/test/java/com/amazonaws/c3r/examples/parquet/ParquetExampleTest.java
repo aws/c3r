@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.examples.parquet;
 
+import com.amazonaws.c3r.examples.utils.FileTestUtility;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -16,16 +17,14 @@ public class ParquetExampleTest {
     @Test
     public void roundTripTest() throws IOException {
         final Path inputParquet = Path.of("../samples/parquet/data_sample.parquet");
-        final Path encryptedParquet = Files.createTempFile("encrypted", ".parquet");
-        final Path decryptedParquet = Files.createTempFile("decrypted", ".parquet");
+        final Path encryptedParquet = FileTestUtility.createTempFile("encrypted", ".parquet");
+        final Path decryptedParquet = FileTestUtility.createTempFile("decrypted", ".parquet");
 
         ParquetExample.encrypt(inputParquet.toString(), encryptedParquet.toString());
-        assertTrue(Files.exists(encryptedParquet));
         assertTrue(Files.size(encryptedParquet) > 0);
 
         ParquetExample.decrypt(encryptedParquet.toString(), decryptedParquet.toString());
 
-        assertTrue(Files.exists(decryptedParquet));
         assertTrue(Files.size(decryptedParquet) > 0);
     }
 }
