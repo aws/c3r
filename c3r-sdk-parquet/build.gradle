@@ -31,7 +31,7 @@ plugins {
 
     // Vanilla code generation. Read more at:
     // https://projectlombok.org/
-    id "io.freefair.lombok" version "6.6.1"
+    id "io.freefair.lombok" version "6.6.2"
 }
 
 apply plugin: 'com.github.spotbugs'
