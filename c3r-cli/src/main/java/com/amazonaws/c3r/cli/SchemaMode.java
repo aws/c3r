@@ -12,6 +12,7 @@ import com.amazonaws.c3r.io.schema.ParquetSchemaGenerator;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
+import software.amazon.awssdk.regions.Region;
 
 import java.io.File;
 import java.util.Objects;
@@ -91,6 +92,21 @@ public class SchemaMode implements Callable<Integer> {
      */
     @Getter
     static class OptionalArgs {
+
+        /**
+         * {@value CliDescriptions#AWS_PROFILE_DESCRIPTION}.
+         */
+        @CommandLine.Option(names = {"--profile", "-l"},
+                description = CliDescriptions.AWS_PROFILE_DESCRIPTION)
+        private String profile = null;
+
+        /**
+         * {@value CliDescriptions#AWS_REGION_DESCRIPTION}.
+         */
+        @CommandLine.Option(names = {"--region", "-g"},
+                description = CliDescriptions.AWS_REGION_DESCRIPTION)
+        private String region = null;
+
         /**
          * For description see {@link CliDescriptions#ID_DESCRIPTION}.
          */
@@ -148,38 +164,37 @@ public class SchemaMode implements Callable<Integer> {
     private OptionalArgs optionalArgs = new OptionalArgs();
 
     /** DAO for interacting with AWS Clean Rooms. */
-    private CleanRoomsDao cleanRoomsDao;
+    private final CleanRoomsDao cleanRoomsDao;
 
     /**
-     * Return a CLI instance for schema generation with no specified AWS Clean Rooms collaboration.
+     * Return a default CLI instance for schema generation.
      *
      * <p>
      * Note: {@link #getApp} is the intended method for manually creating this class
      * with the appropriate CLI settings.
      */
     SchemaMode() {
-        this.cleanRoomsDao = null;
+        this.cleanRoomsDao = CleanRoomsDao.builder().build();
     }
 
     /**
-     * Return a CLI instance for schema generation configured for a particular AWS Clean Rooms collaboration.
+     * Return a CLI instance for schema generation with a custom {@link CleanRoomsDao}.
      *
      * <p>
      * Note: {@link #getApp} is the intended method for manually creating this class
      * with the appropriate CLI settings.
      *
-     * @param cleanRoomsDao Object containing information on the cryptographic settings for the collaboration
-     *                      if provided, else {@code null}.
+     * @param cleanRoomsDao Custom {@link CleanRoomsDao} to use for Clean Rooms API calls
      */
     SchemaMode(final CleanRoomsDao cleanRoomsDao) {
         this.cleanRoomsDao = cleanRoomsDao;
     }
 
     /**
-     * Get the schema mode command line application with a custom CleanRoomsDao.
+     * Get the schema mode command line application with a custom {@link CleanRoomsDao}.
      *
-     * @param cleanRoomsDao AWS Clean Rooms data access object to use for schema mode.
-     * @return CommandLine interface for `schema` with customized AWS Clean Rooms access.
+     * @param cleanRoomsDao Custom {@link CleanRoomsDao} to use for Clean Rooms API calls
+     * @return CommandLine interface for `schema` with customized AWS Clean Rooms access
      */
     static CommandLine getApp(final CleanRoomsDao cleanRoomsDao) {
         return generateCommandLine(new SchemaMode(cleanRoomsDao));
@@ -188,19 +203,16 @@ public class SchemaMode implements Callable<Integer> {
     /**
      * Get the settings from AWS Clean Rooms for this collaboration.
      *
-     * @return Cryptographic computing rules for collaboration, else {@code null} if not applicable.
+     * @return Cryptographic computing rules for collaboration, or {@code null} if not applicable.
      */
     public ClientSettings getClientSettings() {
         if (optionalArgs.id == null) {
             return null;
         }
-        final ClientSettings settings;
-        if (cleanRoomsDao == null) {
-            settings = new CleanRoomsDao().getCollaborationDataEncryptionMetadata(optionalArgs.id.toString());
-        } else {
-            settings = cleanRoomsDao.getCollaborationDataEncryptionMetadata(optionalArgs.id.toString());
-        }
-        return settings;
+        final var region = optionalArgs.region == null ? null : Region.of(optionalArgs.region);
+        final var dao = cleanRoomsDao != null ? cleanRoomsDao : CleanRoomsDao.builder().build();
+        return dao.withProfile(optionalArgs.profile).withRegion(region)
+                .getCollaborationDataEncryptionMetadata(optionalArgs.id.toString());
     }
 
     /**

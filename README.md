@@ -36,6 +36,11 @@ The C3R encryption client is an executable JAR with a command line interface (CL
 
 These modes are briefly described in the subsequent portions of this README.
 
+### C3R with named AWS CLI profiles and regions
+
+Modes which make API calls to AWS services feature optional `--profile` and `--region` flags, allowing for convenient selection of an AWS CLI named profile and AWS region respectively.
+
+
 ### C3R `schema` mode: specifying how data should be encrypted
 
 For the C3R encryption client to encrypt a tabular file for a collaboration, it must have a corresponding schema file specifying how the encrypted output should be derived from the input.
@@ -46,7 +51,7 @@ The C3R encryption client can help generate schema files for an `INPUT` file usi
 $ java -jar c3r-cli.jar schema --interactive INPUT
 ```
 
-See the "Generate an encryption schema for a tabular ﬁle" section of the AWS Clean Rooms documentation for more information.
+See the "Generate an encryption schema for a tabular file" section of the AWS Clean Rooms documentation for more information.
 
 ### C3R `encrypt` mode: encrypting data for a collaboration
 

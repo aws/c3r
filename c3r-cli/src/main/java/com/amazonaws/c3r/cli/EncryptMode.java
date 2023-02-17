@@ -22,11 +22,11 @@ import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
+import software.amazon.awssdk.regions.Region;
 
 import javax.crypto.SecretKey;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
@@ -85,7 +85,21 @@ public class EncryptMode implements Callable<Integer> {
      * Optional command line arguments.
      */
     @Getter
-    private static class OptionalArgs {
+    static class OptionalArgs {
+        /**
+         * {@value CliDescriptions#AWS_PROFILE_DESCRIPTION}.
+         */
+        @CommandLine.Option(names = {"--profile", "-l"},
+                description = CliDescriptions.AWS_PROFILE_DESCRIPTION)
+        private String profile = null;
+
+        /**
+         * {@value CliDescriptions#AWS_REGION_DESCRIPTION}.
+         */
+        @CommandLine.Option(names = {"--region", "-g"},
+                description = CliDescriptions.AWS_REGION_DESCRIPTION)
+        private String region = null;
+
         /**
          * {@value CliDescriptions#FILE_FORMAT_DESCRIPTION}.
          */
@@ -158,33 +172,33 @@ public class EncryptMode implements Callable<Integer> {
     private final CleanRoomsDao cleanRoomsDao;
 
     /**
-     * Return a CLI instance for encryption not connected to AWS Clean Rooms.
+     * Return a default CLI instance for encryption.
      *
      * <p>
      * Note: {@link #getApp} is the intended method for manually creating this class
      * with the appropriate CLI settings.
      */
     EncryptMode() {
-        this.cleanRoomsDao = null;
+        this.cleanRoomsDao = CleanRoomsDao.builder().build();
     }
 
     /**
-     * Return a CLI instance for an encryption pass configured for a particular AWS Clean Rooms collaboration.
+     * Return a CLI instance for an encryption pass with a custom {@link CleanRoomsDao}.
      *
      * <p>
      * Note: {@link #getApp} is the intended method for manually creating this class
      * with the appropriate CLI settings.
      *
-     * @param cleanRoomsDao Contains information on the cryptographic settings for the collaboration
+     * @param cleanRoomsDao Custom {@link CleanRoomsDao} to use for Clean Rooms API calls
      */
     EncryptMode(final CleanRoomsDao cleanRoomsDao) {
         this.cleanRoomsDao = cleanRoomsDao;
     }
 
     /**
-     * Get the encryption mode command line application with a custom CleanRoomsDao and standard CLI settings.
+     * Get the encrypt mode command line application with a custom {@link CleanRoomsDao}.
      *
-     * @param cleanRoomsDao AWS Clean Rooms data access object to use for encryption mode.
+     * @param cleanRoomsDao Custom {@link CleanRoomsDao} to use for Clean Rooms API calls
      * @return CommandLine interface for `encrypt` with customized AWS Clean Rooms access and standard CLI settings
      */
     public static CommandLine getApp(final CleanRoomsDao cleanRoomsDao) {
@@ -197,9 +211,10 @@ public class EncryptMode implements Callable<Integer> {
      * @return Cryptographic computing rules for collaboration
      */
     public ClientSettings getClientSettings() {
-        final ClientSettings settings = Objects.requireNonNullElseGet(cleanRoomsDao, CleanRoomsDao::new)
-                .getCollaborationDataEncryptionMetadata(requiredArgs.getId().toString());
-        return settings;
+        final var region = optionalArgs.region == null ? null : Region.of(optionalArgs.region);
+        final var dao = cleanRoomsDao != null ? cleanRoomsDao : CleanRoomsDao.builder().build();
+        return dao.withProfile(optionalArgs.profile).withRegion(region)
+                .getCollaborationDataEncryptionMetadata(requiredArgs.id.toString());
     }
 
     /**

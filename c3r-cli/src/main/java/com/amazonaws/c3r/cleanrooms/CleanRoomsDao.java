@@ -5,9 +5,19 @@ package com.amazonaws.c3r.cleanrooms;
 
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.With;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cleanrooms.CleanRoomsClient;
 import software.amazon.awssdk.services.cleanrooms.model.AccessDeniedException;
 import software.amazon.awssdk.services.cleanrooms.model.DataEncryptionMetadata;
@@ -18,37 +28,88 @@ import software.amazon.awssdk.services.cleanrooms.model.ThrottlingException;
 import software.amazon.awssdk.services.cleanrooms.model.ValidationException;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Create a connection to AWS Clean Rooms to get collaboration information.
  */
-@AllArgsConstructor
 @Slf4j
-public class CleanRoomsDao {
+@Getter
+@NoArgsConstructor(force = true)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public final class CleanRoomsDao {
     /**
      * Create a connection to AWS Clean Rooms.
      */
-    private final CleanRoomsClient client;
+    private CleanRoomsClient client;
 
     /**
-     * Construct an CleanRoomsDao using the default {@link CleanRoomsClient}.
-     *
-     * @throws C3rRuntimeException If a {@link SdkException} is raised connecting to AWS Clean Rooms
+     * AWS CLI named profile to use with the AWS SDK.
      */
-    public CleanRoomsDao() {
-        this(CleanRoomsClient::create);
+    @With
+    private final String profile;
+
+    /**
+     * AWS region to use with the AWS SDK.
+     */
+    @With
+    private final Region region;
+
+    /**
+     * Construct an CleanRoomsDao with default specified settings.
+     *
+     * @param profile AWS CLI named profile to use with the AWS SDK
+     * @param region AWS region to use with the AWS SDK
+     */
+    @Builder
+    private CleanRoomsDao(final String profile, final Region region) {
+        this.profile = profile;
+        this.region = region;
     }
 
     /**
-     * Construct a CleanRoomsDao using a specified {@link CleanRoomsClient} supplier.
+     * Get the {@link AwsCredentialsProvider} to use for connecting with AWS Clean Rooms,
+     * based on a specified named profile or the default provider.
      *
-     * @param clientSupplier Supplier for a {@link CleanRoomsClient}.
-     * @throws C3rRuntimeException If a {@link SdkException} is raised connecting to AWS Clean Rooms
+     * @return A {@link AwsCredentialsProvider} based on the specified named profile (if any).
      */
-    CleanRoomsDao(final Supplier<CleanRoomsClient> clientSupplier) {
+    AwsCredentialsProvider initAwsCredentialsProvider() {
+        if (profile == null) {
+            return DefaultCredentialsProvider.builder().build();
+        } else {
+            return ProfileCredentialsProvider.builder().profileName(profile).build();
+        }
+    }
+
+    /**
+     * Get the {@link Region} to use for connecting with AWS Clean Rooms,
+     * based on a specified region or the default provider chain.
+     *
+     * @return A specified {@link Region} or the default.
+     */
+    Region initRegion() {
+        if (region == null) {
+            return DefaultAwsRegionProviderChain.builder().build().getRegion();
+        } else {
+            return region;
+        }
+    }
+
+    /**
+     * Get the {@link CleanRoomsClient} for this instance, initializing it if it is not yet created.
+     *
+     * @return The instances {@link CleanRoomsClient}
+     * @throws C3rRuntimeException If an SDK error occurs setting up the {@link CleanRoomsClient}
+     */
+    CleanRoomsClient getClient() {
+        if (client != null) {
+            return client;
+        }
         try {
-            client = clientSupplier.get();
+            client = CleanRoomsClient.builder()
+                    .region(initRegion())
+                    .credentialsProvider(initAwsCredentialsProvider())
+                    .build();
+            return client;
         } catch (SdkException e) {
             throw new C3rRuntimeException("Unable to connect to AWS Clean Rooms: " + e.getMessage(), e);
         }
@@ -69,7 +130,7 @@ public class CleanRoomsDao {
         final String endError = "Please verify that the CollaborationID is correct and try again.";
         final GetCollaborationResponse response;
         try {
-            response = client.getCollaboration(request);
+            response = getClient().getCollaboration(request);
         } catch (ResourceNotFoundException e) {
             throw new C3rRuntimeException(baseError + " No collaboration found. " + endError, e);
         } catch (AccessDeniedException e) {

@@ -13,6 +13,17 @@ public final class CliDescriptions {
     public static final String VERSION = "1.0.0";
 
     /**
+     * Description of AWS profile.
+     */
+    public static final String AWS_PROFILE_DESCRIPTION = "AWS CLI profile for credentials and config (uses AWS "
+            + " SDK default if omitted)";
+
+    /**
+     * Description of AWS region.
+     */
+    public static final String AWS_REGION_DESCRIPTION = "AWS region for API requests (uses AWS SDK default if omitted)";
+
+    /**
      * Description of how to allow for custom CSV values in the input file.
      */
     public static final String ENCRYPT_CSV_INPUT_NULL_VALUE_DESCRIPTION = "Value representing how NULL is encoded in the input CSV data " +

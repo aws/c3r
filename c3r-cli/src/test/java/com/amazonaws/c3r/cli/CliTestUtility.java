@@ -4,10 +4,10 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import picocli.CommandLine;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -40,7 +40,7 @@ public final class CliTestUtility {
      */
     public static int runWithoutCleanRooms(final EncryptCliConfigTestUtility args) {
         final CleanRoomsDao cleanRoomsDao;
-        cleanRoomsDao = mock(CleanRoomsDao.class);
+        cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(args.getClientSettings());
         return EncryptMode.getApp(cleanRoomsDao).execute(args.toArrayWithoutMode());
     }

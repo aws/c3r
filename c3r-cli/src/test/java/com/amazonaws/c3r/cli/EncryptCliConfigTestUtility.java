@@ -91,6 +91,16 @@ public final class EncryptCliConfigTestUtility {
     private FileFormat fileFormat;
 
     /**
+     * AWS CLI profile.
+     */
+    private String profile;
+
+    /**
+     * AWS region.
+     */
+    private String region;
+
+    /**
      * Hidden default constructor so static instance creators are used.
      */
     private EncryptCliConfigTestUtility() {
@@ -191,6 +201,12 @@ public final class EncryptCliConfigTestUtility {
         }
         if (fileFormat != null) {
             args.add("--fileFormat=" + fileFormat);
+        }
+        if (profile != null) {
+            args.add("--profile=" + profile);
+        }
+        if (region != null) {
+            args.add("--region=" + region);
         }
         return args;
     }
