@@ -25,6 +25,18 @@ import static org.mockito.Mockito.when;
 
 // Test class for implementation done in TableSchema using mocks to be independent of child implementations.
 public class TableSchemaTest {
+    // Use to mock a TableSchema with specified column data and header status.
+    private TableSchema generateMockTableSchema(final Boolean hasHeaders, final List<ColumnSchema> columns)
+            throws NoSuchFieldException, IllegalAccessException {
+        final var tableSchema = mock(TableSchema.class);
+        final var rma = new ReflectionMemberAccessor();
+        final Field header = TableSchema.class.getDeclaredField("headerRow");
+        rma.set(header, tableSchema, hasHeaders);
+        when(tableSchema.getColumns()).thenReturn(columns);
+        doCallRealMethod().when(tableSchema).validate();
+        return tableSchema;
+    }
+
     // Check that logic for when preprocessing is needed is correct.
     @Test
     public void mappedSchemaRequiresPreprocessingTest() {
@@ -68,16 +80,14 @@ public class TableSchemaTest {
 
     // Tests that the source and header set collapses duplicates correctly.
     @Test
-    public void validateGetSourceAndTargetHeadersTest() {
-        final var tableSchema = mock(TableSchema.class);
-        doCallRealMethod().when(tableSchema).getSourceAndTargetHeaders();
-
+    public void validateGetSourceAndTargetHeadersTest() throws NoSuchFieldException, IllegalAccessException {
         final List<ColumnSchema> columnSchemas = List.of(
                 GeneralTestUtility.cleartextColumn("s1", "t1"),
                 GeneralTestUtility.cleartextColumn("s1", "t2"),
                 GeneralTestUtility.cleartextColumn("s2", "t3")
         );
-        when(tableSchema.getColumns()).thenReturn(columnSchemas);
+        final var tableSchema = generateMockTableSchema(false, columnSchemas);
+        doCallRealMethod().when(tableSchema).getSourceAndTargetHeaders();
 
         final Set<ColumnHeader> knownValid = Set.of(
                 new ColumnHeader("s1"),
@@ -93,17 +103,11 @@ public class TableSchemaTest {
     // Checks for the same target header being reused is rejected during validations.
     @Test
     public void checkDuplicateTargetsTest() throws NoSuchFieldException, IllegalAccessException {
-        final var tableSchema = mock(TableSchema.class);
-        final var rma = new ReflectionMemberAccessor();
-        final Field header = TableSchema.class.getDeclaredField("headerRow");
-        rma.set(header, tableSchema, true);
-        doCallRealMethod().when(tableSchema).validate();
-
         final List<ColumnSchema> noDuplicates = List.of(
                 GeneralTestUtility.cleartextColumn("s1", "t1"),
                 GeneralTestUtility.cleartextColumn("s2", "t2")
         );
-        when(tableSchema.getColumns()).thenReturn(noDuplicates);
+        final var tableSchema = generateMockTableSchema(true, noDuplicates);
         assertDoesNotThrow(tableSchema::validate);
 
         final List<ColumnSchema> duplicates = List.of(
@@ -111,20 +115,15 @@ public class TableSchemaTest {
                 GeneralTestUtility.cleartextColumn("s2", "t2"),
                 GeneralTestUtility.cleartextColumn("s3", "t2")
         );
-        when(tableSchema.getColumns()).thenReturn(duplicates);
-        final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchema::validate);
+        final var tableSchemaDuplicates = generateMockTableSchema(true, duplicates);
+        final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchemaDuplicates::validate);
         assertEquals("Target header name can only be used once. Duplicates found: t2", e.getMessage());
     }
 
     // Test that a null value for the header and a null value for the columns causes construction to fail.
     @Test
     public void nullHeaderRowAndNullColumnsTest() throws NoSuchFieldException, IllegalAccessException {
-        final var tableSchema = mock(TableSchema.class);
-        when(tableSchema.getColumns()).thenReturn(null);
-        final var rma = new ReflectionMemberAccessor();
-        final Field header = TableSchema.class.getDeclaredField("headerRow");
-        rma.set(header, tableSchema, null);
-        doCallRealMethod().when(tableSchema).validate();
+        final var tableSchema = generateMockTableSchema(null, null);
 
         final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchema::validate);
         assertEquals("Schema was not initialized.", e.getMessage());
@@ -133,12 +132,7 @@ public class TableSchemaTest {
     // Test that if the header is null the schema won't be created.
     @Test
     public void nullHeaderRowTest() throws IllegalAccessException, NoSuchFieldException {
-        final var tableSchema = mock(TableSchema.class);
-        final var rma = new ReflectionMemberAccessor();
-        final Field header = TableSchema.class.getDeclaredField("headerRow");
-        rma.set(header, tableSchema, null);
-        when(tableSchema.getColumns()).thenReturn(new ArrayList<>());
-        doCallRealMethod().when(tableSchema).validate();
+        final var tableSchema = generateMockTableSchema(null, new ArrayList<>());
 
         final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchema::validate);
         assertEquals("Schema must specify whether or not data has a header row.", e.getMessage());
@@ -147,12 +141,7 @@ public class TableSchemaTest {
     // Check that validation fails because no value was given for columns.
     @Test
     public void nullColumnsTest() throws NoSuchFieldException, IllegalAccessException {
-        final var tableSchema = mock(TableSchema.class);
-        when(tableSchema.getColumns()).thenReturn(null);
-        final var rma = new ReflectionMemberAccessor();
-        final Field header = TableSchema.class.getDeclaredField("headerRow");
-        rma.set(header, tableSchema, false);
-        doCallRealMethod().when(tableSchema).validate();
+        final var tableSchema = generateMockTableSchema(false, null);
 
         final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchema::validate);
         assertEquals("At least one data column must provided in the config file.", e.getMessage());
@@ -161,12 +150,7 @@ public class TableSchemaTest {
     // Check that validations fails because the column list is empty
     @Test
     public void emptyColumnsTest() throws NoSuchFieldException, IllegalAccessException {
-        final var tableSchema = mock(TableSchema.class);
-        when(tableSchema.getColumns()).thenReturn(new ArrayList<>());
-        final var rma = new ReflectionMemberAccessor();
-        final Field header = TableSchema.class.getDeclaredField("headerRow");
-        rma.set(header, tableSchema, true);
-        doCallRealMethod().when(tableSchema).validate();
+        final var tableSchema = generateMockTableSchema(true, new ArrayList<>());
 
         final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchema::validate);
         assertEquals("At least one data column must provided in the config file.", e.getMessage());
