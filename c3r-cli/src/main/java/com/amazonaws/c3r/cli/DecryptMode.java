@@ -60,7 +60,7 @@ public class DecryptMode implements Callable<Integer> {
     /**
      * Required values as specified by the user.
      */
-    @CommandLine.ArgGroup(validate = false, heading = "%nRequired parameters:%n")
+    @CommandLine.ArgGroup(multiplicity = "1", exclusive = false, heading = "%nRequired parameters:%n")
     private RequiredArgs requiredArgs = new RequiredArgs();
 
     /**
@@ -132,7 +132,7 @@ public class DecryptMode implements Callable<Integer> {
     /**
      * Optional values as specified by the user.
      */
-    @CommandLine.ArgGroup(validate = false, heading = "%nOptional parameters:%n")
+    @CommandLine.ArgGroup(exclusive = false, heading = "%nOptional parameters:%n")
     private OptionalArgs optionalArgs = new OptionalArgs();
 
     /**

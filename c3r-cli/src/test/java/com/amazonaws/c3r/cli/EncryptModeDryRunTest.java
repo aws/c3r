@@ -16,8 +16,6 @@ import picocli.CommandLine;
 import software.amazon.awssdk.regions.Region;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-public class EncryptModeArgsTest {
+public class EncryptModeDryRunTest {
     private static final String INPUT_PATH = "../samples/csv/data_sample_without_quotes.csv";
 
     private static final String SCHEMA_PATH = "../samples/schema/config_sample.json";
@@ -58,21 +56,6 @@ public class EncryptModeArgsTest {
         assertEquals(SCHEMA_PATH, main.getRequiredArgs().getSchema());
         assertEquals(INPUT_PATH, main.getRequiredArgs().getInput());
         assertEquals(GeneralTestUtility.EXAMPLE_SALT, main.getRequiredArgs().getId());
-    }
-
-    @Test
-    public void missingRequiredEncryptArgFailsTest() {
-        encArgs.setDryRun(false);
-        encArgs.setEnableStackTraces(false);
-        encArgs.setOverwrite(false);
-        encArgs.setOutput(null);
-        final var origArgs = encArgs.getCliArgsWithoutMode();
-        for (int i = 0; i < origArgs.size(); i++) {
-            final List<String> args = new ArrayList<>(origArgs);
-            final String arg = origArgs.get(i);
-            args.remove(arg);
-            assertNotEquals(0, new CommandLine(main).execute(args.toArray(String[]::new)));
-        }
     }
 
     @Test
