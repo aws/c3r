@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.utils.FileTestUtility;
@@ -27,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MainErrorMessageTest {
@@ -60,7 +60,7 @@ public class MainErrorMessageTest {
 
     private void encryptAndCheckErrorMessagePresent(final EncryptCliConfigTestUtility encArgs, final boolean enableStackTraces,
                                                     final String message, final Class<? extends Throwable> expectedException) {
-        final CleanRoomsDao cleanRoomsDao = mock(CleanRoomsDao.class);
+        final CleanRoomsDao cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
         final CommandLine cmd = EncryptMode.getApp(cleanRoomsDao);
         runAndCheckErrorMessagePresent(cmd, encArgs.toArrayWithoutMode(), enableStackTraces, message, expectedException);

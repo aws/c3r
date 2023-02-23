@@ -4,6 +4,8 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.io.CsvTestUtility;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.io.ParquetTestUtility;
@@ -12,6 +14,7 @@ import com.amazonaws.c3r.utils.FileUtil;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 import picocli.CommandLine;
 
 import java.io.ByteArrayOutputStream;
@@ -33,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MainTest {
@@ -59,8 +61,9 @@ public class MainTest {
         decArgs = DecryptCliConfigTestUtility.defaultTestArgs();
         decArgs.setFailOnFingerprintColumns(false);
 
-        cleanRoomsDao = mock(CleanRoomsDao.class);
-        when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
+        cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
+        when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenAnswer((Answer<ClientSettings>) (invocation) ->
+                encArgs.getClientSettings());
     }
 
     // Verify calling the command with no argument fails
@@ -219,7 +222,9 @@ public class MainTest {
         encArgs.setSchema("../samples/schema/config_sample_x3.json");
         encArgs.setPreserveNulls(false);
 
+        final var cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
+
         int exitCode = EncryptMode.getApp(cleanRoomsDao).execute(encArgs.toArrayWithoutMode());
         assertEquals(0, exitCode);
 

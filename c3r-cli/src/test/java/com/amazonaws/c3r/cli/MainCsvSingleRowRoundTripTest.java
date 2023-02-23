@@ -6,6 +6,7 @@ package com.amazonaws.c3r.cli;
 import com.amazonaws.c3r.FingerprintTransformer;
 import com.amazonaws.c3r.SealedTransformer;
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
@@ -34,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /*
@@ -134,7 +134,7 @@ public class MainCsvSingleRowRoundTripTest {
             encArgs.setCsvOutputNullValue(encCsvOutputNull);
         }
 
-        final CleanRoomsDao cleanRoomsDao = mock(CleanRoomsDao.class);
+        final CleanRoomsDao cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
         final int exitCode = EncryptMode.getApp(cleanRoomsDao).execute(encArgs.toArrayWithoutMode());
         assertEquals(0, exitCode);

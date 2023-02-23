@@ -3,7 +3,7 @@
 
 package com.amazonaws.c3r.cli;
 
-import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.utils.FileTestUtility;
@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SchemaModeTest {
@@ -82,7 +81,7 @@ public class SchemaModeTest {
                 .overwrite(true)
                 .collaborationId(GeneralTestUtility.EXAMPLE_SALT.toString())
                 .build();
-        final var cleanRoomsDao = mock(CleanRoomsDao.class);
+        final var cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.lowAssuranceMode());
 
         assertEquals(0, SchemaMode.getApp(cleanRoomsDao).execute(args.toArrayWithoutMode()));
@@ -109,7 +108,7 @@ public class SchemaModeTest {
                 .overwrite(true)
                 .collaborationId(GeneralTestUtility.EXAMPLE_SALT.toString())
                 .build();
-        final var cleanRoomsDao = mock(CleanRoomsDao.class);
+        final var cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.highAssuranceMode());
 
         assertEquals(0, SchemaMode.getApp(cleanRoomsDao).execute(args.toArrayWithoutMode()));
@@ -196,7 +195,7 @@ public class SchemaModeTest {
         final var userInput = new ByteArrayInputStream(inputBuilder.toString().getBytes(StandardCharsets.UTF_8));
         System.setIn(new BufferedInputStream(userInput));
 
-        final var cleanRoomsDao = mock(CleanRoomsDao.class);
+        final var cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.lowAssuranceMode());
 
         assertEquals(0, SchemaMode.getApp(cleanRoomsDao).execute(args.toArrayWithoutMode()));
@@ -245,7 +244,7 @@ public class SchemaModeTest {
         final var userInput = new ByteArrayInputStream(inputBuilder.toString().getBytes(StandardCharsets.UTF_8));
         System.setIn(new BufferedInputStream(userInput));
 
-        final var cleanRoomsDao = mock(CleanRoomsDao.class);
+        final var cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.highAssuranceMode());
 
         assertEquals(0, SchemaMode.getApp(cleanRoomsDao).execute(args.toArrayWithoutMode()));

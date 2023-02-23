@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import com.amazonaws.c3r.utils.FileTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,6 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MainEnvVarKeyValidTest {
@@ -44,7 +44,7 @@ public class MainEnvVarKeyValidTest {
         final String output = FileTestUtility.createTempFile().toString();
         encArgs = EncryptCliConfigTestUtility.defaultDryRunTestArgs(ENC_INPUT_PATH, SCHEMA_PATH);
         encArgs.setOutput(output);
-        final CleanRoomsDao cleanRoomsDao = mock(CleanRoomsDao.class);
+        final CleanRoomsDao cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
         encMain = EncryptMode.getApp(cleanRoomsDao);
         decArgs = DecryptCliConfigTestUtility.defaultDryRunTestArgs(DEC_INPUT_PATH);

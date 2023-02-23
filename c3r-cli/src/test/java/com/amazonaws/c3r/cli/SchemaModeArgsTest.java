@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.utils.FileTestUtility;
@@ -12,6 +13,7 @@ import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
+import software.amazon.awssdk.regions.Region;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -24,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SchemaModeArgsTest {
@@ -40,28 +42,28 @@ public class SchemaModeArgsTest {
 
     private static final String INPUT_PARQUET_PATH = "../samples/parquet/data_sample.parquet";
 
-    private SchemaCliConfigTestUtility schemaCliTestConfig;
+    private SchemaCliConfigTestUtility schemaArgs;
 
     private SchemaMode main;
 
-    private CleanRoomsDao cleanRoomsDao;
+    private CleanRoomsDao mockCleanRoomsDao;
 
     @BeforeEach
     public void setup() throws IOException {
         final String output = FileTestUtility.createTempFile("schema", ".json").toString();
-        schemaCliTestConfig = SchemaCliConfigTestUtility.builder().overwrite(true).input(INPUT_CSV_PATH)
+        schemaArgs = SchemaCliConfigTestUtility.builder().overwrite(true).input(INPUT_CSV_PATH)
                 .output(output).build();
-        cleanRoomsDao = mock(CleanRoomsDao.class);
-        when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.lowAssuranceMode());
-        main = new SchemaMode(cleanRoomsDao);
+        mockCleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
+        when(mockCleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(ClientSettings.lowAssuranceMode());
     }
 
     public void runMainWithCliArgs(final boolean passes) {
-        final var args = schemaCliTestConfig.toListWithoutMode();
+        main = new SchemaMode(mockCleanRoomsDao);
+        final int exitCode = new CommandLine(main).execute(schemaArgs.toArrayWithoutMode());
         if (passes) {
-            assertEquals(0, new CommandLine(main).execute(args.toArray(new String[0])));
+            assertEquals(0, exitCode);
         } else {
-            assertNotEquals(0, new CommandLine(main).execute(args.toArray(new String[0])));
+            assertNotEquals(0, exitCode);
         }
     }
 
@@ -76,7 +78,7 @@ public class SchemaModeArgsTest {
         final File sourceFile = new File(INPUT_CSV_PATH);
         final File targetFile = new File(sourceFile.getName() + ".json");
         targetFile.deleteOnExit();
-        schemaCliTestConfig.setOutput(null);
+        schemaArgs.setOutput(null);
         runMainWithCliArgs(true);
         assertNull(main.getOptionalArgs().getOutput());
         assertTrue(targetFile.exists());
@@ -91,17 +93,18 @@ public class SchemaModeArgsTest {
     public void specifiedOutputFileTest() {
         final File schemaOutput = new File("output.json");
         schemaOutput.deleteOnExit();
-        schemaCliTestConfig.setOutput("output.json");
+        schemaArgs.setOutput("output.json");
         runMainWithCliArgs(true);
         assertEquals("output.json", main.getOptionalArgs().getOutput());
     }
 
     @Test
     public void missingRequiredSchemaModeArgFailsTest() {
-        schemaCliTestConfig.setOutput(null);
-        schemaCliTestConfig.setOverwrite(false);
-        schemaCliTestConfig.setEnableStackTraces(false);
-        final var origArgs = schemaCliTestConfig.toListWithoutMode();
+        schemaArgs.setOutput(null);
+        schemaArgs.setOverwrite(false);
+        schemaArgs.setEnableStackTraces(false);
+        main = new SchemaMode(mockCleanRoomsDao);
+        final var origArgs = schemaArgs.toListWithoutMode();
         for (int i = 0; i < origArgs.size(); i++) {
             final List<String> args = new ArrayList<>(origArgs);
             final String arg = origArgs.get(i);
@@ -113,19 +116,19 @@ public class SchemaModeArgsTest {
 
     @Test
     public void validateInputBlankTest() {
-        schemaCliTestConfig.setInput("--invalid");
+        schemaArgs.setInput("--invalid");
         runMainWithCliArgs(false);
     }
 
     @Test
     public void getTargetFileEmptyTest() {
-        schemaCliTestConfig.setOutput("");
+        schemaArgs.setOutput("");
         runMainWithCliArgs(false);
     }
 
     @Test
     public void validateBadLogLevelErrorTest() {
-        schemaCliTestConfig.setVerbosity("SUPER-LOUD-PLEASE");
+        schemaArgs.setVerbosity("SUPER-LOUD-PLEASE");
         runMainWithCliArgs(false);
     }
 
@@ -134,16 +137,16 @@ public class SchemaModeArgsTest {
         final Path schemaPath = Files.createTempFile("schema", ".json");
         schemaPath.toFile().deleteOnExit();
 
-        schemaCliTestConfig.setOutput(schemaPath.toAbsolutePath().toString());
-        schemaCliTestConfig.setSubMode("--interactive");
-        final var args = schemaCliTestConfig.toList();
+        schemaArgs.setOutput(schemaPath.toAbsolutePath().toString());
+        schemaArgs.setSubMode("--interactive");
+        final var args = schemaArgs.toList();
         args.remove(0);
 
         // user input which ends unexpectedly during interactive CLI session
         final var userInput = new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
         System.setIn(new BufferedInputStream(userInput));
 
-        final int exitCode = new CommandLine(main).execute(args.toArray(new String[0]));
+        final int exitCode = new CommandLine(new SchemaMode(mockCleanRoomsDao)).execute(args.toArray(new String[0]));
         assertNotEquals(0, exitCode);
 
         assertTrue(schemaPath.toFile().exists());
@@ -155,7 +158,7 @@ public class SchemaModeArgsTest {
         final ByteArrayOutputStream consoleOutput = new ByteArrayOutputStream();
         final PrintStream pErr = new PrintStream(consoleOutput);
         System.setErr(pErr);
-        schemaCliTestConfig.setSubMode("--invalidMode");
+        schemaArgs.setSubMode("--invalidMode");
         runMainWithCliArgs(false);
         final String expected = "Unknown option: '--invalidMode'";
         assertTrue(consoleOutput.toString(StandardCharsets.UTF_8).contains(expected));
@@ -166,68 +169,105 @@ public class SchemaModeArgsTest {
         final ByteArrayOutputStream nullConsoleOutput = new ByteArrayOutputStream();
         final PrintStream pNullErr = new PrintStream(nullConsoleOutput);
         System.setErr(pNullErr);
-        assertDoesNotThrow(() -> new CommandLine(main).execute("--output=" + schemaCliTestConfig.getOutput(), INPUT_CSV_PATH));
-        assertTrue(nullConsoleOutput.toString(StandardCharsets.UTF_8).startsWith("Error: Missing required argument (specify one of these):"
+        assertDoesNotThrow(() -> new CommandLine(new SchemaMode(mockCleanRoomsDao))
+                .execute("--output=" + schemaArgs.getOutput(), INPUT_CSV_PATH));
+        assertTrue(nullConsoleOutput.toString(StandardCharsets.UTF_8)
+                .startsWith("Error: Missing required argument (specify one of these):"
                 + " (-t | -i)"));
     }
 
     @Test
     public void unknownFileFormatTest() throws IOException {
         final String schemaUnknownExtensionPath = FileTestUtility.createTempFile("schema", ".unknown").toString();
-        schemaCliTestConfig.setInput(schemaUnknownExtensionPath);
-        schemaCliTestConfig.setFileFormat(null);
+        schemaArgs.setInput(schemaUnknownExtensionPath);
+        schemaArgs.setFileFormat(null);
         runMainWithCliArgs(false);
     }
 
     @Test
     public void supportedFileFormatFlagCsvTest() {
-        schemaCliTestConfig.setInput(INPUT_CSV_PATH);
-        schemaCliTestConfig.setFileFormat(FileFormat.CSV);
+        schemaArgs.setInput(INPUT_CSV_PATH);
+        schemaArgs.setFileFormat(FileFormat.CSV);
         runMainWithCliArgs(true);
     }
 
     @Test
     public void unsupportedFileFormatFlagTest() throws IOException {
         final String schemaUnsupportedExtensionPath = FileTestUtility.createTempFile("schema", ".unsupported").toString();
-        schemaCliTestConfig.setInput(schemaUnsupportedExtensionPath);
-        schemaCliTestConfig.setFileFormat(FileFormat.PARQUET);
+        schemaArgs.setInput(schemaUnsupportedExtensionPath);
+        schemaArgs.setFileFormat(FileFormat.PARQUET);
         runMainWithCliArgs(false);
     }
 
     @Test
     public void supportedFileFormatFlagParquetTest() {
-        schemaCliTestConfig.setInput(INPUT_PARQUET_PATH);
-        schemaCliTestConfig.setFileFormat(FileFormat.PARQUET);
+        schemaArgs.setInput(INPUT_PARQUET_PATH);
+        schemaArgs.setFileFormat(FileFormat.PARQUET);
         runMainWithCliArgs(true);
     }
 
     @Test
     public void noHeadersCsvTest() {
-        schemaCliTestConfig.setInput(INPUT_CSV_PATH);
-        schemaCliTestConfig.setFileFormat(FileFormat.CSV);
-        schemaCliTestConfig.setNoHeaders(true);
+        schemaArgs.setInput(INPUT_CSV_PATH);
+        schemaArgs.setFileFormat(FileFormat.CSV);
+        schemaArgs.setNoHeaders(true);
         runMainWithCliArgs(true);
     }
 
     @Test
     public void noHeadersParquetTest() {
-        schemaCliTestConfig.setInput(INPUT_PARQUET_PATH);
-        schemaCliTestConfig.setFileFormat(FileFormat.PARQUET);
-        schemaCliTestConfig.setNoHeaders(true);
+        schemaArgs.setInput(INPUT_PARQUET_PATH);
+        schemaArgs.setFileFormat(FileFormat.PARQUET);
+        schemaArgs.setNoHeaders(true);
         runMainWithCliArgs(false);
     }
 
     @Test
     public void testInvalidIdFormat() {
-        schemaCliTestConfig.setInput(INPUT_CSV_PATH);
-        schemaCliTestConfig.setCollaborationId("invalidCollaborationId");
+        schemaArgs.setInput(INPUT_CSV_PATH);
+        schemaArgs.setCollaborationId("invalidCollaborationId");
         runMainWithCliArgs(false);
     }
 
     @Test
     public void testValidId() {
-        schemaCliTestConfig.setInput(INPUT_CSV_PATH);
-        schemaCliTestConfig.setCollaborationId(GeneralTestUtility.EXAMPLE_SALT.toString());
+        schemaArgs.setInput(INPUT_CSV_PATH);
+        schemaArgs.setCollaborationId(GeneralTestUtility.EXAMPLE_SALT.toString());
         runMainWithCliArgs(true);
+    }
+
+    @Test
+    public void noProfileOrRegionFlagsTest() {
+        // Ensure that if no profile or region flag are passed, then the CleanRoomsDao are not constructed
+        // with any explicit values for them (i.e., ensuring the defaults are used)
+        main = new SchemaMode(mockCleanRoomsDao);
+        new CommandLine(main).execute(schemaArgs.toArrayWithoutMode());
+        assertNull(main.getOptionalArgs().getProfile());
+        assertNull(main.getCleanRoomsDao().getRegion());
+    }
+
+    @Test
+    public void profileFlagTest() throws IOException {
+        // Ensure that passing a value via the --profile flag is given to the CleanRoomsDao builder's `profile(..)` method.
+        final String myProfileName = "my-profile-name";
+        assertNotEquals(myProfileName, mockCleanRoomsDao.toString());
+
+        schemaArgs.setProfile(myProfileName);
+        schemaArgs.setCollaborationId(UUID.randomUUID().toString());
+        main = new SchemaMode(mockCleanRoomsDao);
+        new CommandLine(main).execute(schemaArgs.toArrayWithoutMode());
+        assertEquals(myProfileName, main.getOptionalArgs().getProfile());
+        assertEquals(myProfileName, main.getCleanRoomsDao().getProfile());
+    }
+
+    @Test
+    public void regionFlagTest() {
+        final String myRegion = "collywobbles";
+        schemaArgs.setRegion(myRegion);
+        schemaArgs.setCollaborationId(UUID.randomUUID().toString());
+        main = new SchemaMode(mockCleanRoomsDao);
+        new CommandLine(main).execute(schemaArgs.toArrayWithoutMode());
+        assertEquals(myRegion, main.getOptionalArgs().getRegion());
+        assertEquals(Region.of(myRegion), main.getCleanRoomsDao().getRegion());
     }
 }

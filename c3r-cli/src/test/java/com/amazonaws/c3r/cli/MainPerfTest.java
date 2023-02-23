@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
+import com.amazonaws.c3r.cleanrooms.CleanRoomsDaoTestUtility;
 import com.amazonaws.c3r.io.CsvTestUtility;
 import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.TableGeneratorTestUtility;
@@ -17,7 +18,6 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MainPerfTest {
@@ -50,7 +50,7 @@ public class MainPerfTest {
         encArgs.setSchema(schemaPath);
         encArgs.setOutput(marshalledPath.toString());
 
-        final CleanRoomsDao cleanRoomsDao = mock(CleanRoomsDao.class);
+        final CleanRoomsDao cleanRoomsDao = CleanRoomsDaoTestUtility.generateMockDao();
         when(cleanRoomsDao.getCollaborationDataEncryptionMetadata(any())).thenReturn(encArgs.getClientSettings());
         long totalMarshalTimeSec = 0;
         for (int i = 0; i < repetitions; i++) {

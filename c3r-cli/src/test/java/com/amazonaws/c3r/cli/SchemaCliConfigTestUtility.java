@@ -72,6 +72,16 @@ public class SchemaCliConfigTestUtility {
     private String collaborationId;
 
     /**
+     * AWS CLI profile.
+     */
+    private String profile;
+
+    /**
+     * AWS region.
+     */
+    private String region;
+
+    /**
      * Converts the specified command line parameters to a list.
      *
      * @return List of command line parameters
@@ -103,6 +113,12 @@ public class SchemaCliConfigTestUtility {
         }
         if (collaborationId != null) {
             args.add("--id=" + collaborationId);
+        }
+        if (profile != null) {
+            args.add("--profile=" + profile);
+        }
+        if (region != null) {
+            args.add("--region=" + region);
         }
         return args;
     }
