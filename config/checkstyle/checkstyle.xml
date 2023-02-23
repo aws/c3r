@@ -41,7 +41,6 @@
     <!-- Files must contain a copyright header. -->
     <module name="HeaderCheck">
         <property name="headerFile" value="${config_loc}/license-header.txt"/>
-        <property name="ignoreLines" value="2"/>
     </module>
 
     <!-- Enforce maximum line lengths. -->
