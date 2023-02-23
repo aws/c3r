@@ -24,8 +24,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -37,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-public class SchemaModeArgsTest {
+public class SchemaModeDryRunTest {
     private static final String INPUT_CSV_PATH = "../samples/csv/data_sample_without_quotes.csv";
 
     private static final String INPUT_PARQUET_PATH = "../samples/parquet/data_sample.parquet";
@@ -96,22 +94,6 @@ public class SchemaModeArgsTest {
         schemaArgs.setOutput("output.json");
         runMainWithCliArgs(true);
         assertEquals("output.json", main.getOptionalArgs().getOutput());
-    }
-
-    @Test
-    public void missingRequiredSchemaModeArgFailsTest() {
-        schemaArgs.setOutput(null);
-        schemaArgs.setOverwrite(false);
-        schemaArgs.setEnableStackTraces(false);
-        main = new SchemaMode(mockCleanRoomsDao);
-        final var origArgs = schemaArgs.toListWithoutMode();
-        for (int i = 0; i < origArgs.size(); i++) {
-            final List<String> args = new ArrayList<>(origArgs);
-            final String arg = origArgs.get(i);
-            args.remove(arg);
-            final int exitCode = new CommandLine(main).execute(args.toArray(String[]::new));
-            assertNotEquals(0, exitCode);
-        }
     }
 
     @Test

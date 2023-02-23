@@ -11,13 +11,11 @@ import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class DecryptModeArgsTest {
+public class DecryptModeDryRunTest {
     private static final String INPUT_PATH = "../samples/csv/marshalled_data_sample.csv";
 
     private DecryptCliConfigTestUtility decArgs;
@@ -41,22 +39,6 @@ public class DecryptModeArgsTest {
         runMainWithCliArgs();
         assertEquals(INPUT_PATH, main.getRequiredArgs().getInput());
         assertEquals(GeneralTestUtility.EXAMPLE_SALT, main.getRequiredArgs().getId());
-    }
-
-    @Test
-    public void missingRequiredDecryptArgFailsTest() {
-        decArgs.setDryRun(false);
-        decArgs.setEnableStackTraces(false);
-        decArgs.setOverwrite(false);
-        decArgs.setOutput(null);
-        final var origArgs = decArgs.getCliArgsWithoutMode();
-
-        for (int i = 0; i < origArgs.size(); i++) {
-            final List<String> args = new ArrayList<>(origArgs);
-            final String arg = origArgs.get(i);
-            args.remove(arg);
-            assertNotEquals(0, new CommandLine(main).execute(args.toArray(String[]::new)));
-        }
     }
 
     @Test
