@@ -34,7 +34,7 @@ plugins {
 
     // Vanilla code generation. Read more at:
     // https://projectlombok.org/
-    id "io.freefair.lombok" version "6.6.2"
+    id "io.freefair.lombok" version "6.6.3"
 
     // Aggregate Javadoc generation. Read more at:
     // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
@@ -78,7 +78,7 @@ dependencies {
     implementation project(":c3r-sdk-core")
     implementation project(":c3r-sdk-parquet")
 
-    implementation 'software.amazon.awssdk:cleanrooms:2.20.12'
+    implementation 'software.amazon.awssdk:cleanrooms:2.20.13'
 
     // Logging
     implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
