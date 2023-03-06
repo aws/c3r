@@ -174,7 +174,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 }
 
 task testJar(type: Jar, dependsOn: [classes, testClasses]) {
-    archiveClassifier = 'tests'
+    classifier = 'tests'
     from sourceSets.test.output
 }
 
