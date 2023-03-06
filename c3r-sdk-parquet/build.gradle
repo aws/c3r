@@ -162,7 +162,7 @@ artifacts {
 publishing {
     publications {
         maven(MavenPublication) {
-            version "1.0.0"
+            version "1.1.0"
             groupId 'software.amazon.c3r'
             artifact jar
             artifact sourcesJar
