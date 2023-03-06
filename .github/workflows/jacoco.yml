@@ -35,7 +35,6 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: build
-          gradle-version: 7.5.1
       - name: jacoco-badge-generator
         id: jacoco
         uses: cicirello/jacoco-badge-generator@v2
