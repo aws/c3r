@@ -124,6 +124,18 @@ public class CsvRowReaderTest {
     }
 
     @Test
+    public void tooManyColumnsTest() {
+        assertThrowsExactly(C3rRuntimeException.class,
+                () -> CsvRowReader.builder().sourceName("../samples/csv/one_row_too_many_columns.csv").build());
+    }
+
+    @Test
+    public void tooFewColumnsTest() {
+        assertThrowsExactly(C3rRuntimeException.class,
+                () -> CsvRowReader.builder().sourceName("../samples/csv/one_row_too_few_columns.csv").build());
+    }
+
+    @Test
     public void rowsAreExpectedSizeTest() {
         cReader = CsvRowReader.builder().sourceName("../samples/csv/data_sample_without_quotes.csv").build();
 
