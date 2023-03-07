@@ -30,7 +30,6 @@ pushd $SCRIPT_DIR/.. > /dev/null
 C3R_CLI_DIR=c3r-cli/build/libs
 
 # Build everything
-gradle wrapper
 ./gradlew build -x checkFileUtilTest
 
 # Get the version from the CLI

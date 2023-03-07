@@ -16,10 +16,7 @@ logs/
 
 # Gradle files
 
-gradle/
 .gradle
-gradlew
-gradlew.bat
 **/*gradle.properties
 
 # Other temp files
