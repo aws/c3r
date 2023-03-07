@@ -233,8 +233,8 @@ public final class CsvRowReader extends RowReader<CsvValue> {
     /**
      * Starts iteration style parsing of the CSV file.
      *
-     * @param parser  CSV data parser
-     * @param reader  Source to read CSV data from
+     * @param parser      CSV data parser
+     * @param reader      Source to read CSV data from
      * @param fileCharset Charset for the contents the reader is reading
      * @throws C3rRuntimeException If the file can't be parsed
      */
@@ -322,6 +322,8 @@ public final class CsvRowReader extends RowReader<CsvValue> {
 
     /**
      * Stage the next CSV row.
+     *
+     * @throws C3rRuntimeException If there's a mismatch between the expected column count and the read column count
      */
     protected void refreshNextRow() {
         if (closed) {
@@ -332,6 +334,10 @@ public final class CsvRowReader extends RowReader<CsvValue> {
         if (record == null) {
             nextRow = null;
             return;
+        }
+        if (record.getValues().length != headers.size()) {
+            throw new C3rRuntimeException("Column count mismatch at row " + this.getReadRowCount() + " of input file. Expected "
+                    + headers.size() + " columns, but found " + record.getValues().length + ".");
         }
         nextRow = new CsvRow();
         for (int i = 0; i < headers.size(); i++) {
