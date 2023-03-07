@@ -25,7 +25,7 @@ jobs:
         uses: fkirc/skip-duplicate-actions@v5.3.0
         with:
           concurrent_skipping: 'same_content_newer'
-          paths: '["**/src/**", "**.gradle", "samples/**", "config/**"]'
+          paths: '["**/src/**", "**.gradle", "samples/**", "config/**", ".github/workflows/gradle-build-ci.yml"]'
 
   gradle:
     strategy:
@@ -47,12 +47,13 @@ jobs:
         if: startsWith(matrix.os, 'windows')
         uses: actions/checkout@v3
         with:
-          repository: 'cdarlint/winutils'
+          repository: 'kontext-tech/winutils'
           path: 'hadoop'
       - name: Set up Hadoop env
         if: startsWith(matrix.os, 'windows')
         run: |
-          echo "HADOOP_HOME=${{ github.workspace }}\hadoop\hadoop-3.2.2" >> $env:GITHUB_ENV
+          echo "HADOOP_HOME=${{ github.workspace }}\hadoop\hadoop-3.3.1" >> $env:GITHUB_ENV;
+          echo "${{ github.workspace }}\hadoop\hadoop-3.3.1\bin" >> $env:GITHUB_PATH;
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
