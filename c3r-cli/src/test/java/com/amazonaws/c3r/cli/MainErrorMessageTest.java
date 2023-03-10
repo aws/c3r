@@ -23,6 +23,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -80,25 +81,36 @@ public class MainErrorMessageTest {
 
     private void runAndCheckErrorMessagePresent(final CommandLine cmd, final String[] args, final boolean enableStackTraces,
                                                 final String message, final Class<? extends Throwable> expectedException) {
-        final List<LogEvent> logEvents;
+        final List<LogEvent> errorLogEvents;
+        final List<LogEvent> warnLogEvents;
         try (LogCaptor logCaptor = LogCaptor.forName("ROOT")) {
             cmd.execute(args);
-            logEvents = logCaptor.getLogEvents();
+            errorLogEvents = logCaptor.getLogEvents().stream()
+                    .filter(logEvent -> "ERROR".equals(logEvent.getLevel()))
+                    .collect(Collectors.toList());
+            warnLogEvents = logCaptor.getLogEvents().stream()
+                    .filter(logEvent -> "WARN".equals(logEvent.getLevel()))
+                    .collect(Collectors.toList());
         }
-        assertFalse(logEvents.isEmpty());
-        final LogEvent errorEvent = logEvents.get(logEvents.size() - 1); // The last message is the error
-        final String outputMessage = errorEvent.getFormattedMessage();
+        assertFalse(errorLogEvents.isEmpty());
+        assertFalse(warnLogEvents.isEmpty());
+        final LogEvent errorEvent = errorLogEvents.get(errorLogEvents.size() - 1); // The last error is what we want
+        final LogEvent warnEvent = warnLogEvents.get(warnLogEvents.size() - 1); // The last warning is what we want
+        final String errorMessage = errorEvent.getFormattedMessage();
 
         // Validate presence when stack traces enabled
         if (enableStackTraces) {
             assertTrue(errorEvent.getThrowable().isPresent());
             assertEquals(expectedException, errorEvent.getThrowable().get().getClass());
-            assertTrue(outputMessage.contains(message));
+            assertTrue(errorMessage.contains(message));
         } else {
             // Validate presence when stack traces disabled
             assertFalse(errorEvent.getThrowable().isPresent());
-            assertTrue(outputMessage.contains(message));
+            assertTrue(errorMessage.contains(message));
         }
+        final String warnMessage = warnEvent.getFormattedMessage();
+        // Static check since it's the final message and not dynamic.
+        assertEquals("Output files may have been left on disk.", warnMessage);
     }
 
     @Test

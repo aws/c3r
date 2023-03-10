@@ -72,6 +72,7 @@ public final class Main {
             log.error("An unexpected error occurred: {}", e.getClass());
             log.error("Note: the --enableStackTraces flag can provide additional context for errors.");
         }
+        log.warn("Output files may have been left on disk.");
     }
 
     /**
