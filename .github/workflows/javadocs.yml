@@ -37,6 +37,7 @@ jobs:
         with:
           path: 'build/docs/aggregateJavadoc/'
   deploy:
+    needs: 'gradle'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
