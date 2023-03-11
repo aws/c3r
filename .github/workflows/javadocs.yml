@@ -32,6 +32,10 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: aggregateJavadoc
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'build/docs/aggregateJavadoc/'
   deploy:
     environment:
       name: github-pages
@@ -40,10 +44,6 @@ jobs:
     steps:
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: 'build/docs/aggregateJavadoc/'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
