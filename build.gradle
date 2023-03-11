@@ -1,0 +1,44 @@
+/*
+ Applies core Gradle plugins, which are ones built into Gradle itself.
+*/
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+}
+
+plugins {
+    // Java for compile and unit test of Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/java_plugin.html
+    id 'java'
+
+    // Aggregate Javadoc generation. Read more at:
+    // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
+    id 'io.freefair.aggregate-javadoc-jar' version "6.6.3"
+    id 'io.freefair.javadoc-links' version "6.6.3"
+}
+
+apply plugin: "io.freefair.aggregate-javadoc-jar"
+apply plugin: "io.freefair.javadoc-links"
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+tasks.withType(Javadoc) {
+    options.addBooleanOption("Xdoclint:-missing", true)
+}
+
+dependencies {
+    rootProject.subprojects { subproject ->
+        subproject.plugins.withId("java") {
+            project(":c3r-cli")
+            project(":c3r-sdk-core")
+            project(":c3r-sdk-examples")
+            project(":c3r-sdk-parquet")
+        }
+    }
+}
