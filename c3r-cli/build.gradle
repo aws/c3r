@@ -35,10 +35,6 @@ plugins {
     // Vanilla code generation. Read more at:
     // https://projectlombok.org/
     id "io.freefair.lombok" version "6.6.3"
-
-    // Aggregate Javadoc generation. Read more at:
-    // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
-    id 'io.freefair.javadocs' version "6.6.3"
 }
 
 // SpotBugs for quality checks and reports of source files. Read more at:
