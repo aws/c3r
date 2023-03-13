@@ -1,6 +1,6 @@
 # Cryptographic Computing for Clean Rooms (C3R)
 
-The Cryptographic Computing for Clean Rooms (C3R) encryption client and SDK provide client-side tooling which allows users to participate in AWS Clean Rooms collaborations leveraging cryptographic computing by pre- and post-processing data.
+The Cryptographic Computing for Clean Rooms (C3R) encryption client and software development kit (SDK) provide client-side tooling which allows users to participate in AWS Clean Rooms collaborations leveraging cryptographic computing by pre- and post-processing data.
 
 The [AWS Clean Rooms documentation](https://docs.aws.amazon.com/clean-rooms) contains detailed information regarding how to use the C3R encryption client in conjunction with an AWS Clean Rooms collaboration.
 
@@ -22,7 +22,7 @@ The C3R encryption client command line interface and related JARs can be downloa
 
 Currently CSV and Parquet file formats are supported. Parquet support is limited (see the FAQ and AWS Clean Rooms documentation for details).
 
-The core functionality of the C3R encryption client is format agnostic; its core APIs can be used for any format by implementing the appropriate [RowReader](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowReader.java) and [RowWriter](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowWriter.java) interfaces.
+The core functionality of the C3R encryption client is format agnostic; the SDK can be used for any format by implementing an appropriate [RowReader](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowReader.java) and [RowWriter](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowWriter.java).
 
 ### C3R CLI Modes of Operation
 
