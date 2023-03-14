@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Implementations of {@link com.amazonaws.c3r.data.Value}, {@link com.amazonaws.c3r.data.Row}, and
- * {@link com.amazonaws.c3r.data.RowFactory} for Parquet data. The additional classes to support processing the data, such as schemas and
- * type metadata classes are contained here as well.
+ * Implementation of {@link com.amazonaws.c3r.data.Value}, {@link com.amazonaws.c3r.data.Row}, and
+ * {@link com.amazonaws.c3r.data.RowFactory} for each supported data format. Also contains metadata classes to store additional context for
+ * cryptographic operations on values.
  *
  * <p>
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.

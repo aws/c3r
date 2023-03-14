@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Support for reading and writing rows of Parquet data.
+ * Support for reading and writing rows of data for various data sources.
  *
  * <p>
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.

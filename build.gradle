@@ -35,9 +35,7 @@ tasks.withType(Javadoc) {
 dependencies {
     rootProject.subprojects { subproject ->
         subproject.plugins.withId("java") {
-            project(":c3r-cli")
             project(":c3r-sdk-core")
-            project(":c3r-sdk-examples")
             project(":c3r-sdk-parquet")
         }
     }
