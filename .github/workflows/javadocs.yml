@@ -12,12 +12,13 @@ permissions:
   pages: write
   id-token: write
 
-# Allow one concurrent deployment
+# Allow one concurrent deployment (if a build is already in progress, cancel in favor of the latest Javadocs)
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
+  # Only run if the Java files were potentially updated
   filter:
     runs-on: ubuntu-latest
     outputs:
@@ -29,26 +30,18 @@ jobs:
           concurrent_skipping: 'same_content_newer'
           paths: '["**/src/**", "**.gradle", "**/build.gradle"]'
   javadocs:
+    # Check for potentially new Javadocs
     needs: filter
     if: ${{ needs.filter.outputs.should_skip != 'true' }}
+    # Set the URL to publish docs to (currently top-level GitHub Page for repo)
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      # Build Javadocs only
       - name: Set up repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Update minor version
-        id: version
-        run: |
-          tags=($(git tag -l))
-          last_tag=${tags[${#tags[@]}-1]}
-          new_tag=`echo $last_tag | awk 'BEGIN {FS=".";OFS="."} {print $1 "." $2 "." $3+1}'`
-          git tag $new_tag
-          git push origin $new_tag
-          echo $new_tag
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -57,11 +50,13 @@ jobs:
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: -P${{ steps.version.outputs }} aggregateJavadoc
+          arguments: aggregateJavadoc
+      # Cache Javadocs
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: 'build/docs/aggregateJavadoc/'
+      # Publish Javadocs to URL
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Deploy to GitHub Pages
