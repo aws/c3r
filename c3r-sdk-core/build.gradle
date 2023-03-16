@@ -72,11 +72,17 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
 
+    // AWS Clean Rooms
+    implementation 'software.amazon.awssdk:cleanrooms:2.20.25'
+
     // SQL
     implementation 'org.xerial:sqlite-jdbc:3.41.0.0'
 
     // Parsing - CSV
     implementation 'com.univocity:univocity-parsers:2.9.1'
+
+    // Parsing - JSON
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
     implementation 'com.github.spotbugs:spotbugs-annotations:4.7.3'
