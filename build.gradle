@@ -16,12 +16,12 @@ plugins {
 
     // Aggregate Javadoc generation. Read more at:
     // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
-    id 'io.freefair.aggregate-javadoc' version "6.6.3"
-    id 'io.freefair.javadoc-links' version "6.6.3"
+    id 'io.freefair.javadocs' version "6.6.3"
 }
 
 apply plugin: "io.freefair.aggregate-javadoc"
 apply plugin: "io.freefair.javadoc-links"
+apply plugin: "io.freefair.javadoc-utf-8"
 
 repositories {
     // Use Maven Central for resolving dependencies.

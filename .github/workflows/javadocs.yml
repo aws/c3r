@@ -18,11 +18,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gradle:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5.3.0
+        with:
+          concurrent_skipping: 'same_content_newer'
+          paths: '["**/src/**", "**.gradle", "**/build.gradle"]'
+  javadocs:
+    needs: filter
+    if: ${{ needs.filter.outputs.should_skip != 'true' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Set up repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Update minor version
+        id: version
+        run: |
+          tags=($(git tag -l))
+          last_tag=${tags[${#tags[@]}-1]}
+          new_tag=`echo $last_tag | awk 'BEGIN {FS=".";OFS="."} {print $1 "." $2 "." $3+1}'`
+          git tag $new_tag
+          git push origin $new_tag
+          echo $new_tag
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -31,20 +57,12 @@ jobs:
       - name: Build with Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: aggregateJavadoc
+          arguments: -P${{ steps.version.outputs }} aggregateJavadoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: 'build/docs/aggregateJavadoc/'
-  deploy:
-    needs: 'gradle'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v1
