@@ -130,7 +130,7 @@ public class CleanRoomsDaoTest {
     @Test
     public void initRegionCustomRegion() throws CleanRoomsException {
         final String customRegion = "us-east-1";
-        final CleanRoomsDao dao = CleanRoomsDao.builder().region(Region.of(customRegion)).build();
+        final CleanRoomsDao dao = CleanRoomsDao.builder().region(customRegion).build();
         assertEquals(Region.of(customRegion), dao.initRegion());
     }
 
@@ -140,7 +140,7 @@ public class CleanRoomsDaoTest {
         when(dao.initRegion()).thenThrow(SdkClientException.create("Region oops!"));
         when(dao.initAwsCredentialsProvider()).thenThrow(SdkClientException.create("Credentials oops!"));
         when(dao.getClient()).thenCallRealMethod();
-        assertThrows(C3rRuntimeException.class, () -> dao.getClient());
+        assertThrows(C3rRuntimeException.class, dao::getClient);
     }
 
     @Test
