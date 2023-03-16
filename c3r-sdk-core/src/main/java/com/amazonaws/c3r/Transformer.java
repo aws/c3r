@@ -3,10 +3,18 @@
 
 package com.amazonaws.c3r;
 
+import com.amazonaws.c3r.config.ClientSettings;
+import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.encryption.EncryptionContext;
+import com.amazonaws.c3r.encryption.Encryptor;
+import com.amazonaws.c3r.encryption.providers.SymmetricStaticProvider;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Performs the marshalling/unmarshalling of ciphertext that may be used in a clean room.
@@ -81,5 +89,29 @@ public abstract class Transformer {
             throw new C3rRuntimeException("Marshalled bytes too long for Glue. Glue supports a maximum length of "
                     + MAX_GLUE_STRING_BYTES + " bytes but marshalled value was " + marshalledBytes.length + " bytes.");
         }
+    }
+
+    /**
+     * Create cryptographic transforms available for use.
+     *
+     * @param secretKey                Clean room key used to generate sub-keys for HMAC and encryption
+     * @param salt                     Salt that can be publicly known but adds to randomness of cryptographic operations
+     * @param settings                 Clean room cryptographic settings
+     * @param failOnFingerprintColumns Whether to throw an error if a Fingerprint column is seen in the data
+     * @return Mapping of {@link ColumnType} to the appropriate {@link Transformer}
+     */
+    public static Map<ColumnType, Transformer> initTransformers(final SecretKey secretKey, final String salt, final ClientSettings settings,
+                                                                final boolean failOnFingerprintColumns) {
+        final Encryptor encryptor = Encryptor.getInstance(new SymmetricStaticProvider(secretKey,
+                salt.getBytes(StandardCharsets.UTF_8)));
+        final Map<ColumnType, Transformer> transformers = new LinkedHashMap<>();
+        transformers.put(ColumnType.CLEARTEXT, new CleartextTransformer());
+        transformers.put(ColumnType.FINGERPRINT, new FingerprintTransformer(
+                secretKey,
+                salt.getBytes(StandardCharsets.UTF_8),
+                settings,
+                failOnFingerprintColumns));
+        transformers.put(ColumnType.SEALED, new SealedTransformer(encryptor, settings));
+        return transformers;
     }
 }

@@ -3,23 +3,13 @@
 
 package com.amazonaws.c3r.config;
 
-import com.amazonaws.c3r.CleartextTransformer;
-import com.amazonaws.c3r.FingerprintTransformer;
-import com.amazonaws.c3r.SealedTransformer;
-import com.amazonaws.c3r.Transformer;
-import com.amazonaws.c3r.encryption.Encryptor;
-import com.amazonaws.c3r.encryption.providers.SymmetricStaticProvider;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
-import javax.crypto.SecretKey;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Basic information needed whether encrypting or decrypting data.
@@ -89,30 +79,6 @@ public abstract class Config {
         } else {
             return sourceFileNameNoPath.substring(0, extensionIndex) + ".out" + sourceFileNameNoPath.substring(extensionIndex);
         }
-    }
-
-    /**
-     * Create cryptographic transforms available for use.
-     *
-     * @param secretKey         Clean room key used to generate sub-keys for HMAC and encryption
-     * @param salt              Salt that can be publicly known but adds to randomness of cryptographic operations
-     * @param settings          Clean room cryptographic settings
-     * @param failOnFingerprintColumns Whether to throw an error if a Fingerprint column is seen in the data
-     * @return Mapping of {@link ColumnType} to the appropriate {@link Transformer}
-     */
-    protected Map<ColumnType, Transformer> initTransformers(final SecretKey secretKey, final String salt, final ClientSettings settings,
-                                                            final boolean failOnFingerprintColumns) {
-        final Encryptor encryptor = Encryptor.getInstance(new SymmetricStaticProvider(secretKey,
-                salt.getBytes(StandardCharsets.UTF_8)));
-        final Map<ColumnType, Transformer> transformers = new LinkedHashMap<>();
-        transformers.put(ColumnType.CLEARTEXT, new CleartextTransformer());
-        transformers.put(ColumnType.FINGERPRINT, new FingerprintTransformer(
-                secretKey,
-                salt.getBytes(StandardCharsets.UTF_8),
-                settings,
-                failOnFingerprintColumns));
-        transformers.put(ColumnType.SEALED, new SealedTransformer(encryptor, settings));
-        return transformers;
     }
 
     /**
