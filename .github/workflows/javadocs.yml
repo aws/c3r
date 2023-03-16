@@ -18,7 +18,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versioning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update minor version
+        uses: actions/github-script@v6
+        id: last-version
+        with:
+          result-encoding: string
+          retries: 3
+          script: |
+            github.rest.repos.listTags({
+            aws,
+            c3r,
+            1,
+            1})
+      - name: Show Version
+        run: echo "${{steps.last-version.outputs.result}}"
   gradle:
+    needs: 'versioning'
     runs-on: ubuntu-latest
     steps:
       - name: Set up repository
