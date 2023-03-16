@@ -4,11 +4,11 @@
 package com.amazonaws.c3r.io;
 
 import com.amazonaws.c3r.config.ColumnHeader;
+import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.data.Value;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
-import com.amazonaws.c3r.internal.ColumnInsight;
 import com.amazonaws.c3r.io.sql.SqlTable;
 import com.amazonaws.c3r.io.sql.TableGenerator;
 import lombok.Getter;

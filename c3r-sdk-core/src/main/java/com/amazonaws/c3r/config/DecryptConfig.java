@@ -46,7 +46,7 @@ public final class DecryptConfig extends Config {
                           @NonNull final String salt,
                           final boolean failOnFingerprintColumns) {
         super(sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue);
-        transformers = initTransformers(secretKey, salt, null, failOnFingerprintColumns);
+        transformers = Transformer.initTransformers(secretKey, salt, null, failOnFingerprintColumns);
     }
 
 }

@@ -1,13 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.amazonaws.c3r.internal;
+package com.amazonaws.c3r.config;
 
-import com.amazonaws.c3r.config.ColumnHeader;
-import com.amazonaws.c3r.config.ColumnSchema;
-import com.amazonaws.c3r.config.ColumnType;
-import com.amazonaws.c3r.config.Pad;
-import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.data.CsvValue;
 import org.junit.jupiter.api.Test;
 
