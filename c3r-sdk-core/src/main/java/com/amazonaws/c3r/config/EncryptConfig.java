@@ -72,7 +72,7 @@ public final class EncryptConfig extends Config {
         this.tempDir = tempDir;
         this.settings = settings;
         this.tableSchema = tableSchema;
-        transformers = initTransformers(secretKey, salt, settings, false);
+        transformers = Transformer.initTransformers(secretKey, salt, settings, false);
         validate();
     }
 
