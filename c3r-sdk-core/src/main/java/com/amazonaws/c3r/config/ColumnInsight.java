@@ -1,10 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.amazonaws.c3r.internal;
+package com.amazonaws.c3r.config;
 
-import com.amazonaws.c3r.config.ColumnSchema;
-import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.data.Value;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -23,6 +21,7 @@ public class ColumnInsight extends ColumnSchema {
      * otherwise the field is set to {@code 0} and ignored.
      */
     @Getter
+    @Setter
     private int maxValueLength;
 
     /**

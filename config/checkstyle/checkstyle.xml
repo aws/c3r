@@ -19,6 +19,10 @@
         <property name="id" value="SkipMainFiles"/>
     </module>
     <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[\\/]examples[\\/]"/>
+        <property name="id" value="SkipExampleFiles"/>
+    </module>
+    <module name="SuppressionSingleFilter">
         <property name="files" value=".*[\\/]examples[\\/]|.*[\\/]src[\\/]test[\\/]"/>
         <property name="id" value="MainFilesOnly"/>
     </module>
@@ -32,11 +36,7 @@
         <property name="eachLine" value="true"/>
     </module>
 
-    <module name="SuppressWithPlainTextCommentFilter">
-        <property name="offCommentFormat" value="CHECKSTYLE\:SUPPRESS\:([\w\|]+)"/>
-        <property name="onCommentFormat" value="CHECKSTYLE\:UNSUPPRESS\:([\w\|]+)$"/>
-        <property name="checkFormat" value="$1"/>
-    </module>
+    <module name="SuppressWithPlainTextCommentFilter"/>
 
     <!-- Files must contain a copyright header. -->
     <module name="HeaderCheck">
@@ -422,7 +422,7 @@
             <property name="illegalPattern" value="true"/>
             <property name="message" value="Don't use System console for logging, use a logger instead"/>
             <property name="ignoreComments" value="true"/>
-            <property name="id" value="SkipTestFiles"/>
+            <property name="id" value="SkipExampleFiles"/>
         </module>
 
         <!-- Checks that we don't use Objects.hash. Objects.hashCode is preferred-->

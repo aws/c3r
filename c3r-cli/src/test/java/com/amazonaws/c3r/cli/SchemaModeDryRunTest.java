@@ -13,7 +13,6 @@ import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
-import software.amazon.awssdk.regions.Region;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -155,7 +154,7 @@ public class SchemaModeDryRunTest {
                 .execute("--output=" + schemaArgs.getOutput(), INPUT_CSV_PATH));
         assertTrue(nullConsoleOutput.toString(StandardCharsets.UTF_8)
                 .startsWith("Error: Missing required argument (specify one of these):"
-                + " (-t | -i)"));
+                        + " (-t | -i)"));
     }
 
     @Test
@@ -250,6 +249,6 @@ public class SchemaModeDryRunTest {
         main = new SchemaMode(mockCleanRoomsDao);
         new CommandLine(main).execute(schemaArgs.toArrayWithoutMode());
         assertEquals(myRegion, main.getOptionalArgs().getRegion());
-        assertEquals(Region.of(myRegion), main.getCleanRoomsDao().getRegion());
+        assertEquals(myRegion, main.getCleanRoomsDao().getRegion());
     }
 }

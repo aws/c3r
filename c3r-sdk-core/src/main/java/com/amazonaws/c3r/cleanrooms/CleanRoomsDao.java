@@ -52,7 +52,7 @@ public final class CleanRoomsDao {
      * AWS region to use with the AWS SDK.
      */
     @With
-    private final Region region;
+    private final String region;
 
     /**
      * Construct an CleanRoomsDao with default specified settings.
@@ -61,7 +61,7 @@ public final class CleanRoomsDao {
      * @param region AWS region to use with the AWS SDK
      */
     @Builder
-    private CleanRoomsDao(final String profile, final Region region) {
+    private CleanRoomsDao(final String profile, final String region) {
         this.profile = profile;
         this.region = region;
     }
@@ -90,7 +90,7 @@ public final class CleanRoomsDao {
         if (region == null) {
             return DefaultAwsRegionProviderChain.builder().build().getRegion();
         } else {
-            return region;
+            return Region.of(region);
         }
     }
 

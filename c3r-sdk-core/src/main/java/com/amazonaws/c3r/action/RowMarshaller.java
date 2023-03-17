@@ -6,6 +6,7 @@ package com.amazonaws.c3r.action;
 import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
+import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.PadType;
@@ -15,7 +16,6 @@ import com.amazonaws.c3r.data.RowFactory;
 import com.amazonaws.c3r.data.Value;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
-import com.amazonaws.c3r.internal.ColumnInsight;
 import com.amazonaws.c3r.internal.Nonce;
 import com.amazonaws.c3r.io.RowReader;
 import com.amazonaws.c3r.io.RowWriter;
@@ -423,8 +423,8 @@ public final class RowMarshaller<T extends Value> {
     /**
      * Closes the connections to the input source, output target and SQL database as well as deleting the database.
      *
-     * @throws C3rRuntimeException  If there's an error closing connections to the input file, output file, SQL database,
-     *                              or the SQL database file.
+     * @throws C3rRuntimeException If there's an error closing connections to the input file, output file, SQL database,
+     *                             or the SQL database file.
      */
     public void close() {
         try {
