@@ -3,10 +3,6 @@
 
 package com.amazonaws.c3r.json;
 
-import com.amazonaws.c3r.cli.CliTestUtility;
-import com.amazonaws.c3r.cli.EncryptCliConfigTestUtility;
-import com.amazonaws.c3r.cli.EncryptMode;
-import com.amazonaws.c3r.cli.Main;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
@@ -16,23 +12,18 @@ import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.PositionalTableSchema;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
-import com.amazonaws.c3r.io.CsvTestUtility;
 import com.amazonaws.c3r.utils.FileTestUtility;
-import com.amazonaws.c3r.utils.FileUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test class for Positional Schema specific portions of JSON parsing.
 public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCommonTypeAdapterTestInterface {
@@ -214,77 +205,6 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
         assertEquals(ColumnHeader.getColumnHeaderFromIndex(2), col3.getSourceHeader());
         assertEquals("column 3", col3.getTargetHeader().toString());
         assertEquals(ColumnType.CLEARTEXT, col3.getType());
-    }
-
-    /*
-     * Add an extra column row to a known valid schema and make sure it's not accepted because it doesn't have the same number
-     * of columns as the csv file. Easiest to run through the CLI since we need the CSV parser for verification.
-     */
-    @Test
-    public void tooManyRowsPositionalSchemaTest() throws IOException {
-        final String tempJson = FileUtil.readBytes("../samples/schema/config_sample_no_headers.json");
-        final int closeOuter = tempJson.lastIndexOf("]");
-        final String json = tempJson.substring(0, closeOuter - 1) + ", [] ] }";
-        Files.writeString(schema, json);
-
-        final EncryptCliConfigTestUtility args =
-                EncryptCliConfigTestUtility.defaultDryRunTestArgs("../samples/csv/data_sample_without_quotes.csv", schema.toString());
-        args.setDryRun(false);
-
-        final var inputArgs = args.toArrayWithoutMode();
-        assertEquals(Main.FAILURE, EncryptMode.getApp(null).execute(inputArgs));
-    }
-
-    /*
-     * Remove a column row to a known valid schema and make sure it's not accepted because it doesn't have the same number
-     * of columns as the csv file. Easiest to run through the CLI since we need the CSV parser for verification.
-     */
-    @Test
-    public void tooFewRowsPositionalSchemaTest() throws IOException {
-        final String tempJson = FileUtil.readBytes("../samples/schema/config_sample_no_headers.json");
-        final int lastElementStart = tempJson.lastIndexOf("],");
-        final String json = tempJson.substring(0, lastElementStart - 1) + "]]}";
-        Files.writeString(schema, json);
-
-        final var args = EncryptCliConfigTestUtility.defaultDryRunTestArgs("../samples/csv/data_sample_no_headers.csv", schema.toString());
-        args.setDryRun(false);
-
-        final var inputArgs = args.toArrayWithoutMode();
-        assertEquals(Main.FAILURE, EncryptMode.getApp(null).execute(inputArgs));
-    }
-
-    /*
-     * Make sure only the rows with ColumnSchemas are included in the output. Easiest to run through the CLI since we need
-     * the CSV parser for verification.
-     */
-    @Test
-    public void notAllRowsUsedTest() throws IOException {
-        final String json = "{ \"headerRow\": false, \"columns\": [" +
-                "[{\"targetHeader\":\"firstname\", \"type\": \"cleartext\"}]," +
-                "[]," +
-                "[]," +
-                "[]," +
-                "[]," +
-                "[]," +
-                "[]," +
-                "[]," +
-                "[]" +
-                "]}";
-        Files.writeString(schema, json);
-
-        final EncryptCliConfigTestUtility args =
-                EncryptCliConfigTestUtility.defaultDryRunTestArgs("../samples/csv" + "/data_sample_without_quotes.csv", schema.toString());
-        final String output = FileTestUtility.createTempFile().toString();
-        args.setOutput(output);
-        args.setDryRun(false);
-
-        assertEquals(Main.SUCCESS, CliTestUtility.runWithoutCleanRooms(args));
-        final List<Map<String, String>> rows = CsvTestUtility.readRows(args.getOutput());
-        assertTrue(rows.size() > 0);
-        for (Map<String, String> row : rows) {
-            assertEquals(1, row.size());
-            assertTrue(row.containsKey("firstname"));
-        }
     }
 
     // Make sure null values in columns throw an error

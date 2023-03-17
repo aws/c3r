@@ -12,7 +12,6 @@ import com.amazonaws.c3r.io.schema.ParquetSchemaGenerator;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
-import software.amazon.awssdk.regions.Region;
 
 import java.io.File;
 import java.util.Objects;
@@ -209,9 +208,8 @@ public class SchemaMode implements Callable<Integer> {
         if (optionalArgs.id == null) {
             return null;
         }
-        final var region = optionalArgs.region == null ? null : Region.of(optionalArgs.region);
         final var dao = cleanRoomsDao != null ? cleanRoomsDao : CleanRoomsDao.builder().build();
-        return dao.withProfile(optionalArgs.profile).withRegion(region)
+        return dao.withProfile(optionalArgs.profile).withRegion(optionalArgs.region)
                 .getCollaborationDataEncryptionMetadata(optionalArgs.id.toString());
     }
 
