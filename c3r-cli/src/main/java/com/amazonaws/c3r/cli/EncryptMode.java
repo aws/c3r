@@ -22,7 +22,6 @@ import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
-import software.amazon.awssdk.regions.Region;
 
 import javax.crypto.SecretKey;
 import java.util.ArrayList;
@@ -211,9 +210,8 @@ public class EncryptMode implements Callable<Integer> {
      * @return Cryptographic computing rules for collaboration
      */
     public ClientSettings getClientSettings() {
-        final var region = optionalArgs.region == null ? null : Region.of(optionalArgs.region);
         final var dao = cleanRoomsDao != null ? cleanRoomsDao : CleanRoomsDao.builder().build();
-        return dao.withProfile(optionalArgs.profile).withRegion(region)
+        return dao.withProfile(optionalArgs.profile).withRegion(optionalArgs.region)
                 .getCollaborationDataEncryptionMetadata(requiredArgs.id.toString());
     }
 

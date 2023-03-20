@@ -8,9 +8,10 @@ on:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
+  actions: read
   contents: read
-  pages: write
   id-token: write
+  pages: write
 
 # Allow one concurrent deployment (if a build is already in progress, cancel in favor of the latest Javadocs)
 concurrency:
@@ -27,12 +28,13 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5.3.0
         with:
+          # If the Java sources, build files, configuration files or workflows have been updated, we should update the Javadocs.
           concurrent_skipping: 'same_content_newer'
-          paths: '["**/src/**", "**.gradle", "**/build.gradle"]'
+          paths: '["**/src/**", "**.gradle", "**/build.gradle", ".github/workflows/**"]'
   javadocs:
-    # Check for potentially new Javadocs
+    # Check for potentially new Javadocs and that we're on the correct repository
     needs: filter
-    if: ${{ needs.filter.outputs.should_skip != 'true' }}
+    if: ${{ needs.filter.outputs.should_skip != 'true' && github.repository == 'aws/c3r' }}
     # Set the URL to publish docs to (currently top-level GitHub Page for repo)
     environment:
       name: github-pages

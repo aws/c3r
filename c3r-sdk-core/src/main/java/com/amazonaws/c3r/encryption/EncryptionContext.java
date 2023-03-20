@@ -3,13 +3,13 @@
 
 package com.amazonaws.c3r.encryption;
 
+import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.encryption.materials.DecryptionMaterials;
 import com.amazonaws.c3r.encryption.materials.EncryptionMaterials;
 import com.amazonaws.c3r.encryption.providers.EncryptionMaterialsProvider;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
-import com.amazonaws.c3r.internal.ColumnInsight;
 import com.amazonaws.c3r.internal.Nonce;
 import com.amazonaws.c3r.internal.Validatable;
 import lombok.Builder;
@@ -55,10 +55,10 @@ public final class EncryptionContext implements Validatable {
     /**
      * Create the configuration for encrypting this particular column.
      *
-     * @param columnLabel Name of column
-     * @param nonce Pseudorandom number
-     * @param padType Type of padding used on the column, or {@code null} if not applicable
-     * @param padLength Length of padding in bytes, or {@code null} if not applicable
+     * @param columnLabel    Name of column
+     * @param nonce          Pseudorandom number
+     * @param padType        Type of padding used on the column, or {@code null} if not applicable
+     * @param padLength      Length of padding in bytes, or {@code null} if not applicable
      * @param maxValueLength Maximum length in bytes of the values for this context
      * @param clientDataType Data type before encryption
      */
@@ -78,8 +78,8 @@ public final class EncryptionContext implements Validatable {
     /**
      * Create the configuration for encrypting this particular column.
      *
-     * @param columnInsight Information about the column
-     * @param nonce Pseudorandom number
+     * @param columnInsight  Information about the column
+     * @param nonce          Pseudorandom number
      * @param clientDataType Data type before encryption
      */
     public EncryptionContext(final ColumnInsight columnInsight,
