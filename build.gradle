@@ -29,14 +29,8 @@ repositories {
 }
 
 tasks.withType(Javadoc) {
-    options.addBooleanOption("Xdoclint:-missing", true)
-}
-
-dependencies {
-    rootProject.subprojects { subproject ->
-        subproject.plugins.withId("java") {
-            project(":c3r-sdk-core")
-            project(":c3r-sdk-parquet")
-        }
-    }
+    title("C3R Javadocs Version 1.1.0-SNAPSHOT")
+    options.addNumberOption("source", 11)
+    options.addStringOption("exclude", "com.amazonaws.c3r.cli:com.amazonaws.c3r.io.schema:com.amazonaws.c3r.examples")
+    options.addStringOption("group", "Parquet com.amazonaws.c3r.action.ParquetRowMarshaller:com.amazonaws.c3r.action.ParquetRowUnmarshaller")
 }
