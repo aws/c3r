@@ -34,7 +34,7 @@ jobs:
   javadocs:
     # Check for potentially new Javadocs and that we're on the correct repository
     needs: filter
-    if: ${{ needs.filter.outputs.should_skip != 'true' && github.repository == 'aws/c3r' }}
+    if: ${{ needs.filter.outputs.should_skip != 'true' && github.repository == 'm271828/c3r' }}
     # Set the URL to publish docs to (currently top-level GitHub Page for repo)
     environment:
       name: github-pages
