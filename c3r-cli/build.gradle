@@ -38,7 +38,7 @@ plugins {
 
     // Aggregate Javadoc generation. Read more at:
     // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
-    id 'io.freefair.javadocs' version "6.6.3"
+    id 'io.freefair.javadocs' version "8.0.1"
 }
 
 // SpotBugs for quality checks and reports of source files. Read more at:
