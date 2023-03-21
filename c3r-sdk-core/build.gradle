@@ -206,9 +206,9 @@ publishing {
         maven(MavenPublication) {
             version "1.1.0"
             groupId 'software.amazon.c3r'
-            artifact jar
             artifact sourcesJar
             artifact javadocJar
+            from components.java
             pom {
                 name = 'Amazon C3R SDK Core'
                 description = 'Cryptographic Computing for Clean Rooms SDK Core'
@@ -236,7 +236,7 @@ publishing {
         }
     }
     repositories {
-        maven{
+        maven {
             url = 'https://aws.oss.sonatype.org/service/local/staging/deploy/maven2/'
             credentials(PasswordCredentials)
         }
