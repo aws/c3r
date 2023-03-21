@@ -10,7 +10,7 @@ public final class CliDescriptions {
     /**
      * Current version number for Cryptographic Computing for Clean Room's command line interface for AWS Clean Rooms.
      */
-    public static final String VERSION = "1.1.0";
+    public static final String VERSION = "1.1.1";
 
     /**
      * Description of AWS profile.

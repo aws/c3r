@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.1.1] - 2023-03-21
+
+### Changed
+- ColumnInsight moved from SDK internal to SDK config dir (#114)
+- Config.initTransformers moved to Transformer class and made publicly available (#114)
+- JSON utilities and AWS Clean Rooms DAO moved from CLI to SDK (#112)
+- Bump trufflesecurity/trufflehog from 3.28.7 to 3.29.1
+- Bump Gradle from 7.5.1 to 8.0.1
+- Bump software.amazon.awssdk:cleanrooms from 2.20.17 to 2.20.28
+- Bump org.xerial:sqlite-jdbc from 3.41.0.0 to 3.41.0.1
+- Bump org.mockito:mockito-inline from 5.1.1 to 5.2.0
+- Bump org.mockito:mockito-core from 5.1.1 to 5.2.0
+- Bump io.freefair.lombok from 6.6.3 to 8.0.1
+- Bump io.freefair.javadocs from 6.6.3 to 8.0.1
+- Bump com.github.johnrengelman.shadow from 7.1.2 to 8.1.1
+
+### Added
+- Add CSV column count validation (#97)
+- Add Spark example (#117)
+
+### Fixed
+- POM file generated for Maven release now includes dependencies (#124)
+
 ## [1.1.0] - 2023-03-06
 
 ### Changed
