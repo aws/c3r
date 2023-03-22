@@ -106,7 +106,7 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
 
     // Logging test tools
-    testImplementation 'io.github.hakky54:logcaptor:2.8.0'
+    testImplementation 'io.github.hakky54:logcaptor:2.9.0'
 }
 
 application {
