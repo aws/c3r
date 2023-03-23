@@ -81,7 +81,7 @@ dependencies {
     //           Classes requiring this dependency:
     //           + org.apache.hadoop.conf.Configuration
     //           + org.apache.hadoop.fs.Path
-    implementation 'org.apache.hadoop:hadoop-common:3.3.4'
+    implementation 'org.apache.hadoop:hadoop-common:3.3.5'
     implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:3.3.5'
 
     // Testing
