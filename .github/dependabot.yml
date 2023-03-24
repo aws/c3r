@@ -9,6 +9,8 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "io.freefair.javadocs:io.freefair.javadocs.gradle.plugin"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
