@@ -118,7 +118,3 @@ jar {
         attributes('Multi-Release': true)
     }
 }
-
-tasks.withType(Javadoc) {
-    options.addBooleanOption("Xdoclint:-missing", true)
-}

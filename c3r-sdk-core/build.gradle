@@ -246,7 +246,3 @@ publishing {
 signing {
     sign publishing.publications.maven
 }
-
-tasks.withType(Javadoc) {
-    options.addBooleanOption("Xdoclint:-missing", true)
-}
