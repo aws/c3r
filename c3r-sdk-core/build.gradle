@@ -76,7 +76,7 @@ dependencies {
     implementation 'software.amazon.awssdk:cleanrooms:2.20.31'
 
     // SQL
-    implementation 'org.xerial:sqlite-jdbc:3.41.2.0'
+    implementation 'org.xerial:sqlite-jdbc:3.41.2.1'
 
     // Parsing - CSV
     implementation 'com.univocity:univocity-parsers:2.9.1'
