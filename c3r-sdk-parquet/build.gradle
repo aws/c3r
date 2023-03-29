@@ -1,23 +1,7 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-}
-
 plugins {
     // Java compilation, unit tests, and library distribution needs. Read more at:
     // https://docs.gradle.org/current/userguide/java_library_plugin.html
     id 'java-library'
-
-    // Checkstyle for style checks and reports on Java source files. Read more at:
-    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
-    id 'checkstyle'
-
-    // JaCoCo for coverage metrics and reports of Java source files. Read more at:
-    // https://docs.gradle.org/current/userguide/jacoco_plugin.html
-    id 'jacoco'
 
     // Maven publishing needs
     id 'maven-publish'
@@ -31,27 +15,10 @@ plugins {
 
     // Vanilla code generation. Read more at:
     // https://projectlombok.org/
-    id "io.freefair.lombok" version "8.0.1"
+    id "io.freefair.lombok" version "$freefair_version"
 }
 
 apply plugin: 'com.github.spotbugs'
-
-/*
- Configures the Checkstyle "checkstyle" plugin. Remove this and the plugin if
- you want to skip these checks and report generation.
-*/
-checkstyle {
-    sourceSets = [sourceSets.main, sourceSets.test]
-    configFile = file('../config/checkstyle/checkstyle.xml')
-    configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
-    configDirectory.set(file('../config/checkstyle'))
-    ignoreFailures = false
-}
-
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenCentral()
-}
 
 /*
  Configures the SpotBugs "com.github.spotbugs" plugin. Remove this and the
@@ -63,14 +30,11 @@ spotbugs {
     excludeFilter.set(file("../config/spotbugs/excludeFilter.xml"))
 }
 
+ext.hadoop_version = '3.3.5'
+
 dependencies {
     // AWS-C3R
     implementation project(":c3r-sdk-core")
-
-    // Logging
-    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
 
     // Parsing - Parquet
     implementation 'org.apache.parquet:parquet-hadoop:1.12.3'
@@ -81,15 +45,9 @@ dependencies {
     //           Classes requiring this dependency:
     //           + org.apache.hadoop.conf.Configuration
     //           + org.apache.hadoop.fs.Path
-    implementation 'org.apache.hadoop:hadoop-common:3.3.5'
-    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:3.3.5'
+    implementation "org.apache.hadoop:hadoop-common:$hadoop_version"
+    implementation "org.apache.hadoop:hadoop-mapreduce-client-core:$hadoop_version"
 
-    // Testing
-    testImplementation 'org.mockito:mockito-core:5.2.0'
-    testImplementation 'org.mockito:mockito-inline:5.2.0'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
     testImplementation project(path: ':c3r-sdk-core', configuration: 'testArtifacts')
 }
 
@@ -112,35 +70,6 @@ test {
     }
 
     finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-    dependsOn test // tests are required to run before generating the report
-    reports {
-        csv.required = true
-        html.required = true
-    }
-}
-
-check.dependsOn jacocoTestCoverageVerification
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = 0.85
-            }
-        }
-    }
-}
-
-tasks.withType(JavaCompile) {
-    options.release = 11
-}
-
-jar {
-    manifest {
-        attributes('Multi-Release': true)
-    }
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -203,8 +132,4 @@ publishing {
 
 signing {
     sign publishing.publications.maven
-}
-
-tasks.withType(Javadoc) {
-    options.addBooleanOption("Xdoclint:-missing", true)
 }

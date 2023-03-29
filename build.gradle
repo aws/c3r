@@ -1,0 +1,94 @@
+subprojects {
+    /*
+    Applies core Gradle plugins, which are ones built into Gradle itself.
+    */
+    buildscript {
+        repositories {
+            maven {
+                url "https://plugins.gradle.org/m2/"
+            }
+        }
+    }
+
+    repositories {
+        // Use Maven Central for resolving dependencies.
+        mavenCentral()
+    }
+
+    apply plugin: 'java'
+
+    // JaCoCo for coverage metrics and reports of Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/jacoco_plugin.html
+    apply plugin: 'jacoco'
+
+    // Checkstyle for style checks and reports on Java source files. Read more at:
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    apply plugin: 'checkstyle'
+
+    ext.freefair_version = '8.0.1'
+    ext.junit_version = '5.9.2'
+    ext.log4j_version = '2.20.0'
+    ext.mockito_version = '5.2.0'
+
+    dependencies {
+        // Logging
+        implementation "org.apache.logging.log4j:log4j-api:$log4j_version"
+        implementation "org.apache.logging.log4j:log4j-core:$log4j_version"
+        implementation "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version"
+
+        // Test infrastructure
+        testImplementation "org.junit.jupiter:junit-jupiter-api:$junit_version"
+        testImplementation "org.junit.jupiter:junit-jupiter-params:$junit_version"
+        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit_version"
+
+        // Test mocking
+        testImplementation "org.mockito:mockito-core:$mockito_version"
+        testImplementation "org.mockito:mockito-inline:$mockito_version"
+    }
+
+
+    check.dependsOn jacocoTestCoverageVerification
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                limit {
+                    minimum = 0.85
+                }
+            }
+        }
+    }
+
+    jacocoTestReport {
+        dependsOn test // tests are required to run before generating the report
+        reports {
+            csv.required = true
+            html.required = true
+        }
+    }
+
+    /*
+    Configures the Checkstyle "checkstyle" plugin. Remove this and the plugin if
+    you want to skip these checks and report generation.
+    */
+    checkstyle {
+        sourceSets = [sourceSets.main, sourceSets.test]
+        configFile = file('../config/checkstyle/checkstyle.xml')
+        configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
+        configDirectory.set(file('../config/checkstyle'))
+        ignoreFailures = false
+    }
+
+    tasks.withType(JavaCompile) {
+        options.release = 11
+    }
+
+    tasks.withType(Javadoc) {
+        options.addBooleanOption("Xdoclint:-missing", true)
+    }
+
+    jar {
+        manifest {
+            attributes('Multi-Release': true)
+        }
+    }
+}

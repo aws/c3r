@@ -1,27 +1,4 @@
-/*
- Applies core Gradle plugins, which are ones built into Gradle itself.
-*/
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-}
-
 plugins {
-    // Java for compile and unit test of Java source files. Read more at:
-    // https://docs.gradle.org/current/userguide/java_plugin.html
-    id 'java'
-
-    // Checkstyle for style checks and reports on Java source files. Read more at:
-    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
-    id 'checkstyle'
-
-    // JaCoCo for coverage metrics and reports of Java source files. Read more at:
-    // https://docs.gradle.org/current/userguide/jacoco_plugin.html
-    id 'jacoco'
-
     // Support using this application on the CLI
     id 'application'
 
@@ -34,34 +11,17 @@ plugins {
 
     // Vanilla code generation. Read more at:
     // https://projectlombok.org/
-    id "io.freefair.lombok" version "8.0.1"
+    id "io.freefair.lombok" version "$freefair_version"
 
     // Aggregate Javadoc generation. Read more at:
     // https://docs.freefair.io/gradle-plugins/6.6.1/reference/#_io_freefair_javadocs
-    id 'io.freefair.javadocs' version "8.0.1"
+    id 'io.freefair.javadocs' version "$freefair_version"
 }
 
 // SpotBugs for quality checks and reports of source files. Read more at:
 // https://spotbugs.readthedocs.io/en/stable/gradle.html
 apply plugin: 'com.github.spotbugs'
 apply plugin: 'com.github.johnrengelman.shadow'
-
-/*
- Configures the Checkstyle "checkstyle" plugin. Remove this and the plugin if
- you want to skip these checks and report generation.
-*/
-checkstyle {
-    sourceSets = [sourceSets.main, sourceSets.test]
-    configFile = file('../config/checkstyle/checkstyle.xml')
-    configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
-    configDirectory.set(file('../config/checkstyle'))
-    ignoreFailures = false
-}
-
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenCentral()
-}
 
 /*
  Configures the SpotBugs "com.github.spotbugs" plugin. Remove this and the
@@ -78,11 +38,6 @@ dependencies {
     implementation project(":c3r-sdk-core")
     implementation project(":c3r-sdk-parquet")
 
-    // Logging
-    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
-
     // CLI
     implementation 'info.picocli:picocli:4.7.1'
 
@@ -96,14 +51,6 @@ dependencies {
 
     // Parsing - CSV
     testImplementation 'com.univocity:univocity-parsers:2.9.1'
-
-    // Mocks
-    testImplementation 'org.mockito:mockito-core:5.2.0'
-
-    // Test infrastructure
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
 
     // Logging test tools
     testImplementation 'io.github.hakky54:logcaptor:2.9.0'
@@ -156,35 +103,6 @@ tasks.register('badEnvironmentVariableTest', Test) {
 
 check.dependsOn badEnvironmentVariableTest
 
-jacocoTestReport {
-    dependsOn test // tests are required to run before generating the report
-    reports {
-        csv.required = true
-        html.required = true
-    }
-}
-
-check.dependsOn jacocoTestCoverageVerification
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = 0.85
-            }
-        }
-    }
-}
-
-tasks.withType(JavaCompile) {
-    options.release = 11
-}
-
-jar {
-    manifest {
-        attributes('Multi-Release': true)
-    }
-}
-
 configurations {
     testImplementation {
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
@@ -196,8 +114,4 @@ configurations {
 shadowJar {
     zip64 = true
     mergeServiceFiles()
-}
-
-tasks.withType(Javadoc) {
-    options.addBooleanOption("Xdoclint:-missing", true)
 }
