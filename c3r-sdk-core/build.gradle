@@ -73,7 +73,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
 
     // AWS Clean Rooms
-    implementation 'software.amazon.awssdk:cleanrooms:2.20.33'
+    implementation 'software.amazon.awssdk:cleanrooms:2.20.34'
 
     // SQL
     implementation 'org.xerial:sqlite-jdbc:3.41.2.1'
