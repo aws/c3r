@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.2] - 2023-04-04
+
+### Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.20.28 to 2.20.37
+- Bump org.xerial:sqlite-jdbc from 3.41.0.1 to 3.41.2.1
+- Bump org.apache.hadoop:hadoop-mapreduce-client-core from 3.3.4 to 3.3.5
+- Bump org.apache.hadoop:hadoop-common from 3.3.4 to 3.3.5
+- Bump io.github.hakky54:logcaptor from 2.8.0 to 2.9.0
+- Bump com.github.spotbugs from 5.0.13 to 5.0.14
+- Bump trufflesecurity/trufflehog from 3.29.1 to 3.31.2
+
 ## [1.1.1] - 2023-03-21
 
 ### Changed
