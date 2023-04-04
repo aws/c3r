@@ -37,24 +37,19 @@ public final class EncryptConfig extends Config {
     private final TableSchema tableSchema;
 
     /**
-     * Cryptographic transforms available.
-     */
-    private final Map<ColumnType, Transformer> transformers;
-
-    /**
      * Set up configuration that will be used for encrypting data.
      *
-     * @param secretKey Clean room key used to generate sub-keys for HMAC and encryption
-     * @param sourceFile Location of input data
-     * @param fileFormat Format of input data
-     * @param targetFile Where output should be saved
-     * @param tempDir Where to write temporary files if needed
-     * @param overwrite Whether to overwrite the target file if it exists already
-     * @param csvInputNullValue What value should be interpreted as {@code null} for CSV files
+     * @param secretKey          Clean room key used to generate sub-keys for HMAC and encryption
+     * @param sourceFile         Location of input data
+     * @param fileFormat         Format of input data
+     * @param targetFile         Where output should be saved
+     * @param tempDir            Where to write temporary files if needed
+     * @param overwrite          Whether to overwrite the target file if it exists already
+     * @param csvInputNullValue  What value should be interpreted as {@code null} for CSV files
      * @param csvOutputNullValue What value should be saved in output to represent {@code null} values for CSV
-     * @param salt Salt that can be publicly known but adds to randomness of cryptographic operations
-     * @param settings Clean room cryptographic settings
-     * @param tableSchema How data in the input file maps to data in the output file
+     * @param salt               Salt that can be publicly known but adds to randomness of cryptographic operations
+     * @param settings           Clean room cryptographic settings
+     * @param tableSchema        How data in the input file maps to data in the output file
      */
     @Builder
     private EncryptConfig(@NonNull final SecretKey secretKey,
@@ -68,11 +63,11 @@ public final class EncryptConfig extends Config {
                           @NonNull final String salt,
                           @NonNull final ClientSettings settings,
                           @NonNull final TableSchema tableSchema) {
-        super(sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue);
+        super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt,
+                Transformer.initTransformers(secretKey, salt, settings, false));
         this.tempDir = tempDir;
         this.settings = settings;
         this.tableSchema = tableSchema;
-        transformers = Transformer.initTransformers(secretKey, salt, settings, false);
         validate();
     }
 

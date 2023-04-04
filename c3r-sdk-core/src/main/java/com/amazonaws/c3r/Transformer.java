@@ -5,6 +5,8 @@ package com.amazonaws.c3r;
 
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnType;
+import com.amazonaws.c3r.config.DecryptConfig;
+import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.encryption.Encryptor;
 import com.amazonaws.c3r.encryption.providers.SymmetricStaticProvider;
@@ -113,5 +115,31 @@ public abstract class Transformer {
                 failOnFingerprintColumns));
         transformers.put(ColumnType.SEALED, new SealedTransformer(encryptor, settings));
         return transformers;
+    }
+
+    /**
+     * Create cryptographic transforms available for use.
+     *
+     * @param config The cryptographic settings to use to initialize the transformers
+     * @return Mapping of {@link ColumnType} to the appropriate {@link Transformer}
+     */
+    public static Map<ColumnType, Transformer> initTransformers(final EncryptConfig config) {
+        return initTransformers(config.getSecretKey(),
+                config.getSalt(),
+                config.getSettings(),
+                false); // FailOnFingerprintColumns not relevant to encryption
+    }
+
+    /**
+     * Create cryptographic transforms available for use.
+     *
+     * @param config The cryptographic settings to use to initialize the transformers
+     * @return Mapping of {@link ColumnType} to the appropriate {@link Transformer}
+     */
+    public static Map<ColumnType, Transformer> initTransformers(final DecryptConfig config) {
+        return initTransformers(config.getSecretKey(),
+                config.getSalt(),
+                null, // Settings not relevant to decryption
+                config.isFailOnFingerprintColumns());
     }
 }

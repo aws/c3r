@@ -47,7 +47,7 @@ public final class ParquetRowUnmarshaller {
         return ParquetRowUnmarshaller.builder()
                 .sourceFile(config.getSourceFile())
                 .targetFile(config.getTargetFile())
-                .transformers(config.getTransformers())
+                .transformers(Transformer.initTransformers(config))
                 .build();
     }
 
