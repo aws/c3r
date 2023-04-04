@@ -10,12 +10,23 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import javax.crypto.SecretKey;
+import java.util.Map;
 
 /**
  * Information needed when decrypting a data file.
  */
 @Getter
 public final class DecryptConfig extends Config {
+
+    /**
+     * Cryptographic transforms available.
+     *
+     * <p>
+     * This method will be deprecated in the next major release. See its replacement at
+     * {@link Transformer#initTransformers(SecretKey, String, ClientSettings, boolean)}
+     */
+    @Deprecated
+    private final Map<ColumnType, Transformer> transformers;
 
     /**
      * Whether to throw an error if a Fingerprint column is seen in the data.
@@ -45,8 +56,8 @@ public final class DecryptConfig extends Config {
                           final String csvOutputNullValue,
                           @NonNull final String salt,
                           final boolean failOnFingerprintColumns) {
-        super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt,
-                Transformer.initTransformers(secretKey, salt, null, failOnFingerprintColumns));
+        super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt);
+        this.transformers = Transformer.initTransformers(secretKey, salt, null, failOnFingerprintColumns);
         this.failOnFingerprintColumns = failOnFingerprintColumns;
     }
 

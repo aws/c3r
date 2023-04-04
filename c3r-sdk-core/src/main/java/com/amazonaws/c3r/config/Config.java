@@ -3,7 +3,6 @@
 
 package com.amazonaws.c3r.config;
 
-import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.utils.FileUtil;
@@ -12,7 +11,6 @@ import lombok.NonNull;
 
 import javax.crypto.SecretKey;
 import java.io.File;
-import java.util.Map;
 
 /**
  * Basic information needed whether encrypting or decrypting data.
@@ -55,16 +53,6 @@ public abstract class Config {
     private final String salt;
 
     /**
-     * Cryptographic transforms available.
-     *
-     * <p>
-     * This method will be deprecated in the next major release. See its replacement at
-     * {@link Transformer#initTransformers(SecretKey, String, ClientSettings, boolean)}
-     */
-    @Deprecated
-    private final Map<ColumnType, Transformer> transformers;
-
-    /**
      * Basic configuration information needed for encrypting or decrypting data.
      *
      * @param secretKey          Clean room key used to generate sub-keys for HMAC and encryption
@@ -75,11 +63,10 @@ public abstract class Config {
      * @param csvInputNullValue  What value should be interpreted as {@code null} for CSV files
      * @param csvOutputNullValue What value should be saved in output to represent {@code null} values for CSV
      * @param salt               Salt that can be publicly known but adds to randomness of cryptographic operations
-     * @param transformers       The Transformers to use for cryptographic operations
      */
     protected Config(@NonNull final SecretKey secretKey, @NonNull final String sourceFile, final FileFormat fileFormat,
                      final String targetFile, final boolean overwrite, final String csvInputNullValue, final String csvOutputNullValue,
-                     @NonNull final String salt, @NonNull final Map<ColumnType, Transformer> transformers) {
+                     @NonNull final String salt) {
         this.secretKey = secretKey;
         this.sourceFile = sourceFile;
         this.fileFormat = fileFormat == null ? FileFormat.fromFileName(sourceFile) : fileFormat;
@@ -87,7 +74,6 @@ public abstract class Config {
         this.csvInputNullValue = csvInputNullValue;
         this.csvOutputNullValue = csvOutputNullValue;
         this.salt = salt;
-        this.transformers = transformers;
         validate(overwrite);
 
         FileUtil.initFileIfNotExists(this.targetFile);

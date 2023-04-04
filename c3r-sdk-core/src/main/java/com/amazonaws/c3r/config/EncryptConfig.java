@@ -37,6 +37,16 @@ public final class EncryptConfig extends Config {
     private final TableSchema tableSchema;
 
     /**
+     * Cryptographic transforms available.
+     *
+     * <p>
+     * This method will be deprecated in the next major release. See its replacement at
+     * {@link Transformer#initTransformers(SecretKey, String, ClientSettings, boolean)}
+     */
+    @Deprecated
+    private final Map<ColumnType, Transformer> transformers;
+
+    /**
      * Set up configuration that will be used for encrypting data.
      *
      * @param secretKey          Clean room key used to generate sub-keys for HMAC and encryption
@@ -63,11 +73,11 @@ public final class EncryptConfig extends Config {
                           @NonNull final String salt,
                           @NonNull final ClientSettings settings,
                           @NonNull final TableSchema tableSchema) {
-        super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt,
-                Transformer.initTransformers(secretKey, salt, settings, false));
+        super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt);
         this.tempDir = tempDir;
         this.settings = settings;
         this.tableSchema = tableSchema;
+        this.transformers = Transformer.initTransformers(secretKey, salt, settings, false);
         validate();
     }
 
