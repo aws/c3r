@@ -2,9 +2,32 @@
 
 The Cryptographic Computing for Clean Rooms (C3R) encryption client and software development kit (SDK) provide client-side tooling which allows users to participate in AWS Clean Rooms collaborations leveraging cryptographic computing by pre- and post-processing data.
 
-The [AWS Clean Rooms documentation](https://docs.aws.amazon.com/clean-rooms) contains detailed information regarding how to use the C3R encryption client in conjunction with an AWS Clean Rooms collaboration.
+The [AWS Clean Rooms User Guide](https://docs.aws.amazon.com/clean-rooms/latest/userguide/index.html) contains detailed information regarding how to use the C3R encryption client in conjunction with an AWS Clean Rooms collaboration.
 
 NOTICE: This project is released as open source under the Apache 2.0 license but is only intended for use with AWS Clean Rooms. Any other use cases may result in errors or inconsistent results.
+
+## Table of Contents
+- [Cryptographic Computing for Clean Rooms (C3R)](#cryptographic-computing-for-clean-rooms-c3r)
+  - [Table of Contents](#table-of-contents)
+  - [Getting Started](#getting-started)
+    - [Downloading Releases](#downloading-releases)
+    - [System Requirements](#system-requirements)
+    - [Supported Data Formats](#supported-data-formats)
+    - [AWS CLI Options in C3R](#aws-cli-options-in-c3r)
+    - [C3R CLI Modes](#c3r-cli-modes)
+      - [`schema` mode](#schema-mode)
+      - [`encrypt` mode](#encrypt-mode)
+      - [`decrypt` mode](#decrypt-mode)
+    - [SDK Usage Examples](#sdk-usage-examples)
+  - [General Security Notes](#general-security-notes)
+    - [Trusted Computing Environment](#trusted-computing-environment)
+    - [Temporary Files](#temporary-files)
+  - [Frequently Asked Questions](#frequently-asked-questions)
+    - [How can I encrypt non-string values?](#how-can-i-encrypt-non-string-values)
+    - [What Parquet data types are supported?](#what-parquet-data-types-are-supported)
+    - [Does the C3R encryption client implement any non-standard cryptography?](#does-the-c3r-encryption-client-implement-any-non-standard-cryptography)
+  - [License](#license)
+
 
 ## Getting Started
 
@@ -16,15 +39,19 @@ The C3R encryption client command line interface and related JARs can be downloa
 
 1. Java Runtime Environment version 11 or newer.
 
-2. Enough disk storage to hold cleartext data, temporary files, and the encrypted output. See the AWS Clean Rooms documentation for details on how settings affect storage needs.
+2. Enough disk storage to hold cleartext data, temporary files, and the encrypted output. See the "[Guidelines for the C3R encryption client](https://docs.aws.amazon.com/clean-rooms/latest/userguide/crypto-computing-guidelines.html)" section of the user guide for details on how settings affect storage needs.
 
 ### Supported Data Formats
 
-Currently CSV and Parquet file formats are supported. Parquet support is limited (see the FAQ and AWS Clean Rooms documentation for details).
+CSV and Parquet file formats are supported. Details and  limitations are found in the "[Supported file and data types](https://docs.aws.amazon.com/clean-rooms/latest/userguide/crypto-computing-file-types.html)" section of the user guide.
 
 The core functionality of the C3R encryption client is format agnostic; the SDK can be used for any format by implementing an appropriate [RowReader](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowReader.java) and [RowWriter](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowWriter.java).
 
-### C3R CLI Modes of Operation
+### AWS CLI Options in C3R
+
+Modes which make API calls to AWS services feature optional `--profile` and `--region` flags, allowing for convenient selection of an AWS CLI named profile and AWS region respectively.
+
+### C3R CLI Modes
 
 The C3R encryption client is an executable JAR with a command line interface (CLI). It has several modes of operation which are described in the usage help message, e.g.:
 
@@ -36,12 +63,7 @@ The C3R encryption client is an executable JAR with a command line interface (CL
 
 These modes are briefly described in the subsequent portions of this README.
 
-### C3R with named AWS CLI profiles and regions
-
-Modes which make API calls to AWS services feature optional `--profile` and `--region` flags, allowing for convenient selection of an AWS CLI named profile and AWS region respectively.
-
-
-### C3R `schema` mode: specifying how data should be encrypted
+#### `schema` mode
 
 For the C3R encryption client to encrypt a tabular file for a collaboration, it must have a corresponding schema file specifying how the encrypted output should be derived from the input.
 
@@ -51,9 +73,9 @@ The C3R encryption client can help generate schema files for an `INPUT` file usi
 $ java -jar c3r-cli.jar schema --interactive INPUT
 ```
 
-See the "Generate an encryption schema for a tabular file" section of the AWS Clean Rooms documentation for more information.
+See the "[Generate an encryption schema for a tabular file](https://docs.aws.amazon.com/clean-rooms/latest/userguide/prepare-encrypted-data.html#gen-encryption-schema-csv)" section of the user guide for more information.
 
-### C3R `encrypt` mode: encrypting data for a collaboration
+#### `encrypt` mode
 
 Given the following:
 
@@ -63,7 +85,7 @@ Given the following:
 
 3. a collaboration `COLLABORATION_ID` in the form of a UUID, and
 
-4. an environment variable `C3R_SHARED_SECRET` containing a Base64-encoded 256-bit secret. See the "Preparing encrypted data tables" section in [AWS Clean Rooms documentation](https://docs.aws.amazon.com/clean-rooms/latest/userguide/prepare-encrypted-data.html#create-SSK) for details on how to generate the shared secret key.
+4. an environment variable `C3R_SHARED_SECRET` containing a Base64-encoded 256-bit secret. See the "[Preparing encrypted data tables](https://docs.aws.amazon.com/clean-rooms/latest/userguide/prepare-encrypted-data.html#create-SSK)" section of the user guide for details on how to generate a shared secret key.
 
 
 An encrypted `OUTPUT` file can be generated by running the C3R encryption client at the command line as follows:
@@ -75,9 +97,9 @@ $ java -jar c3r-cli.jar encrypt INPUT \
   --output=OUTPUT
 ```
 
-See the "Encrypt data" section of the AWS Clean Rooms documentation for more information.
+See the "[Encrypt data](https://docs.aws.amazon.com/clean-rooms/latest/userguide/prepare-encrypted-data.html#encrypt-data)" section of the user guide for more information.
 
-### C3R `decrypt` mode: decrypting results from a collaboration
+#### `decrypt` mode
 
 Once queries have been executed on encrypted data in an AWS Clean Rooms collaboration, that encrypted query results `INPUT` file can be decrypted generating a cleartext `OUTPUT` file using the same Base64-encoded 256-bit secret stored in the `C3R_SHARED_SECRET` environment variable, and `COLLABORATION_ID` as follows:
 
@@ -87,7 +109,7 @@ $ java -jar c3r-cli.jar decrypt INPUT \
   --output=OUTPUT
 ```
 
-See the "Decrypting data tables with the C3R encryption client" section of the AWS Clean Rooms documentation for more information.
+See the "[Decrypting data tables with the C3R encryption client](https://docs.aws.amazon.com/clean-rooms/latest/userguide/decrypt-data.html)" section of the user guide.
 
 ### SDK Usage Examples
 
