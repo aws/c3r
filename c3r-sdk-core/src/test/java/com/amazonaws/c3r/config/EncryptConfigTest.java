@@ -162,7 +162,7 @@ public class EncryptConfigTest {
 
         final EncryptConfig noHeadersConfig = EncryptConfig.builder()
                 .sourceFile(noHeadersFile)
-                .targetFile(output)
+                .targetFile(FileTestUtility.createTempFile().toString())
                 .tempDir(tempDir)
                 .overwrite(true)
                 .csvInputNullValue(null)
@@ -176,7 +176,7 @@ public class EncryptConfigTest {
 
         final EncryptConfig headersConfig = EncryptConfig.builder()
                 .sourceFile(headersFile)
-                .targetFile(output)
+                .targetFile(FileTestUtility.createTempFile().toString())
                 .tempDir(tempDir)
                 .overwrite(true)
                 .csvInputNullValue(null)
