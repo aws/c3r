@@ -39,7 +39,7 @@ dependencies {
     implementation project(":c3r-sdk-parquet")
 
     // CLI
-    implementation 'info.picocli:picocli:4.7.1'
+    implementation 'info.picocli:picocli:4.7.2'
 
     // Parsing - JSON
     implementation 'com.google.code.gson:gson:2.10.1'
