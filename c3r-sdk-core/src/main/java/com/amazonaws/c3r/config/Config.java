@@ -9,6 +9,7 @@ import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
+import javax.crypto.SecretKey;
 import java.io.File;
 
 /**
@@ -42,23 +43,37 @@ public abstract class Config {
     private final String csvOutputNullValue;
 
     /**
+     * Clean room key used to generate sub-keys for HMAC and encryption.
+     */
+    private final SecretKey secretKey;
+
+    /**
+     * Salt that can be publicly known but adds to randomness of cryptographic operations.
+     */
+    private final String salt;
+
+    /**
      * Basic configuration information needed for encrypting or decrypting data.
      *
+     * @param secretKey          Clean room key used to generate sub-keys for HMAC and encryption
      * @param sourceFile         Location of input data
      * @param fileFormat         Format of input data
      * @param targetFile         Where output should be saved
      * @param overwrite          Whether to overwrite the target file if it exists already
      * @param csvInputNullValue  What value should be interpreted as {@code null} for CSV files
      * @param csvOutputNullValue What value should be saved in output to represent {@code null} values for CSV
+     * @param salt               Salt that can be publicly known but adds to randomness of cryptographic operations
      */
-    protected Config(@NonNull final String sourceFile, final FileFormat fileFormat, final String targetFile, final boolean overwrite,
-                     final String csvInputNullValue, final String csvOutputNullValue) {
+    protected Config(@NonNull final SecretKey secretKey, @NonNull final String sourceFile, final FileFormat fileFormat,
+                     final String targetFile, final boolean overwrite, final String csvInputNullValue, final String csvOutputNullValue,
+                     @NonNull final String salt) {
+        this.secretKey = secretKey;
         this.sourceFile = sourceFile;
         this.fileFormat = fileFormat == null ? FileFormat.fromFileName(sourceFile) : fileFormat;
         this.targetFile = targetFile == null ? getDefaultTargetFile(sourceFile) : targetFile;
         this.csvInputNullValue = csvInputNullValue;
         this.csvOutputNullValue = csvOutputNullValue;
-
+        this.salt = salt;
         validate(overwrite);
 
         FileUtil.initFileIfNotExists(this.targetFile);

@@ -61,7 +61,7 @@ public final class CsvRowMarshaller {
                 .outputNullValue(config.getCsvOutputNullValue())
                 .settings(config.getSettings())
                 .schema(config.getTableSchema())
-                .transforms(config.getTransformers())
+                .transforms(Transformer.initTransformers(config))
                 .build();
     }
 

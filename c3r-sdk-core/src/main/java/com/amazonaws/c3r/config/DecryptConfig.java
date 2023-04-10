@@ -17,22 +17,33 @@ import java.util.Map;
  */
 @Getter
 public final class DecryptConfig extends Config {
+
     /**
      * Cryptographic transforms available.
+     *
+     * <p>
+     * This method will be deprecated in the next major release. See its replacement at
+     * {@link Transformer#initTransformers(SecretKey, String, ClientSettings, boolean)}
      */
+    @Deprecated
     private final Map<ColumnType, Transformer> transformers;
+
+    /**
+     * Whether to throw an error if a Fingerprint column is seen in the data.
+     */
+    private final boolean failOnFingerprintColumns;
 
     /**
      * Set up configuration that will be used for decrypting data.
      *
-     * @param secretKey Clean room key used to generate sub-keys for HMAC and encryption
-     * @param sourceFile Location of input data
-     * @param fileFormat Format of input data
-     * @param targetFile Where output should be saved
-     * @param overwrite Whether to overwrite the target file if it exists already
-     * @param csvInputNullValue What value should be interpreted as {@code null} for CSV files
-     * @param csvOutputNullValue What value should be saved in output to represent {@code null} values for CSV
-     * @param salt Salt that can be publicly known but adds to randomness of cryptographic operations
+     * @param secretKey                Clean room key used to generate sub-keys for HMAC and encryption
+     * @param sourceFile               Location of input data
+     * @param fileFormat               Format of input data
+     * @param targetFile               Where output should be saved
+     * @param overwrite                Whether to overwrite the target file if it exists already
+     * @param csvInputNullValue        What value should be interpreted as {@code null} for CSV files
+     * @param csvOutputNullValue       What value should be saved in output to represent {@code null} values for CSV
+     * @param salt                     Salt that can be publicly known but adds to randomness of cryptographic operations
      * @param failOnFingerprintColumns Whether to throw an error if a Fingerprint column is seen in the data
      */
     @Builder
@@ -45,8 +56,9 @@ public final class DecryptConfig extends Config {
                           final String csvOutputNullValue,
                           @NonNull final String salt,
                           final boolean failOnFingerprintColumns) {
-        super(sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue);
-        transformers = Transformer.initTransformers(secretKey, salt, null, failOnFingerprintColumns);
+        super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt);
+        this.transformers = Transformer.initTransformers(secretKey, salt, null, failOnFingerprintColumns);
+        this.failOnFingerprintColumns = failOnFingerprintColumns;
     }
 
 }

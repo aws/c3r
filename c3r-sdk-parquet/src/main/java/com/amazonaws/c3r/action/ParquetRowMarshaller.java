@@ -53,7 +53,7 @@ public final class ParquetRowMarshaller {
                 .settings(config.getSettings())
                 .schema(config.getTableSchema())
                 .tempDir(config.getTempDir())
-                .transforms(config.getTransformers())
+                .transforms(Transformer.initTransformers(config))
                 .build();
     }
 

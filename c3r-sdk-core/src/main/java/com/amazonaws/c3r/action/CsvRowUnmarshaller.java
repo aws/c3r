@@ -51,7 +51,7 @@ public final class CsvRowUnmarshaller {
                 .targetFile(config.getTargetFile())
                 .csvInputNullValue(config.getCsvInputNullValue())
                 .csvOutputNullValue(config.getCsvOutputNullValue())
-                .transformers(config.getTransformers())
+                .transformers(Transformer.initTransformers(config))
                 .build();
     }
 
