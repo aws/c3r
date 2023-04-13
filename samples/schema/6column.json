@@ -1,4 +1,5 @@
 {
+  "headerRow": true,
   "columns": [
     {
       "sourceHeader": "cleartext",
