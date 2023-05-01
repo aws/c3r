@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.3] - 2023-05-01
+
+### Changed
+- Deprecated Config class' transformer field (#157)
+- Bump software.amazon.awssdk:cleanrooms from 2.20.37 to 2.20.56
+- Bump org.apache.parquet:parquet-hadoop from 1.12.3 to 1.13.0
+- Bump org.junit.jupiter:junit-jupiter-api from 5.9.2 to 5.9.3
+- Bump org.junit.jupiter:junit-jupiter-params from 5.9.2 to 5.9.3
+- Bump org.junit.jupiter:junit-jupiter-engine from 5.9.2 to 5.9.3
+- Bump info.picocli:picocli from 4.7.1 to 4.7.3
+- Bump trufflesecurity/trufflehog 3.31.2 to 3.33.0
+
 ## [1.1.2] - 2023-04-04
 
 ### Changed
