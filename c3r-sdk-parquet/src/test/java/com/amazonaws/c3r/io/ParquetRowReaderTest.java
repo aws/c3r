@@ -4,19 +4,11 @@
 package com.amazonaws.c3r.io;
 
 import com.amazonaws.c3r.config.ColumnHeader;
-import com.amazonaws.c3r.data.ParquetDataType;
-import com.amazonaws.c3r.data.ParquetRow;
-import com.amazonaws.c3r.data.ParquetSchema;
-import com.amazonaws.c3r.data.ParquetValue;
-import com.amazonaws.c3r.data.Row;
+import com.amazonaws.c3r.data.*;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.ParquetTestUtility;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType;
-import org.apache.parquet.schema.Type;
-import org.apache.parquet.schema.Types;
+import org.apache.parquet.schema.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -26,10 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ParquetRowReaderTest {
 

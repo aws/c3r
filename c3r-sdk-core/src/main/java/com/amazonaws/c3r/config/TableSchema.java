@@ -85,10 +85,10 @@ public abstract class TableSchema implements Validatable {
         if (columns == null || columns.isEmpty()) {
             throw new C3rIllegalArgumentException("At least one data column must provided in the config file.");
         }
-        if (columns.size() > Limits.COLUMN_COUNT_MAX) {
+        if (columns.size() > Limits.ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX) {
             throw new C3rIllegalArgumentException(
-                    "A table can have at most "
-                            + Limits.COLUMN_COUNT_MAX
+                    "An encrypted table can have at most "
+                            + Limits.ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX
                             + " columns "
                             + " but this schema specifies "
                             + getColumns().size()

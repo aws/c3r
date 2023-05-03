@@ -10,25 +10,9 @@ package com.amazonaws.c3r.internal;
  */
 public final class Limits {
     /**
-     * Max number of columns allowed in a table (2^30).
-     *
-     * <p>
-     * Note: The cryptographic requirements actually limit
-     * the number of encrypted rows to 2^32 and the number
-     * of transfer columns to 2^30, but 2^30 on total
-     * column count both implies those constraints and
-     * is still almost certainly far more than any table
-     * will contain anyway.
-     *
-     * <p>
-     * NOTE: This constraint combined with the limit on the byte size of
-     * output data imply the (infeasible to check) constraint that a single
-     * row must contain less than 2^52 bytes of cleartext.
+     * Max number of columns allowed in an output encrypted table.
      */
-    // Checkstyle treats the 30 as a magic number, but it doesn't make sense in this context to make it a separate variable.
-    // CHECKSTYLE:OFF
-    public static final int COLUMN_COUNT_MAX = 1 << 30;
-    // CHECKSTYLE:ON
+    public static final int ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX = 1600;
 
     /**
      * Max number of encrypted rows across all tables from all providers (2^41).
