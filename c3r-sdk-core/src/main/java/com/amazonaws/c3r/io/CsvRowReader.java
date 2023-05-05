@@ -42,7 +42,7 @@ public final class CsvRowReader extends RowReader<CsvValue> {
      * <p>
      * This is defined at the implementation layer and not the RowReader interface in order to allow tuning among different formats.
      */
-    static final int MAX_COLUMN_COUNT = 1600;
+    static final int MAX_COLUMN_COUNT = 10000;
 
     /**
      * Name of the CSV file for error reporting purposes.

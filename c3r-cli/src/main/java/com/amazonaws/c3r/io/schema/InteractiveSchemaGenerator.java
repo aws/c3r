@@ -618,7 +618,7 @@ public final class InteractiveSchemaGenerator {
                     promptNonNegativeInt(
                             "Number of target columns from source " + columnReference,
                             defaultTargetColumnCount,
-                            Limits.COLUMN_COUNT_MAX));
+                            Limits.ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX));
         } else {
             // This column cannot even appear as cleartext because of collaboration settings,
             // so warn that it will be skipped

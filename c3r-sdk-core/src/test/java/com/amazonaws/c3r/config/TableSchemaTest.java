@@ -64,7 +64,7 @@ public class TableSchemaTest {
         @SuppressWarnings("unchecked")
         final ArrayList<ColumnSchema> fakeBigList = mock(ArrayList.class);
         when(fakeBigList.isEmpty()).thenReturn(false);
-        when(fakeBigList.size()).thenReturn(Limits.COLUMN_COUNT_MAX);
+        when(fakeBigList.size()).thenReturn(Limits.ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX);
 
         // make a fake table schema with the fake column list
 
@@ -72,9 +72,9 @@ public class TableSchemaTest {
         when(maxColumnCountSchema.getColumns()).thenReturn(fakeBigList);
         doCallRealMethod().when(maxColumnCountSchema).validate();
 
-        assertEquals(Limits.COLUMN_COUNT_MAX, maxColumnCountSchema.getColumns().size());
+        assertEquals(Limits.ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX, maxColumnCountSchema.getColumns().size());
 
-        when(fakeBigList.size()).thenReturn(Limits.COLUMN_COUNT_MAX + 1);
+        when(fakeBigList.size()).thenReturn(Limits.ENCRYPTED_OUTPUT_COLUMN_COUNT_MAX + 1);
         assertThrows(C3rIllegalArgumentException.class, maxColumnCountSchema::validate);
     }
 
