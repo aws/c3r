@@ -37,7 +37,7 @@ dependencies {
     implementation project(":c3r-sdk-core")
 
     // Parsing - Parquet
-    implementation 'org.apache.parquet:parquet-hadoop:1.13.0'
+    implementation 'org.apache.parquet:parquet-hadoop:1.13.1'
     // Parsing - For Hadoop abstractions some Parquet APIs require (i.e.,
     //           this code base doesn't really use them at all).
     //           At some point if there's a way to avoid this that may
