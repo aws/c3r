@@ -58,6 +58,6 @@ jobs:
           echo "HADOOP_HOME=${{ github.workspace }}\hadoop\hadoop-3.3.1" >> $env:GITHUB_ENV;
           echo "${{ github.workspace }}\hadoop\hadoop-3.3.1\bin" >> $env:GITHUB_PATH;
       - name: Build with Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v2.4.2
         with:
           arguments: build
