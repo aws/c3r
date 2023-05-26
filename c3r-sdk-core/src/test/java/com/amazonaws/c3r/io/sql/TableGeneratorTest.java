@@ -130,7 +130,7 @@ public class TableGeneratorTest {
 
     @Test
     public void initTableTargetColumnHeaderBadSqlHeaderTest() {
-        final char[] sqlHeaderTooLong = new char[Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH];
+        final char[] sqlHeaderTooLong = new char[Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH];
         Arrays.fill(sqlHeaderTooLong, 'a');
 
         final List<ColumnSchema> columnSchemas = new ArrayList<>();
