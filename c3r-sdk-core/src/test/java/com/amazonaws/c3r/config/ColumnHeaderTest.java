@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ColumnHeaderTest {
     @Test
@@ -33,6 +35,42 @@ public class ColumnHeaderTest {
     @Test
     public void checkBlankStringToConstructorTest() {
         assertThrows(C3rIllegalArgumentException.class, () -> new ColumnHeader("\n    \t "));
+    }
+
+    private static void assertMatchesPattern(final Pattern pattern, final String value) {
+        assertTrue(pattern.matcher(value).matches(), "Pattern " + pattern.pattern() + " matches " + value);
+    }
+
+    private static void assertNotMatchesPattern(final Pattern pattern, final String value) {
+        assertFalse(pattern.matcher(value).matches(), "Pattern " + pattern.pattern() + " does not match " + value);
+    }
+
+    /*
+     * Verify normalization of headers along with equality and hashing.
+     * - White space is trimmed
+     * - Header is all lowercase
+     */
+    @Test
+    public void checkRegexpAllowedNames() {
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, " ");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "A");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, " a");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a-");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a-b");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a_b-");
+        assertNotMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "\tThIs iS a WEIrD StrING \n");
+
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "0");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "_");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "ab");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a ");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a_");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a_b");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "ab-b");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "a_b ");
+        assertMatchesPattern(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP, "this is a weird string");
     }
 
     /*
@@ -60,15 +98,15 @@ public class ColumnHeaderTest {
     @Test
     public void checkGlueMaxLengthStringConstructorTest() {
         assertDoesNotThrow(
-                () -> new ColumnHeader("a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH)));
+                () -> new ColumnHeader("a".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH)));
         assertThrows(
                 C3rIllegalArgumentException.class,
-                () -> new ColumnHeader("a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH + 1)));
+                () -> new ColumnHeader("a".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH + 1)));
     }
 
     @Test
     public void checkHeaderNonGlueConformantHeaderNameTest() {
-        assertFalse(Limits.GLUE_VALID_HEADER_REGEXP.matches("Multi Line\n Header"));
+        assertFalse(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.matcher("Multi Line\n Header").matches());
         assertThrows(
                 C3rIllegalArgumentException.class,
                 () -> new ColumnHeader("Multi Line\n Header"));

@@ -456,7 +456,7 @@ public class InteractiveSchemaGeneratorTest {
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
         assertTrue(consoleOutput.toString().toLowerCase().contains("normalized"));
 
-        createInteractiveSchemaGenerator("b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH) + 1, headers, stringColumnTypes, null);
+        createInteractiveSchemaGenerator("b".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH) + 1, headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.CLEARTEXT));
         assertTrue(consoleOutput.toString().toLowerCase().contains("expected"));
     }
@@ -498,11 +498,11 @@ public class InteractiveSchemaGeneratorTest {
                 schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.FINGERPRINT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
 
-        createInteractiveSchemaGenerator("b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH - suffix.length())
+        createInteractiveSchemaGenerator("b".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH - suffix.length())
                 + "\n", headers, stringColumnTypes, null);
         assertEquals(
                 new ColumnHeader(
-                        "b".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH - suffix.length())
+                        "b".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH - suffix.length())
                                 + suffix),
                 schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.FINGERPRINT));
         assertFalse(consoleOutput.toString().toLowerCase().contains("expected"));
@@ -510,7 +510,7 @@ public class InteractiveSchemaGeneratorTest {
 
     @Test
     public void promptTargetHeaderCannotAddSuffixTest() {
-        createInteractiveSchemaGenerator("a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH)
+        createInteractiveSchemaGenerator("a".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH)
                 + "\n", headers, stringColumnTypes, null);
         assertNull(schemaGen.promptTargetHeader(new ColumnHeader("a"), ColumnType.FINGERPRINT));
         assertTrue(consoleOutput.toString().toLowerCase().contains("unable to add header suffix"));
@@ -813,7 +813,7 @@ public class InteractiveSchemaGeneratorTest {
                         // header 2, column 1
                         "special", // bad column type
                         "sealed", // header 2, column 1 type
-                        "long_name".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH), // header 2, column 1 bad target header
+                        "long_name".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH), // header 2, column 1 bad target header
                         "targetHeader2", // header 2, column 1 target header
                         "maybe", // header 2, column 1 bad use suffix
                         "yes", // header 2, column 1 use suffix
@@ -822,14 +822,14 @@ public class InteractiveSchemaGeneratorTest {
                         // header 2, column 2
                         "goin", // header 2, column 2 bad type
                         "fingerprint", // header 2, column 2 type
-                        "long_name".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH), // header 2, column 2 bad target header
+                        "long_name".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH), // header 2, column 2 bad target header
                         "targetHeader2", // header 2, column 2 target header
                         "I can't decide", // header 2, column 2 bad use suffix
                         "yes", // header 2, column 2 use suffix
                         // header 2, column 3
                         "plaintext", // header 2, column 3 bad type
                         "cleartext", // header 2, column 3 type
-                        "long_name".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH), // header 2, column 3 bad target header
+                        "long_name".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH), // header 2, column 3 bad target header
                         "targetHeader2", // header 2, column 3 target header
                         // source header3
                         "one", // bad number of columns for header3

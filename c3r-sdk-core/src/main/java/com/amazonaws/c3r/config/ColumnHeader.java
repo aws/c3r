@@ -9,8 +9,6 @@ import com.amazonaws.c3r.internal.Validatable;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * Stores a normalized and validated column name (column header).
  */
@@ -127,20 +125,20 @@ public class ColumnHeader implements Validatable {
         if (header == null || header.isBlank()) {
             throw new C3rIllegalArgumentException("Column header names must not be blank");
         }
-        if (header.getBytes(StandardCharsets.UTF_8).length > Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH) {
+        if (header.length() > Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH) {
             throw new C3rIllegalArgumentException(
                     "Column header names cannot be longer than "
-                            + Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH
-                            + "UTF8 bytes, but found `"
+                            + Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH
+                            + " characters, but found `"
                             + header
                             + "`.");
         }
-        if (!header.matches(Limits.GLUE_VALID_HEADER_REGEXP)) {
+        if (!Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.matcher(header).matches()) {
             throw new C3rIllegalArgumentException(
                     "Column header name `"
                             + header
                             + "` does not match pattern `"
-                            + Limits.GLUE_VALID_HEADER_REGEXP
+                            + Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.pattern()
                             + "`.");
         }
     }

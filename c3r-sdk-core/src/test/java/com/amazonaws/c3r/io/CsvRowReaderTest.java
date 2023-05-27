@@ -62,10 +62,10 @@ public class CsvRowReaderTest {
             put("1space", " ");
             put("quoted-blank", "\"\"");
             put("quoted-1space", "\" \"");
-            put("\\N", "\\N");
-            put("quoted-\\N", "\"\\N\"");
-            put("spaced-\\N", " \\N ");
-            put("quoted-spaced-\\N", "\" \\N \"");
+            put("backslash-N", "\\N");
+            put("quoted-backslash-N", "\"\\N\"");
+            put("spaced-backslash-N", " \\N ");
+            put("quoted-spaced-backslash-N", "\" \\N \"");
         }
     };
 
@@ -182,10 +182,10 @@ public class CsvRowReaderTest {
                 "1space", null,
                 "quoted-blank", null,
                 "quoted-1space", " ",
-                "\\N", "\\N",
-                "quoted-\\N", "\\N",
-                "spaced-\\N", "\\N",
-                "quoted-spaced-\\N", " \\N "
+                "backslash-N", "\\N",
+                "quoted-backslash-N", "\\N",
+                "spaced-backslash-N", "\\N",
+                "quoted-spaced-backslash-N", " \\N "
         );
 
         assertEquals(expected, actual);
@@ -204,10 +204,10 @@ public class CsvRowReaderTest {
                 "1space", null,
                 "quoted-blank", "",
                 "quoted-1space", " ",
-                "\\N", "\\N",
-                "quoted-\\N", "\\N",
-                "spaced-\\N", "\\N",
-                "quoted-spaced-\\N", " \\N "
+                "backslash-N", "\\N",
+                "quoted-backslash-N", "\\N",
+                "spaced-backslash-N", "\\N",
+                "quoted-spaced-backslash-N", " \\N "
         );
 
         assertEquals(expected, actual);
@@ -224,10 +224,10 @@ public class CsvRowReaderTest {
                 "1space", null,
                 "quoted-blank", "",
                 "quoted-1space", " ",
-                "\\N", "\\N",
-                "quoted-\\N", "\\N",
-                "spaced-\\N", "\\N",
-                "quoted-spaced-\\N", " \\N "
+                "backslash-N", "\\N",
+                "quoted-backslash-N", "\\N",
+                "spaced-backslash-N", "\\N",
+                "quoted-spaced-backslash-N", " \\N "
         );
 
         assertEquals(expected, actual);
@@ -244,10 +244,10 @@ public class CsvRowReaderTest {
                 "1space", "",
                 "quoted-blank", null,
                 "quoted-1space", " ",
-                "\\N", "\\N",
-                "quoted-\\N", "\\N",
-                "spaced-\\N", "\\N",
-                "quoted-spaced-\\N", " \\N "
+                "backslash-N", "\\N",
+                "quoted-backslash-N", "\\N",
+                "spaced-backslash-N", "\\N",
+                "quoted-spaced-backslash-N", " \\N "
         );
 
         assertEquals(expected, actual);
@@ -263,10 +263,10 @@ public class CsvRowReaderTest {
                 "1space", "",
                 "quoted-blank", "",
                 "quoted-1space", " ",
-                "\\N", "\\N",
-                "quoted-\\N", "\\N",
-                "spaced-\\N", "\\N",
-                "quoted-spaced-\\N", " \\N "
+                "backslash-N", "\\N",
+                "quoted-backslash-N", "\\N",
+                "spaced-backslash-N", "\\N",
+                "quoted-spaced-backslash-N", " \\N "
         );
 
         assertEquals(expected, actual);
@@ -282,10 +282,10 @@ public class CsvRowReaderTest {
                 "1space", "",
                 "quoted-blank", "",
                 "quoted-1space", " ",
-                "\\N", null,
-                "quoted-\\N", null,
-                "spaced-\\N", null,
-                "quoted-spaced-\\N", " \\N "
+                "backslash-N", null,
+                "quoted-backslash-N", null,
+                "spaced-backslash-N", null,
+                "quoted-spaced-backslash-N", " \\N "
         );
 
         assertEquals(expected, actual);
@@ -306,7 +306,7 @@ public class CsvRowReaderTest {
     @Test
     public void maxVarcharByteCountHeaderTest() throws IOException {
         final Map<String, String> columns = new HashMap<>();
-        final byte[] varcharBytes = new byte[Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH + 1];
+        final byte[] varcharBytes = new byte[Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH + 1];
         Arrays.fill(varcharBytes, (byte) 'a');
         final String oversizedVarchar = new String(varcharBytes, StandardCharsets.UTF_8);
         columns.put(oversizedVarchar, "value");
@@ -329,7 +329,7 @@ public class CsvRowReaderTest {
                 "\"\",\"\",\"\",\"\",\"\",\"\"",
                 "\",\",\",\",\",\",\",\",\",\",\",\"",
                 ",,,,,\n",
-                "a".repeat(Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH + 1) + ",,,,,"
+                "a".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH + 1) + ",,,,,"
         );
         for (var content : fileContentWith6Columns) {
             final Path nullsCsv = FileTestUtility.createTempFile();
