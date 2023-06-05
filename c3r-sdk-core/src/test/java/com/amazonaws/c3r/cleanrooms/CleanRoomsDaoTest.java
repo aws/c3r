@@ -5,6 +5,7 @@ package com.amazonaws.c3r.cleanrooms;
 
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import com.amazonaws.c3r.utils.C3rSdkProperties;
 import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
 import org.junit.jupiter.api.AfterEach;
@@ -14,6 +15,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
@@ -83,6 +85,22 @@ public class CleanRoomsDaoTest {
         } else {
             System.clearProperty("aws.secretAccessKey");
         }
+    }
+
+    @Test
+    public void defaultApiNameTest() throws CleanRoomsException {
+        final CleanRoomsDao dao = CleanRoomsDao.builder().build();
+        assertEquals(C3rSdkProperties.API_NAME, dao.getApiName());
+    }
+
+    @Test
+    public void customApiNameTest() throws CleanRoomsException {
+        final ApiName testApiName = ApiName.builder()
+                .name("TEST_NAME")
+                .version("1.2.3")
+                .build();
+        final CleanRoomsDao dao = CleanRoomsDao.builder().apiName(testApiName).build();
+        assertEquals(testApiName, dao.getApiName());
     }
 
     @Test

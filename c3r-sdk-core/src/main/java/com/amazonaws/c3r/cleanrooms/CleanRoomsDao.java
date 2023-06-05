@@ -5,6 +5,7 @@ package com.amazonaws.c3r.cleanrooms;
 
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import com.amazonaws.c3r.utils.C3rSdkProperties;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
+import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -37,6 +40,7 @@ import java.util.function.Function;
 @NoArgsConstructor(force = true)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CleanRoomsDao {
+
     /**
      * Create a connection to AWS Clean Rooms.
      */
@@ -55,15 +59,23 @@ public final class CleanRoomsDao {
     private final String region;
 
     /**
+     * Custom user agent for the application's API calls.
+     */
+    @With
+    private final ApiName apiName;
+
+    /**
      * Construct an CleanRoomsDao with default specified settings.
      *
      * @param profile AWS CLI named profile to use with the AWS SDK
-     * @param region AWS region to use with the AWS SDK
+     * @param region  AWS region to use with the AWS SDK
+     * @param apiName Custom user agent content for the application's API calls.
      */
     @Builder
-    private CleanRoomsDao(final String profile, final String region) {
+    private CleanRoomsDao(final String profile, final String region, final ApiName apiName) {
         this.profile = profile;
         this.region = region;
+        this.apiName = apiName != null ? apiName : C3rSdkProperties.API_NAME;
     }
 
     /**
@@ -123,8 +135,12 @@ public final class CleanRoomsDao {
      * @throws C3rRuntimeException If DataEncryptionMetadata cannot be retrieved from AWS Clean Rooms
      */
     public ClientSettings getCollaborationDataEncryptionMetadata(final String collaborationId) {
+        final AwsRequestOverrideConfiguration overrideConfiguration = AwsRequestOverrideConfiguration.builder()
+                .addApiName(apiName)
+                .build();
         final GetCollaborationRequest request = GetCollaborationRequest.builder()
                 .collaborationIdentifier(collaborationId)
+                .overrideConfiguration(overrideConfiguration)
                 .build();
         final String baseError = "Unable to retrieve the collaboration configuration for CollaborationID: `" + collaborationId + "`.";
         final String endError = "Please verify that the CollaborationID is correct and try again.";

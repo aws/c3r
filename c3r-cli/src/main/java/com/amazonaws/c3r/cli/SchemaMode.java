@@ -9,6 +9,7 @@ import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.io.schema.CsvSchemaGenerator;
 import com.amazonaws.c3r.io.schema.ParquetSchemaGenerator;
+import com.amazonaws.c3r.utils.C3rSdkProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
@@ -29,7 +30,7 @@ import static com.amazonaws.c3r.cli.Main.generateCommandLine;
 @Getter
 @CommandLine.Command(name = "schema",
         mixinStandardHelpOptions = true,
-        version = CliDescriptions.VERSION,
+        version = C3rSdkProperties.VERSION,
         descriptionHeading = "%nDescription:%n",
         description = "Generate an encryption schema for a tabular file.")
 public class SchemaMode implements Callable<Integer> {

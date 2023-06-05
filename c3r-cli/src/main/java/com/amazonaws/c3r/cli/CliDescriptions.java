@@ -7,10 +7,11 @@ package com.amazonaws.c3r.cli;
  * CliDescriptions contains the help mode description for all CLI parameters, so they are consistently described across classes.
  */
 public final class CliDescriptions {
+
     /**
-     * Current version number for Cryptographic Computing for Clean Room's command line interface for AWS Clean Rooms.
+     * Name of the application.
      */
-    public static final String VERSION = "1.1.3";
+    public static final String APP_NAME = "c3r-cli";
 
     /**
      * Description of AWS profile.
