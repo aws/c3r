@@ -18,6 +18,8 @@ import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.json.GsonUtil;
+import com.amazonaws.c3r.utils.C3rCliProperties;
+import com.amazonaws.c3r.utils.C3rSdkProperties;
 import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +40,7 @@ import static com.amazonaws.c3r.cli.Main.generateCommandLine;
 @Getter
 @CommandLine.Command(name = "encrypt",
         mixinStandardHelpOptions = true,
-        version = CliDescriptions.VERSION,
+        version = C3rSdkProperties.VERSION,
         descriptionHeading = "%nDescription:%n",
         description = "Encrypt data content for use in an AWS Clean Rooms collaboration.")
 public class EncryptMode implements Callable<Integer> {
@@ -178,7 +180,7 @@ public class EncryptMode implements Callable<Integer> {
      * with the appropriate CLI settings.
      */
     EncryptMode() {
-        this.cleanRoomsDao = CleanRoomsDao.builder().build();
+        this.cleanRoomsDao = CleanRoomsDao.builder().apiName(C3rCliProperties.API_NAME).build();
     }
 
     /**
@@ -210,7 +212,9 @@ public class EncryptMode implements Callable<Integer> {
      * @return Cryptographic computing rules for collaboration
      */
     public ClientSettings getClientSettings() {
-        final var dao = cleanRoomsDao != null ? cleanRoomsDao : CleanRoomsDao.builder().build();
+        final var dao = cleanRoomsDao != null
+                ? cleanRoomsDao
+                : CleanRoomsDao.builder().apiName(C3rCliProperties.API_NAME).build();
         return dao.withProfile(optionalArgs.profile).withRegion(optionalArgs.region)
                 .getCollaborationDataEncryptionMetadata(requiredArgs.id.toString());
     }

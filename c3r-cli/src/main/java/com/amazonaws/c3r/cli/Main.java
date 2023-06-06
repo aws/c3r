@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.cli;
 
 import com.amazonaws.c3r.exception.C3rRuntimeException;
+import com.amazonaws.c3r.utils.C3rSdkProperties;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
 
@@ -13,9 +14,9 @@ import picocli.CommandLine;
  */
 @Slf4j
 @CommandLine.Command(
-        name = "c3r-cli",
+        name = CliDescriptions.APP_NAME,
         mixinStandardHelpOptions = true,
-        version = CliDescriptions.VERSION,
+        version = C3rSdkProperties.VERSION,
         description = "Cryptographic computing tool for use with AWS Clean Rooms.",
         subcommands = {SchemaMode.class, EncryptMode.class, DecryptMode.class})
 public final class Main {

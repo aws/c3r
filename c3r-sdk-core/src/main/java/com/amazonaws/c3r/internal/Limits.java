@@ -34,6 +34,7 @@ public final class Limits {
      *
      * @deprecated This constant is no longer used - see {@link Limits#AWS_CLEAN_ROOMS_HEADER_REGEXP} instead.
      */
+    @Deprecated
     // Checkstyle doesn't like the escape characters in this string, but it is verbatim from the GLUE docs
     // and so it seems valuable to keep it as-is, so it's a 1-to-1 match.
     // CHECKSTYLE:OFF

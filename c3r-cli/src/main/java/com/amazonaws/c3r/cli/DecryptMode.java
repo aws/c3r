@@ -12,6 +12,7 @@ import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.C3rSdkProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
@@ -30,7 +31,7 @@ import static com.amazonaws.c3r.encryption.keys.KeyUtil.KEY_ENV_VAR;
 @Getter
 @CommandLine.Command(name = "decrypt",
         mixinStandardHelpOptions = true,
-        version = CliDescriptions.VERSION,
+        version = C3rSdkProperties.VERSION,
         descriptionHeading = "%nDescription:%n",
         description = "Decrypt data content derived from an AWS Clean Rooms collaboration.")
 public class DecryptMode implements Callable<Integer> {
