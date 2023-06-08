@@ -15,9 +15,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 // Tests top level adapter logic for schema generation to and from jsons.
@@ -117,5 +119,26 @@ public final class TableSchemaTypeAdapterTest {
             assertEquals(positional.getPad(), mapped.getPad());
             assertEquals(positional.getType(), mapped.getType());
         }
+    }
+
+    // Check that duplicate target columns are rejected regardless of normalization-irrelevant differences
+    @Test
+    public void checkDuplicateTargetColumnsErrorsTst() {
+        final String schema = String.join("\n", "{headerRow: true,",
+                "columns: [",
+                "{",
+                "  \"sourceHeader\": \"FirstName\",",
+                "  \"targetHeader\": \"FirstName\",",
+                "  \"type\": \"cleartext\"",
+                "},",
+                "{",
+                "  \"sourceHeader\": \"FirstName\",",
+                "  \"targetHeader\": \" firstname \",",
+                "  \"type\": \"cleartext\"",
+                "}",
+                "]}");
+        assertThrows(C3rIllegalArgumentException.class, () -> GsonUtil.fromJson(schema, TableSchema.class));
+
+        assertDoesNotThrow(() -> GsonUtil.fromJson(schema.replaceAll(" firstname ", "firstname2"), TableSchema.class));
     }
 }

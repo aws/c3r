@@ -19,6 +19,8 @@ NOTICE: This project is released as open source under the Apache 2.0 license but
       - [`encrypt` mode](#encrypt-mode)
       - [`decrypt` mode](#decrypt-mode)
     - [SDK Usage Examples](#sdk-usage-examples)
+  - [Running C3R on Apache Spark](#running-c3r-on-apache-spark)
+    - [Security Notes for running C3R on Apache Spark](#security-notes-for-running-c3r-on-apache-spark)
   - [General Security Notes](#general-security-notes)
     - [Trusted Computing Environment](#trusted-computing-environment)
     - [Temporary Files](#temporary-files)
@@ -114,6 +116,41 @@ See the "[Decrypting data tables with the C3R encryption client](https://docs.aw
 ### SDK Usage Examples
 
 SDK usage examples are available in the SDK packages' `src/examples` directories.
+
+## Running C3R on [Apache Spark](http://spark.apache.org/)
+
+The `c3r-cli-spark` package is a version of `c3r-cli` which must be submitted as a job to a running [Apache Spark](http://spark.apache.org/) server.
+
+The JAR's `com.amazonaws.c3r.spark.cli.Main` class is submitted via the Apache Spark `spark-submit` script and the JAR is then run using passed command line arguments. E.g., here is how to view the top-level usage information:
+
+```
+./spark-3.4.0-bin-hadoop3-scala2.13/bin/spark-submit \
+  --master SPARK_SERVER_URL \
+  ... spark-specific options omitted ... \
+  --class com.amazonaws.c3r.spark.cli.Main \
+  c3r-cli-spark.jar \
+  --help
+```
+
+And here is how to submit a job for encryption:
+
+```
+AWS_REGION=... \
+C3R_SHARED_SECRET=... \
+./spark-3.4.0-bin-hadoop3-scala2.13/bin/spark-submit \
+  --master SPARK_SERVER_URL \
+  ... spark-specific options omitted ... \
+  --class com.amazonaws.c3r.spark.cli.Main \
+  c3r-cli-spark.jar \
+  encrypt INPUT.parquet \
+  --schema=... \
+  --output=... \
+  --id=...
+```
+
+### Security Notes for running C3R on Apache Spark
+
+It is important to note that `c3r-cli-spark` makes no effort to add _additional_ encryption to data transmitted or stored in temporary files by Apache Spark. This means, for example, that on an Apache Spark server with no encryption enabled, sensitive info such as the `C3R_SHARED_SECRET` will appear in plaintext RPC calls between the server and workers. It is up to users to ensure their Apache Spark server has been configured according to their specific security needs. See the Apache Spark [security documentation](https://spark.apache.org/docs/latest/security.html) for guidance on how to configure Apache Spark server security settings.
 
 ## General Security Notes
 

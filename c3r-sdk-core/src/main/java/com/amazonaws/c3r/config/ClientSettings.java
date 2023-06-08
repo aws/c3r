@@ -6,12 +6,14 @@ package com.amazonaws.c3r.config;
 import lombok.Builder;
 import lombok.Value;
 
+import java.io.Serializable;
+
 /**
  * Contains clean room wide settings.
  */
 @Value
 @Builder
-public class ClientSettings {
+public class ClientSettings implements Serializable {
     /**
      * Whether cleartext columns are allowed.
      */

@@ -82,7 +82,7 @@ public class DecryptMode implements Callable<Integer> {
          */
         @CommandLine.Option(names = {"--output", "-o"},
                 description = CliDescriptions.OUTPUT_DESCRIPTION_CRYPTO,
-                paramLabel = "<file>")
+                paramLabel = "<dir>")
         private String output = null;
 
         /**

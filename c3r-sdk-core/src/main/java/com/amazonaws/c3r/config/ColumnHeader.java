@@ -9,11 +9,13 @@ import com.amazonaws.c3r.internal.Validatable;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 
+import java.io.Serializable;
+
 /**
  * Stores a normalized and validated column name (column header).
  */
 @EqualsAndHashCode
-public class ColumnHeader implements Validatable {
+public class ColumnHeader implements Validatable, Serializable {
     /**
      * Default suffix for unspecified sealed target column names.
      */
@@ -87,7 +89,7 @@ public class ColumnHeader implements Validatable {
         if (i < 0) {
             throw new C3rIllegalArgumentException("Column index must be non-negative");
         }
-        return new ColumnHeader("column " + (i + 1));
+        return new ColumnHeader("_c" + i);
     }
 
     /**

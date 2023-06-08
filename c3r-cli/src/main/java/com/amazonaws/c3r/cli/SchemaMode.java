@@ -9,6 +9,7 @@ import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.io.schema.CsvSchemaGenerator;
 import com.amazonaws.c3r.io.schema.ParquetSchemaGenerator;
+import com.amazonaws.c3r.utils.C3rCliProperties;
 import com.amazonaws.c3r.utils.C3rSdkProperties;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -209,7 +210,9 @@ public class SchemaMode implements Callable<Integer> {
         if (optionalArgs.id == null) {
             return null;
         }
-        final var dao = cleanRoomsDao != null ? cleanRoomsDao : CleanRoomsDao.builder().build();
+        final var dao = cleanRoomsDao != null
+                ? cleanRoomsDao
+                : CleanRoomsDao.builder().apiName(C3rCliProperties.API_NAME).build();
         return dao.withProfile(optionalArgs.profile).withRegion(optionalArgs.region)
                 .getCollaborationDataEncryptionMetadata(optionalArgs.id.toString());
     }

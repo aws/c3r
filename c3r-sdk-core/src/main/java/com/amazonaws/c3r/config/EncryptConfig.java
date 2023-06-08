@@ -12,15 +12,13 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import javax.crypto.SecretKey;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Information needed when encrypting a data file.
  */
 @Getter
-public final class EncryptConfig extends Config {
+public final class EncryptConfig extends SimpleFileConfig {
     /**
      * Directory to write temporary files in if two passes are needed to encrypt the data.
      */
@@ -78,7 +76,9 @@ public final class EncryptConfig extends Config {
         this.settings = settings;
         this.tableSchema = tableSchema;
         this.transformers = Transformer.initTransformers(secretKey, salt, settings, false);
+
         validate();
+        FileUtil.initFileIfNotExists(getTargetFile());
     }
 
     /**
@@ -89,19 +89,7 @@ public final class EncryptConfig extends Config {
      * @throws C3rIllegalArgumentException If any of the rules are violated
      */
     private void validate() {
-        FileUtil.verifyWriteableDirectory(tempDir);
-
-        if (!settings.isAllowCleartext()) {
-            final Map<ColumnType, List<ColumnSchema>> typeMap = tableSchema.getColumns().stream()
-                    .collect(Collectors.groupingBy(ColumnSchema::getType));
-            if (typeMap.containsKey(ColumnType.CLEARTEXT)) {
-                final String targetColumns = typeMap.get(ColumnType.CLEARTEXT).stream()
-                        .map(column -> column.getTargetHeader().toString())
-                        .collect(Collectors.joining("`, `"));
-                throw new C3rIllegalArgumentException(
-                        "Cleartext columns found in the schema, but allowCleartext is false. Target " +
-                                "column names: [`" + targetColumns + "`]");
-            }
-        }
+        FileUtil.verifyWritableDirectory(tempDir);
+        TableSchema.validateSchemaAgainstClientSettings(tableSchema, settings);
     }
 }

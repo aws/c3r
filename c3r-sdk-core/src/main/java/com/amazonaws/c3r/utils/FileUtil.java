@@ -68,7 +68,7 @@ public final class FileUtil {
             // decodes the value, regardless of padding. If you do change to `Files.readString()`, unit tests will fail due to the errors.
             bytes = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
         } catch (IOException e) {
-             throw new C3rRuntimeException("Failed to read file: " + file + ".");
+            throw new C3rRuntimeException("Failed to read file: " + file + ".");
         }
         return bytes;
     }
@@ -92,6 +92,28 @@ public final class FileUtil {
             throw new C3rIllegalArgumentException("Cannot read from file `" + location + "`. File does not exist.");
         } else if (!Files.isReadable(inFile)) {
             throw new C3rIllegalArgumentException("Cannot read from file `" + location + "`. Permission denied.");
+        }
+    }
+
+    /**
+     * Checks if a location is readable and a directory.
+     *
+     * @param location Filepath
+     * @throws C3rIllegalArgumentException If the filepath is empty, points to an invalid location or is not readable
+     */
+    public static void verifyReadableDirectory(final String location) {
+        if (location.isBlank()) {
+            throw new C3rIllegalArgumentException("File path is empty.");
+        }
+
+        // Check that it's a directory in a readable location
+        final Path inFile = Path.of(location);
+        if (!Files.isDirectory(inFile)) {
+            throw new C3rIllegalArgumentException("Cannot read from directory `" + location + "`. File is not a directory.");
+        } else if (Files.notExists(inFile)) {
+            throw new C3rIllegalArgumentException("Cannot read from directory `" + location + "`. File does not exist.");
+        } else if (!Files.isReadable(inFile)) {
+            throw new C3rIllegalArgumentException("Cannot read from directory `" + location + "`. Permission denied.");
         }
     }
 
@@ -126,13 +148,27 @@ public final class FileUtil {
      * @param location Filepath to check
      * @throws C3rIllegalArgumentException If the filepath is empty, not a directory or is not a writable location
      */
-    public static void verifyWriteableDirectory(final String location) {
+    public static void verifyWritableDirectory(final String location) {
+        verifyWritableDirectory(location, true);
+    }
+
+    /**
+     * Checks if a location is a writable directory. Directory must already exist.
+     *
+     * @param location Filepath to check
+     * @param overwrite Indicates if we can overwrite an existing path
+     * @throws C3rIllegalArgumentException If the filepath is empty, not a directory or is not a writable location
+     */
+    public static void verifyWritableDirectory(final String location, final boolean overwrite) {
         if (location.isBlank()) {
             throw new C3rIllegalArgumentException("File path is empty.");
         }
         // Check that it's a writeable directory
         final Path outFileDirectory = Path.of(location);
-        if (Files.exists(outFileDirectory) && !Files.isDirectory(outFileDirectory)) {
+        if (Files.exists(outFileDirectory) && !overwrite) {
+            throw new C3rIllegalArgumentException(
+                    "Cannot write to path `" + location + "`. path already exists and overwrite flag is false.");
+        } else if (Files.exists(outFileDirectory) && !Files.isDirectory(outFileDirectory)) {
             throw new C3rIllegalArgumentException("Cannot write to path `" + location + "`. Path is not a directory.");
         } else if (Files.exists(outFileDirectory) && !Files.isWritable(outFileDirectory)) {
             throw new C3rIllegalArgumentException("Cannot write to path `" + location + "`. Permission denied.");
@@ -154,6 +190,24 @@ public final class FileUtil {
                 setOwnerReadWriteOnlyPermissions(file.toFile());
             } catch (IOException e) {
                 throw new C3rRuntimeException("Cannot initialize file: " + fileName, e);
+            }
+        }
+    }
+
+    /**
+     * Creates the directory passed in if it does not exist and sets RW permissions only for the owner.
+     *
+     * @param directoryName the directory to be created
+     * @throws C3rRuntimeException If the file could not be initialized
+     */
+    public static void initDirectoryIfNotExists(final String directoryName) {
+        final Path file = Path.of(directoryName);
+        if (!Files.exists(file)) {
+            // create the target file and set RO permissions
+            try {
+                Files.createDirectory(file);
+            } catch (IOException e) {
+                throw new C3rRuntimeException("Cannot initialize directory: " + directoryName, e);
             }
         }
     }

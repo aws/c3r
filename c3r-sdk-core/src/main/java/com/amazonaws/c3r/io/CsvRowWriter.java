@@ -44,7 +44,7 @@ public final class CsvRowWriter implements RowWriter<CsvValue> {
     private final CsvWriter writer;
 
     /**
-     * Creates a record reader for a CSV file.
+     * Creates a record writer for a CSV file.
      *
      * @param targetName      File name for CSV to be written to
      * @param outputNullValue The value representing NULL in the output file. By default, `,,` will represent NULL

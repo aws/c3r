@@ -5,6 +5,7 @@ package com.amazonaws.c3r.config;
 
 import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -16,7 +17,7 @@ import java.util.Map;
  * Information needed when decrypting a data file.
  */
 @Getter
-public final class DecryptConfig extends Config {
+public final class DecryptConfig extends SimpleFileConfig {
 
     /**
      * Cryptographic transforms available.
@@ -59,6 +60,7 @@ public final class DecryptConfig extends Config {
         super(secretKey, sourceFile, fileFormat, targetFile, overwrite, csvInputNullValue, csvOutputNullValue, salt);
         this.transformers = Transformer.initTransformers(secretKey, salt, null, failOnFingerprintColumns);
         this.failOnFingerprintColumns = failOnFingerprintColumns;
-    }
 
+        FileUtil.initFileIfNotExists(getTargetFile());
+    }
 }

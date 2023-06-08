@@ -96,6 +96,8 @@ public abstract class TableSchema implements Validatable {
         }
 
         // Verify we have no duplicate target column headers
+        // NOTE: target column headers must have already been normalized when checking for duplicates here
+        // to ensure we don't get different column headers than end up being the same post-normalization.
         final Set<ColumnHeader> duplicateTargets = getColumns().stream()
                 .collect(Collectors.groupingBy(ColumnSchema::getTargetHeader)).entrySet()
                 .stream().filter(e -> e.getValue().size() > 1)
@@ -134,7 +136,30 @@ public abstract class TableSchema implements Validatable {
      *
      * @return {@code true} if the data has a header row
      */
-    protected Boolean getHeaderRowFlag() {
+    public Boolean getHeaderRowFlag() {
         return headerRow;
+    }
+
+    /**
+     * Verifies that settings are consistent.
+     * - If the clean room doesn't allow cleartext columns, verify none are in the schema
+     *
+     * @param schema   The TableSchema to validate
+     * @param settings The ClientSettings to validate the TableSchema against
+     * @throws C3rIllegalArgumentException If any of the rules are violated
+     */
+    public static void validateSchemaAgainstClientSettings(final TableSchema schema, final ClientSettings settings) {
+        if (!settings.isAllowCleartext()) {
+            final Map<ColumnType, List<ColumnSchema>> typeMap = schema.getColumns().stream()
+                    .collect(Collectors.groupingBy(ColumnSchema::getType));
+            if (typeMap.containsKey(ColumnType.CLEARTEXT)) {
+                final String targetColumns = typeMap.get(ColumnType.CLEARTEXT).stream()
+                        .map(column -> column.getTargetHeader().toString())
+                        .collect(Collectors.joining("`, `"));
+                throw new C3rIllegalArgumentException(
+                        "Cleartext columns found in the schema, but allowCleartext is false. Target " +
+                                "column names: [`" + targetColumns + "`]");
+            }
+        }
     }
 }
