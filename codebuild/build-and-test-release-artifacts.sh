@@ -28,9 +28,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 pushd $SCRIPT_DIR/.. > /dev/null
 
 C3R_CLI_DIR=c3r-cli/build/libs
+C3R_CLI_SPARK_DIR=c3r-cli-spark/build/libs
 
 # Build everything
-./gradlew build -x checkFileUtilTest
+./gradlew build -x checkFileUtilTest --parallel
 
 # Get the version from the CLI
 C3R_VERSION=$(java -jar $C3R_CLI_DIR/c3r-cli-all.jar --version)
@@ -47,6 +48,7 @@ mkdir -p $ARTIFACT_DIR
 
 # Move CLI jar to the artifact directory
 mv $C3R_CLI_DIR/c3r-cli-all.jar $ARTIFACT_DIR/c3r-cli-$C3R_VERSION.jar
+mv $C3R_CLI_SPARK_DIR/c3r-cli-spark-all.jar $ARTIFACT_DIR/c3r-cli-spark-$C3R_VERSION.jar
 
 # Given an SDK project name, collect it's JAR, javadocs JAR, and sources JAR
 # and move them to the artifact directory with a version number applied
