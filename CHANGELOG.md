@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0] - 2023-06-08
+
+- Initial C3R client for Apache Spark `c3r-cli-spark` (#223)
+- Use Clean Rooms header limits, deprecate Glue limit (#209)
+- Update input/output column count limits (#190)
+- Customize user agent, shared version constants (#219)
+- Bump software.amazon.awssdk:cleanrooms from 2.20.56 to 2.20.82
+- Bump org.xerial:sqlite-jdbc from 3.41.2.1 to 3.42.0.0 (#205)
+- Bump org.apache.parquet:parquet-hadoop from 1.13.0 to 1.13.1 (#201)
+- Bump info.picocli:picocli from 4.7.1 to 4.7.4 (#218)
+- Bump trufflesecurity/trufflehog from 3.33.0 to 3.39.0 (#216)
+
 ## [1.1.3] - 2023-05-01
 
 ### Changed
