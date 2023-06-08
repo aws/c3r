@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -17,7 +18,7 @@ import java.util.UUID;
  */
 @EqualsAndHashCode
 @Getter
-public class ColumnSchema implements Validatable {
+public class ColumnSchema implements Validatable, Serializable {
     /**
      * What cryptographic transform to apply to data.
      */

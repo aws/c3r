@@ -69,6 +69,45 @@ public class FileUtilTest {
     }
 
     @Test
+    public void verifyBlankLocationRejectedByVerifyReadableDirectory() {
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyReadableDirectory(""));
+    }
+
+    @Test
+    public void verifyFileRejectedByVerifyReadableDirectory() {
+        assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyReadableDirectory(FileTestUtility.createTempFile().toString()));
+    }
+
+    @Test
+    public void verifyMissingDirectoryRejectedByVerifyReadableDirectory() throws IOException {
+        final String file = FileTestUtility.resolve("directory").toString();
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyReadableDirectory(file));
+    }
+
+    @Test
+    public void verifyNoReadPermissionsRejectedByVerifyReadableDirectory() throws IOException {
+        final File file = FileTestUtility.createTempDir().toFile();
+        if (isWindows()) {
+            setWindowsFilePermissions(file.toPath(), AclEntryType.DENY, Set.of(AclEntryPermission.READ_DATA));
+        } else {
+            assertTrue(file.setReadable(false, false));
+        }
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyReadableDirectory(file.getAbsolutePath()));
+    }
+
+    @Test
+    public void verifyDirectoryAcceptedByVerifyReadableDirectory() throws IOException {
+        final File file = FileTestUtility.createTempDir().toFile();
+        if (isWindows()) {
+            setWindowsFilePermissions(file.toPath(), AclEntryType.ALLOW, Set.of(AclEntryPermission.READ_DATA));
+        } else {
+            assertTrue(file.setReadable(true, true));
+        }
+        assertDoesNotThrow(() -> FileUtil.verifyReadableDirectory(file.getAbsolutePath()));
+    }
+
+    @Test
     public void verifyBlankLocationRejectedByVerifyWritableFile() {
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableFile("", false));
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableFile("", true));
@@ -113,13 +152,13 @@ public class FileUtilTest {
 
     @Test
     public void verifyBlankLocationRejectedByVerifyWriteableDirectory() {
-        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWriteableDirectory(""));
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableDirectory(""));
     }
 
     @Test
     public void verifyFileIsRejectedByVerifyWriteableDirectory() throws IOException {
         final String file = FileTestUtility.createTempFile().toString();
-        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWriteableDirectory(file));
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableDirectory(file));
     }
 
     @Test
@@ -130,19 +169,31 @@ public class FileUtilTest {
         } else {
             assertTrue(dir.setWritable(false, false));
         }
-        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWriteableDirectory(dir.getAbsolutePath()));
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableDirectory(dir.getAbsolutePath()));
     }
 
     @Test
     public void verifyDirectoryAcceptedByVerifyWriteableDirectory() throws IOException {
         final String dir = FileTestUtility.createTempDir().toFile().toString();
-        assertDoesNotThrow(() -> FileUtil.verifyWriteableDirectory(dir));
+        assertDoesNotThrow(() -> FileUtil.verifyWritableDirectory(dir));
     }
 
     @Test
     public void verifyNewDirectoryAcceptedByVerifyWriteableDirectory() throws IOException {
         final String dir = FileTestUtility.createTempDir().toString();
-        assertDoesNotThrow(() -> FileUtil.verifyWriteableDirectory(dir));
+        assertDoesNotThrow(() -> FileUtil.verifyWritableDirectory(dir));
+    }
+
+    @Test
+    public void verifyExistingDirectoryAndNoOverwriteRejectedByVerifyDirectoryWriteable() throws IOException {
+        final String file = FileTestUtility.createTempDir().toString();
+        assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableDirectory(file, false));
+    }
+
+    @Test
+    public void verifyExistingDirectoryAndOverwriteAcceptedByVerifyDirectoryWriteable() throws IOException {
+        final String file = FileTestUtility.createTempDir().toString();
+        assertDoesNotThrow(() -> FileUtil.verifyWritableDirectory(file, true));
     }
 
     @Test

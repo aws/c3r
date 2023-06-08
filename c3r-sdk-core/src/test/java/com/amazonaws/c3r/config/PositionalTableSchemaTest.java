@@ -283,11 +283,11 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
             final Map<String, String> r = lookupMap.get(knownGoodRow[0]);
             assertEquals(5, r.size());
             assertEquals(knownGoodHeaders, r.keySet());
-            assertTrue(CsvTestUtility.compareCsvValues(knownGoodRow[0], r.get("t1")));
-            assertTrue(CsvTestUtility.compareCsvValues(knownGoodRow[2], r.get("t2")));
-            assertTrue(CsvTestUtility.compareCsvValues(knownGoodRow[2], r.get("t3")));
-            assertTrue(CsvTestUtility.compareCsvValues(knownGoodRow[5], r.get("t4")));
-            assertTrue(CsvTestUtility.compareCsvValues(knownGoodRow[8], r.get("t5")));
+            assertEquals(knownGoodRow[0], r.get("t1"));
+            assertEquals(knownGoodRow[2], r.get("t2"));
+            assertEquals(knownGoodRow[2], r.get("t3"));
+            assertEquals(knownGoodRow[5], r.get("t4"));
+            assertEquals(knownGoodRow[8], r.get("t5"));
         }
     }
 

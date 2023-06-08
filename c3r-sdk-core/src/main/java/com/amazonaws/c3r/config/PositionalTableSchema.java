@@ -115,11 +115,11 @@ public class PositionalTableSchema extends TableSchema {
     private ColumnSchema validateAndConfigureColumnSchema(final int sourceColumnIndex, final ColumnSchema column) {
         if (column.getSourceHeader() != null) {
             throw new C3rIllegalArgumentException("Positional table schemas cannot have `sourceHeader` properties in column schema, but " +
-                    "found one in " + ColumnHeader.getColumnHeaderFromIndex(sourceColumnIndex) + ".");
+                    "found one in column " + (sourceColumnIndex + 1) + ".");
         }
         if (column.getTargetHeader() == null) {
             throw new C3rIllegalArgumentException("Positional table schemas must have a target header name for each column schema. " +
-                    "Missing target header in " + ColumnHeader.getColumnHeaderFromIndex(sourceColumnIndex) + ".");
+                    "Missing target header in column " + (sourceColumnIndex + 1) + ".");
         }
         return ColumnSchema.builder()
                 .sourceHeader(ColumnHeader.getColumnHeaderFromIndex(sourceColumnIndex))

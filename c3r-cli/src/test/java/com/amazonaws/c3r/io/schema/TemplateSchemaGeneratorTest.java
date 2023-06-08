@@ -32,7 +32,7 @@ public class TemplateSchemaGeneratorTest {
     public void validateErrorWithMismatchedColumnCounts() {
         assertThrows(C3rIllegalArgumentException.class, () ->
                 TemplateSchemaGenerator.builder()
-                        .sourceHeaders(List.of(new ColumnHeader("Column 1")))
+                        .sourceHeaders(List.of(new ColumnHeader("_c0")))
                         .sourceColumnTypes(List.of())
                         .targetJsonFile(tempSchema.toString())
                         .build());
@@ -87,7 +87,7 @@ public class TemplateSchemaGeneratorTest {
                 "  \"columns\": [",
                 "    [",
                 "      {",
-                "        \"targetHeader\": \"column 1\",",
+                "        \"targetHeader\": \"_c0\",",
                 "        \"type\": \"[sealed|fingerprint|cleartext]\",",
                 "        \"pad\": {",
                 "          \"COMMENT\": \"omit this pad entry unless column type is sealed\",",
@@ -98,7 +98,7 @@ public class TemplateSchemaGeneratorTest {
                 "    ],",
                 "    [",
                 "      {",
-                "        \"targetHeader\": \"column 2\",",
+                "        \"targetHeader\": \"_c1\",",
                 "        \"type\": \"cleartext\"",
                 "      }",
                 "    ]",
@@ -168,7 +168,7 @@ public class TemplateSchemaGeneratorTest {
                 "  \"columns\": [",
                 "    [",
                 "      {",
-                "        \"targetHeader\": \"column 1\",",
+                "        \"targetHeader\": \"_c0\",",
                 "        \"type\": \"[sealed|fingerprint|cleartext]\",",
                 "        \"pad\": {",
                 "          \"COMMENT\": \"omit this pad entry unless column type is sealed\",",
@@ -179,7 +179,7 @@ public class TemplateSchemaGeneratorTest {
                 "    ],",
                 "    [",
                 "      {",
-                "        \"targetHeader\": \"column 2\",",
+                "        \"targetHeader\": \"_c1\",",
                 "        \"type\": \"cleartext\"",
                 "      }",
                 "    ]",
@@ -245,7 +245,7 @@ public class TemplateSchemaGeneratorTest {
                 "  \"columns\": [",
                 "    [",
                 "      {",
-                "        \"targetHeader\": \"column 1\",",
+                "        \"targetHeader\": \"_c0\",",
                 "        \"type\": \"[sealed|fingerprint]\",",
                 "        \"pad\": {",
                 "          \"COMMENT\": \"omit this pad entry unless column type is sealed\",",

@@ -3,10 +3,12 @@
 
 package com.amazonaws.c3r.config;
 
+import java.io.Serializable;
+
 /**
  * Differentiators for padding types.
  */
-public enum PadType {
+public enum PadType implements Serializable {
     /**
      * Values are not padded.
      */

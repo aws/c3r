@@ -7,10 +7,12 @@ import com.amazonaws.c3r.CleartextTransformer;
 import com.amazonaws.c3r.FingerprintTransformer;
 import com.amazonaws.c3r.SealedTransformer;
 
+import java.io.Serializable;
+
 /**
  * Differentiators for how a column is represented.
  */
-public enum ColumnType {
+public enum ColumnType implements Serializable {
     /**
      * Encrypted, meant to be used in the SELECT clause of an SQL query.
      */

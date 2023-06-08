@@ -10,12 +10,14 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.io.Serializable;
+
 /**
  * The pad type and pad length (if applicable) that should be used on a {@link ColumnType#SEALED} column.
  */
 @EqualsAndHashCode
 @Getter
-public final class Pad implements Validatable {
+public final class Pad implements Validatable, Serializable {
     /**
      * Default specifications for padding.
      */

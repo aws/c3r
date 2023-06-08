@@ -3,14 +3,15 @@
 
 package com.amazonaws.c3r.config;
 
+import com.amazonaws.c3r.encryption.keys.DerivedRootEncryptionKey;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
-import com.amazonaws.c3r.utils.FileUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
 import javax.crypto.SecretKey;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Basic information needed whether encrypting or decrypting data.
@@ -31,6 +32,11 @@ public abstract class Config {
      * Where output should be saved.
      */
     private final String targetFile;
+
+    /**
+     * Whether to overwrite the target file.
+     */
+    private final boolean overwrite;
 
     /**
      * What value should be interpreted as {@code null} for CSV files.
@@ -71,12 +77,12 @@ public abstract class Config {
         this.sourceFile = sourceFile;
         this.fileFormat = fileFormat == null ? FileFormat.fromFileName(sourceFile) : fileFormat;
         this.targetFile = targetFile == null ? getDefaultTargetFile(sourceFile) : targetFile;
+        this.overwrite = overwrite;
         this.csvInputNullValue = csvInputNullValue;
         this.csvOutputNullValue = csvOutputNullValue;
         this.salt = salt;
-        validate(overwrite);
 
-        FileUtil.initFileIfNotExists(this.targetFile);
+        validate();
     }
 
     /**
@@ -97,23 +103,13 @@ public abstract class Config {
     }
 
     /**
-     * Make sure files can be accessed and the data format is known.
+     * Verifies that settings are consistent.
+     * - Make sure the shared secret is valid
      *
-     * @param overwrite Whether to overwrite the output file if it already exists
      * @throws C3rIllegalArgumentException If any of the rules are violated
      */
-    private void validate(final boolean overwrite) {
-        FileUtil.verifyReadableFile(sourceFile);
-        FileUtil.verifyWritableFile(targetFile, overwrite);
-
-        if (fileFormat == null) {
-            throw new C3rIllegalArgumentException("Unknown file extension: please specify the file format for file " + sourceFile + ".");
-        }
-
-        if (fileFormat != FileFormat.CSV) {
-            if (csvInputNullValue != null || csvOutputNullValue != null) {
-                throw new C3rIllegalArgumentException("CSV options specified for " + fileFormat + " file.");
-            }
-        }
+    private void validate() {
+        // Validates that a key can be derived early instead of waiting for Transformer initialization later.
+        new DerivedRootEncryptionKey(secretKey, salt.getBytes(StandardCharsets.UTF_8));
     }
 }

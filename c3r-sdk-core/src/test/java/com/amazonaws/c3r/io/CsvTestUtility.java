@@ -54,7 +54,10 @@ public final class CsvTestUtility {
         final CsvParserSettings settings = getBasicParserSettings(true);
         settings.setHeaderExtractionEnabled(true);
         final CsvParser parser = new CsvParser(settings);
-        return parser.parseAllRecords(new File(fileName)).stream().map(r -> r.toFieldMap()).collect(Collectors.toList());
+        return parser.parseAllRecords(new File(fileName), StandardCharsets.UTF_8)
+                .stream()
+                .map(r -> r.toFieldMap())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -71,19 +74,4 @@ public final class CsvTestUtility {
 
     }
 
-    /**
-     * Compares two CSV values for equality, ignoring quote marks if {@code ignoreQuotes} is true.
-     *
-     * @param val1 First CSV value to compare
-     * @param val2 Second CSV value to compare
-     * @return {@code true} if the values are equivalent
-     */
-    public static boolean compareCsvValues(final String val1, final String val2) {
-        if (val1 == null && val2 == null) {
-            return true;
-        } else if (val1 == null || val2 == null) {
-            return false;
-        }
-        return val1.compareTo(val2) == 0;
-    }
 }

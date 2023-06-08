@@ -63,8 +63,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RowMarshallerTest {
-    private static final String NOTES_COLUMN_LONGEST_VALUE =
-            "This is a really long note that could really be a paragraph";
 
     private String tempDir;
 
@@ -131,9 +129,23 @@ public class RowMarshallerTest {
 
         final var notesTargetHeader = new ColumnHeader("notes");
 
-        // Track the longest value for dynamic padding
+        final int longestNoteValueByteLength = 60;
+
+        if (!FileUtil.isWindows()) {
+            // NOTE 1: Spot check our length ONLY on *nix system CI. On Windows the length of Java string literals appearing
+            // in tests like this be encoded differently. This only matters for tests like this storing
+            // string literals - it does not matter when we read in a file from disk that is UTF8.
+            // NOTE 2: Importantly, the longest `Notes` string has a unicode character `é` (U+00E9) that takes two bytes
+            // in UTF8 (0xC3 0xA9), and so relying on non-UTF8-byte-length notions of a string value's "length"
+            // can lead to errors on UTF8 data containing such values.
+            assertEquals(
+                    longestNoteValueByteLength,
+                    "This is a really long noté that could really be a paragraph"
+                            .getBytes(StandardCharsets.UTF_8).length);
+        }
+
         assertEquals(
-                NOTES_COLUMN_LONGEST_VALUE.length(),
+                longestNoteValueByteLength,
                 targetHeaderMappedColumnInsights.get(notesTargetHeader).getMaxValueLength());
     }
 
@@ -309,7 +321,7 @@ public class RowMarshallerTest {
             for (String s : headers) {
                 final var original = originalLine.get(s);
                 final var cipherCleartext = cipherLine.get(new ColumnHeader(s).toString());
-                assertTrue(CsvTestUtility.compareCsvValues(original, cipherCleartext));
+                assertEquals(original, cipherCleartext);
                 final var cipherSealed = cipherLine.get(s + "_sealed");
                 assertNotEquals(original, cipherSealed);
                 final var cipherFixed = cipherLine.get(s + "_fixed");
@@ -345,13 +357,13 @@ public class RowMarshallerTest {
                 final var resultHeader = new ColumnHeader(s).toString();
                 final var original = originalLine.get(s);
                 final var result = resultLine.get(resultHeader);
-                assertTrue(CsvTestUtility.compareCsvValues(original, result));
+                assertEquals(original, result);
                 final var cipherSealed = resultLine.get(resultHeader + "_sealed");
-                assertTrue(CsvTestUtility.compareCsvValues(original, cipherSealed));
+                assertEquals(original, cipherSealed);
                 final var cipherFixed = resultLine.get(resultHeader + "_fixed");
-                assertTrue(CsvTestUtility.compareCsvValues(original, cipherFixed));
+                assertEquals(original, cipherFixed);
                 final var cipherMax = resultLine.get(resultHeader + "_max");
-                assertTrue(CsvTestUtility.compareCsvValues(original, cipherMax));
+                assertEquals(original, cipherMax);
             }
         }
     }

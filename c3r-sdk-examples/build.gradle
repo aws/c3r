@@ -20,8 +20,6 @@ spotbugs {
     excludeFilter.set(file("../config/spotbugs/excludeFilter.xml"))
 }
 
-ext.spark_version = '3.4.0'
-
 dependencies {
     // AWS-C3R
     implementation project(":c3r-sdk-core")

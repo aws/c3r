@@ -10,7 +10,8 @@
 
 rootProject.name = 'cryptographic-computing-for-clean-rooms'
 
-include 'c3r-sdk-core'
-include 'c3r-sdk-parquet'
 include 'c3r-cli'
+include 'c3r-cli-spark'
+include 'c3r-sdk-core'
 include 'c3r-sdk-examples'
+include 'c3r-sdk-parquet'

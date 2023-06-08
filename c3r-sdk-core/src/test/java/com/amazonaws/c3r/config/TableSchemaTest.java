@@ -110,14 +110,24 @@ public class TableSchemaTest {
         final var tableSchema = generateMockTableSchema(true, noDuplicates);
         assertDoesNotThrow(tableSchema::validate);
 
-        final List<ColumnSchema> duplicates = List.of(
+        final List<ColumnSchema> duplicates1 = List.of(
                 GeneralTestUtility.cleartextColumn("s1", "t1"),
                 GeneralTestUtility.cleartextColumn("s2", "t2"),
                 GeneralTestUtility.cleartextColumn("s3", "t2")
         );
-        final var tableSchemaDuplicates = generateMockTableSchema(true, duplicates);
-        final Exception e = assertThrows(C3rIllegalArgumentException.class, tableSchemaDuplicates::validate);
-        assertEquals("Target header name can only be used once. Duplicates found: t2", e.getMessage());
+        final var tableSchemaDuplicates = generateMockTableSchema(true, duplicates1);
+        final Exception e1 = assertThrows(C3rIllegalArgumentException.class, tableSchemaDuplicates::validate);
+        assertEquals("Target header name can only be used once. Duplicates found: t2", e1.getMessage());
+
+        // Check  that normalization happens prior to deduplication checks, i.e. that" T2 " counts as a duplicate
+        final List<ColumnSchema> duplicates2 = List.of(
+                GeneralTestUtility.cleartextColumn("s1", "t1"),
+                GeneralTestUtility.cleartextColumn("s2", "t2"),
+                GeneralTestUtility.cleartextColumn("s3", " T2 ")
+        );
+        final var tableSchemaDuplicates2 = generateMockTableSchema(true, duplicates2);
+        final Exception e2 = assertThrows(C3rIllegalArgumentException.class, tableSchemaDuplicates2::validate);
+        assertEquals("Target header name can only be used once. Duplicates found: t2", e2.getMessage());
     }
 
     // Test that a null value for the header and a null value for the columns causes construction to fail.

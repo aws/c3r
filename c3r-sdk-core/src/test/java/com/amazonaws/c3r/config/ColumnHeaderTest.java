@@ -115,7 +115,7 @@ public class ColumnHeaderTest {
     // Check that we generate the expected valid and invalid results when creating a header from index.
     @Test
     public void columnHeaderFromIndexTest() {
-        assertEquals(new ColumnHeader("Column 1"), ColumnHeader.getColumnHeaderFromIndex(0));
+        assertEquals(new ColumnHeader("_c0"), ColumnHeader.getColumnHeaderFromIndex(0));
         assertThrows(C3rIllegalArgumentException.class, () -> ColumnHeader.getColumnHeaderFromIndex(-10));
     }
 
