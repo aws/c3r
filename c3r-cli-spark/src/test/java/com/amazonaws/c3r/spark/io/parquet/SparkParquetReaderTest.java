@@ -17,12 +17,18 @@ import com.amazonaws.c3r.utils.FileUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import scala.collection.Iterable;
+import scala.collection.immutable.Seq;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +37,7 @@ import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.DATA_SAMPLE_HEADE
 import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.DATA_SAMPLE_HEADERS_NO_NORMALIZATION;
 import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.EXAMPLE_SALT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -119,5 +126,28 @@ public class SparkParquetReaderTest {
         when(dataset.columns()).thenReturn(new String[0]); // in range column size
         when(dataset.count()).thenReturn(Limits.ROW_COUNT_MAX + 1L);
         assertThrows(C3rRuntimeException.class, () -> SparkParquetReader.validate(dataset));
+    }
+
+    @Test
+    public void maliciousColumnHeaderTest() throws IOException {
+        final StructField maliciousColumn = DataTypes.createStructField("; DROP ALL TABLES;", DataTypes.StringType, true);
+        final StructType maliciousSchema = DataTypes.createStructType(new StructField[]{maliciousColumn});
+        final ArrayList<Row> data = new ArrayList<>();
+        data.add(Row.fromSeq(Seq.from(Iterable.single("value"))));
+        final Dataset<Row> maliciousDataset = session.createDataFrame(data, maliciousSchema);
+        final Path tempDir = FileTestUtility.createTempDir();
+        SparkParquetWriter.writeOutput(maliciousDataset, tempDir.toString());
+        final Dataset<Row> dataset = SparkParquetReader.readInput(session, tempDir.toString());
+
+        /*
+         Assert the malicious header is like any other.
+
+         While the standard Spark Parquet reader will allow special chars, since a ColumnHeader will not, we can assume
+         any fields like this will be dropped later before any further parsing.
+         */
+        assertEquals(maliciousColumn.name(), dataset.columns()[0]);
+
+        // Assert values still exist
+        assertFalse(dataset.isEmpty());
     }
 }
