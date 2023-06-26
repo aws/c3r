@@ -161,7 +161,7 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
     // Take in a set of values and construct a column schema with the index as the source header.
     private static ColumnSchema makeColumnSchema(final int idx, final KnownPartsToCompare known) {
         return ColumnSchema.builder()
-                .sourceHeader(ColumnHeader.getColumnHeaderFromIndex(idx))
+                .sourceHeader(ColumnHeader.of(idx))
                 .targetHeader(known.target)
                 .pad(known.pad)
                 .type(known.colType)
@@ -191,18 +191,18 @@ public final class PositionalTableSchemaTypeAdapterTest implements TableSchemaCo
         final ColumnSchema col1Cleartext = cols.get(0);
         final ColumnSchema col1Sealed = cols.get(1);
         final ColumnSchema col1Fingerprint = cols.get(2);
-        assertEquals(ColumnHeader.getColumnHeaderFromIndex(0), col1Cleartext.getSourceHeader());
+        assertEquals(ColumnHeader.of(0), col1Cleartext.getSourceHeader());
         assertEquals("column 1 cleartext", col1Cleartext.getTargetHeader().toString());
         assertEquals(ColumnType.CLEARTEXT, col1Cleartext.getType());
-        assertEquals(ColumnHeader.getColumnHeaderFromIndex(0), col1Sealed.getSourceHeader());
+        assertEquals(ColumnHeader.of(0), col1Sealed.getSourceHeader());
         assertEquals("column 1 sealed", col1Sealed.getTargetHeader().toString());
         assertEquals(ColumnType.SEALED, col1Sealed.getType());
         assertEquals(Pad.DEFAULT, col1Sealed.getPad());
-        assertEquals(ColumnHeader.getColumnHeaderFromIndex(0), col1Fingerprint.getSourceHeader());
+        assertEquals(ColumnHeader.of(0), col1Fingerprint.getSourceHeader());
         assertEquals("column 1 fingerprint", col1Fingerprint.getTargetHeader().toString());
         assertEquals(ColumnType.FINGERPRINT, col1Fingerprint.getType());
         final ColumnSchema col3 = cols.get(3);
-        assertEquals(ColumnHeader.getColumnHeaderFromIndex(2), col3.getSourceHeader());
+        assertEquals(ColumnHeader.of(2), col3.getSourceHeader());
         assertEquals("column 3", col3.getTargetHeader().toString());
         assertEquals(ColumnType.CLEARTEXT, col3.getType());
     }

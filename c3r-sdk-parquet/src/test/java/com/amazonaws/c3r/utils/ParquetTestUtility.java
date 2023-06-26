@@ -21,6 +21,41 @@ import static java.util.Map.entry;
  * Utility class for testing Parquet functionality.
  */
 public final class ParquetTestUtility {
+
+    public static final String PARQUET_SAMPLE_DATA_PATH = "../samples/parquet/data_sample.parquet";
+
+    /**
+     * Raw column names and types for {@link #PARQUET_SAMPLE_DATA_PATH}.
+     */
+    public static final List<Map.Entry<String, ClientDataType>> PARQUET_SAMPLE_DATA_ROW_TYPE_ENTRIES =
+            List.of(entry("FirstName", ClientDataType.STRING),
+                    entry("LastName", ClientDataType.STRING),
+                    entry("Address", ClientDataType.STRING),
+                    entry("City", ClientDataType.STRING),
+                    entry("State", ClientDataType.STRING),
+                    entry("PhoneNumber", ClientDataType.STRING),
+                    entry("Title", ClientDataType.STRING),
+                    entry("Level", ClientDataType.STRING),
+                    entry("Notes", ClientDataType.STRING));
+
+    /**
+     * ColumnHeaders for {@link #PARQUET_SAMPLE_DATA_PATH}.
+     */
+    public static final List<ColumnHeader> PARQUET_SAMPLE_DATA_HEADERS =
+            PARQUET_SAMPLE_DATA_ROW_TYPE_ENTRIES.stream()
+                    .map(Map.Entry::getKey)
+                    .map(ColumnHeader::new)
+                    .collect(Collectors.toList());
+
+    /**
+     * Non-normalized ColumnHeaders for {@link #PARQUET_SAMPLE_DATA_PATH}.
+     */
+    public static final List<ColumnHeader> PARQUET_SAMPLE_DATA_HEADERS_NO_NORMALIZATION =
+            PARQUET_SAMPLE_DATA_ROW_TYPE_ENTRIES.stream()
+                    .map(Map.Entry::getKey)
+                    .map(ColumnHeader::ofRaw)
+                    .collect(Collectors.toList());
+
     /**
      * A file containing a single row and single column of Parquet data.
      */

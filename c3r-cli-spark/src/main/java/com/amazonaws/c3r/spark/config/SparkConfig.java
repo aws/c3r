@@ -16,6 +16,13 @@ import java.nio.file.Path;
  * Basic information needed whether encrypting or decrypting data for Spark types.
  */
 public class SparkConfig extends Config {
+
+    /**
+     * {@link org.apache.spark.sql.util.CaseInsensitiveStringMap} key for whether header normalization
+     * is skipped.
+     */
+    public static final String PROPERTY_KEY_SKIP_HEADER_NORMALIZATION = "skipHeaderNormalization";
+
     /**
      * Basic configuration information needed for encrypting or decrypting data.
      *

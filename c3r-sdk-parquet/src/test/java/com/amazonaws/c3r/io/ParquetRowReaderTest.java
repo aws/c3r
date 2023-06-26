@@ -104,10 +104,40 @@ public class ParquetRowReaderTest {
 
     @Test
     public void getHeadersTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder()
+                .sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH)
+                .build();
         assertEquals(
                 ParquetTestUtility.PARQUET_TEST_DATA_HEADERS,
                 pReader.getHeaders());
+    }
+
+    @Test
+    public void getHeadersWithNormalizationTest() {
+        final var pReader = ParquetRowReader.builder()
+                .sourceName(ParquetTestUtility.PARQUET_SAMPLE_DATA_PATH)
+                .skipHeaderNormalization(false)
+                .build();
+        assertEquals(
+                ParquetTestUtility.PARQUET_SAMPLE_DATA_HEADERS,
+                pReader.getHeaders());
+        assertEquals(
+                ParquetTestUtility.PARQUET_SAMPLE_DATA_HEADERS,
+                pReader.getParquetSchema().getHeaders());
+    }
+
+    @Test
+    public void getHeadersWithoutNormalizationTest() {
+        final var pReader = ParquetRowReader.builder()
+                .sourceName(ParquetTestUtility.PARQUET_SAMPLE_DATA_PATH)
+                .skipHeaderNormalization(true)
+                .build();
+        assertEquals(
+                ParquetTestUtility.PARQUET_SAMPLE_DATA_HEADERS_NO_NORMALIZATION,
+                pReader.getHeaders());
+        assertEquals(
+                ParquetTestUtility.PARQUET_SAMPLE_DATA_HEADERS_NO_NORMALIZATION,
+                pReader.getParquetSchema().getHeaders());
     }
 
     @Test

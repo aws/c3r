@@ -340,7 +340,10 @@ public class EncryptMode implements Callable<Integer> {
                         SparkCsvWriter.writeOutput(marshalledCsvDataset, cfg.getTargetFile(), cfg.getCsvOutputNullValue());
                         break;
                     case PARQUET:
-                        final Dataset<Row> parquetDataset = SparkParquetReader.readInput(sparkSession, cfg.getSourceFile());
+                        final Dataset<Row> parquetDataset = SparkParquetReader.readInput(
+                                sparkSession,
+                                cfg.getSourceFile(),
+                                /* skipHeaderNormalization */ false);
                         final Dataset<Row> marshalledParquetDataset = SparkMarshaller.encrypt(parquetDataset, cfg);
                         SparkParquetWriter.writeOutput(marshalledParquetDataset, cfg.getTargetFile());
                         break;

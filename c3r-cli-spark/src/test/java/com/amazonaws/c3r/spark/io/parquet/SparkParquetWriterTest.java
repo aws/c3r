@@ -53,13 +53,17 @@ public class SparkParquetWriterTest {
 
     @Test
     public void writeOutputTest() {
-        final Dataset<Row> originalDataset = SparkParquetReader.readInput(session, config.getSourceFile());
+        final Dataset<Row> originalDataset = SparkParquetReader.readInput(
+                session,
+                config.getSourceFile());
         final List<String> originalColumns = Arrays.stream(originalDataset.columns())
                 .map(String::toLowerCase)
                 .sorted()
                 .collect(Collectors.toList());
         SparkParquetWriter.writeOutput(originalDataset, config.getTargetFile());
-        final Dataset<Row> newDataset = SparkParquetReader.readInput(session, config.getTargetFile());
+        final Dataset<Row> newDataset = SparkParquetReader.readInput(
+                session,
+                config.getTargetFile());
         final List<String> newColumns = Arrays.stream(originalDataset.columns())
                 .map(String::toLowerCase)
                 .sorted()

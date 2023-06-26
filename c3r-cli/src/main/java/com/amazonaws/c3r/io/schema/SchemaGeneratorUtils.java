@@ -26,7 +26,7 @@ public final class SchemaGeneratorUtils {
         if (columnHeader != null) {
             return "column `" + columnHeader + "`";
         } else {
-            return ColumnHeader.getColumnHeaderFromIndex(columnIndex).toString();
+            return ColumnHeader.of(columnIndex).toString();
         }
     }
 

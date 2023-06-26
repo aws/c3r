@@ -12,7 +12,7 @@ import lombok.NonNull;
 import java.io.Serializable;
 
 /**
- * Stores a normalized and validated column name (column header).
+ * A column name (column header) that is normalized and validated by default.
  */
 @EqualsAndHashCode
 public class ColumnHeader implements Validatable, Serializable {
@@ -27,6 +27,11 @@ public class ColumnHeader implements Validatable, Serializable {
     public static final String DEFAULT_FINGERPRINT_SUFFIX = "_fingerprint";
 
     /**
+     * Whether {@link #header} was normalized.
+     */
+    private final boolean normalized;
+
+    /**
      * The name of the Column.
      */
     private final String header;
@@ -37,7 +42,18 @@ public class ColumnHeader implements Validatable, Serializable {
      * @param header The name to use (possibly trimmed, made all lowercase)
      */
     public ColumnHeader(final String header) {
-        this.header = normalize(header);
+        this(header, true);
+    }
+
+    /**
+     * Construct a header, optionally normalizing it.
+     *
+     * @param header          Header content
+     * @param normalizeHeader Whether to normalize the header
+     */
+    private ColumnHeader(final String header, final boolean normalizeHeader) {
+        this.normalized = normalizeHeader;
+        this.header = normalizeHeader ? normalize(header) : header;
         validate();
     }
 
@@ -79,17 +95,40 @@ public class ColumnHeader implements Validatable, Serializable {
     }
 
     /**
-     * Construct the column name from a zero counted array. Column names are one counted.
+     * Create a raw column header from a string (i.e., perform no normalization).
+     *
+     * @param header Raw content to use (unmodified) for the header; cannot be null.
+     * @return The unmodified column header
+     */
+    public static ColumnHeader ofRaw(final String header) {
+        return new ColumnHeader(header, false);
+    }
+
+    /**
+     * Construct the column name from a zero counted array.
      *
      * @param i Index of the column we want a name for
-     * @return ColumnHeader where the name is "Column (i+1)"
+     * @return ColumnHeader based on the index
      * @throws C3rIllegalArgumentException If the index is negative
      */
-    public static ColumnHeader getColumnHeaderFromIndex(final int i) {
+    public static ColumnHeader of(final int i) {
         if (i < 0) {
             throw new C3rIllegalArgumentException("Column index must be non-negative");
         }
         return new ColumnHeader("_c" + i);
+    }
+
+    /**
+     * Construct the column name from a zero counted array.
+     *
+     * @param i Index of the column we want a name for
+     * @return ColumnHeader based on the given index
+     * @throws C3rIllegalArgumentException If the index is negative
+     * @deprecated Use the {@link #of(int)} static factory method.
+     */
+    @Deprecated
+    public static ColumnHeader getColumnHeaderFromIndex(final int i) {
+        return ColumnHeader.of(i);
     }
 
     /**
@@ -127,21 +166,23 @@ public class ColumnHeader implements Validatable, Serializable {
         if (header == null || header.isBlank()) {
             throw new C3rIllegalArgumentException("Column header names must not be blank");
         }
-        if (header.length() > Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH) {
-            throw new C3rIllegalArgumentException(
-                    "Column header names cannot be longer than "
-                            + Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH
-                            + " characters, but found `"
-                            + header
-                            + "`.");
-        }
-        if (!Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.matcher(header).matches()) {
-            throw new C3rIllegalArgumentException(
-                    "Column header name `"
-                            + header
-                            + "` does not match pattern `"
-                            + Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.pattern()
-                            + "`.");
+        if (normalized) {
+            if (header.length() > Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH) {
+                throw new C3rIllegalArgumentException(
+                        "Column header names cannot be longer than "
+                                + Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH
+                                + " characters, but found `"
+                                + header
+                                + "`.");
+            }
+            if (!Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.matcher(header).matches()) {
+                throw new C3rIllegalArgumentException(
+                        "Column header name `"
+                                + header
+                                + "` does not match pattern `"
+                                + Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.pattern()
+                                + "`.");
+            }
         }
     }
 }

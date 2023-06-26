@@ -172,7 +172,7 @@ public final class TemplateSchemaGenerator {
             final var entryArray = new JsonArray(1);
             // template entry
             final var templateEntry = new JsonObject();
-            templateEntry.addProperty("targetHeader", ColumnHeader.getColumnHeaderFromIndex(i).toString());
+            templateEntry.addProperty("targetHeader", ColumnHeader.of(i).toString());
             if (sourceColumnTypes.get(i).supportsCryptographicComputing()) {
                 templateEntry.addProperty("type", columnTypeOptions);
                 templateEntry.add("pad", EXAMPLE_PAD);

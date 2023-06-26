@@ -26,11 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -38,22 +35,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CsvRowReaderTest {
 
+    private final List<String> dataSampleRawHeaderNames =
+            List.of("FirstName",
+                    "LastName",
+                    "Address",
+                    "City",
+                    "State",
+                    "PhoneNumber",
+                    "Title",
+                    "Level",
+                    "Notes"
+            );
+
     private final List<ColumnHeader> dataSampleHeaders =
-            Stream.of("FirstName",
-                            "LastName",
-                            "Address",
-                            "City",
-                            "State",
-                            "PhoneNumber",
-                            "Title",
-                            "Level",
-                            "Notes"
-                    )
-                    .map(ColumnHeader::new)
-                    .collect(Collectors.toList());
+            dataSampleRawHeaderNames.stream().map(ColumnHeader::new).collect(Collectors.toList());
+
+    private final List<ColumnHeader> dataSampleHeadersNoNormalization =
+            dataSampleRawHeaderNames.stream().map(ColumnHeader::ofRaw).collect(Collectors.toList());
+
     // ColumnSchema Name -> ColumnSchema Value mappings used for convenient testing data
     // LinkedHashMap to ensure ordering of entries for tests that may care
-
     private final Map<String, String> exampleCsvEntries = new LinkedHashMap<>() {
         {
             put("foo", "foo");
@@ -100,13 +101,20 @@ public class CsvRowReaderTest {
     @Test
     public void getHeadersTest() {
         cReader = CsvRowReader.builder().sourceName("../samples/csv/data_sample_without_quotes.csv").build();
+        assertEquals(dataSampleHeaders, cReader.getHeaders());
+    }
 
-        assertFalse(cReader.getHeaders().isEmpty());
-        assertArrayEquals(new ColumnHeader[]{new ColumnHeader("firstname"), new ColumnHeader("lastname"), new ColumnHeader("address"),
-                        new ColumnHeader("city"), new ColumnHeader("state"),
-                        new ColumnHeader("phonenumber"), new ColumnHeader("title"), new ColumnHeader("level"),
-                        new ColumnHeader("notes")},
-                cReader.getHeaders().toArray());
+    @Test
+    public void getHeadersNormalizationTest() {
+        // explicitly normalize the headers and make sure they match the expected values
+        cReader = CsvRowReader.builder().sourceName("../samples/csv/data_sample_without_quotes.csv").skipHeaderNormalization(false).build();
+        assertEquals(dataSampleHeaders, cReader.getHeaders());
+    }
+
+    @Test
+    public void getHeadersNoNormalizationTest() {
+        cReader = CsvRowReader.builder().sourceName("../samples/csv/data_sample_without_quotes.csv").skipHeaderNormalization(true).build();
+        assertEquals(dataSampleHeadersNoNormalization, cReader.getHeaders());
     }
 
     @Test

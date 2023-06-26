@@ -11,6 +11,7 @@ import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.parquet.ParquetRowMaterializer;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import org.apache.parquet.column.page.PageReadStore;
@@ -98,8 +99,23 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
      *
      * @param sourceName Path to be read as a Parquet file path
      * @throws C3rRuntimeException If {@code fileName} cannot be opened for reading
+     * @deprecated Use the {@link #builder()} method for this class
      */
+    @Deprecated
     public ParquetRowReader(@NonNull final String sourceName) {
+        this(sourceName, false);
+    }
+
+    /**
+     * Creates a record reader for a Parquet file.
+     *
+     * @param sourceName Path to be read as a Parquet file path
+     * @param skipHeaderNormalization Whether to skip the normalization of read in headers
+     * @throws C3rRuntimeException If {@code fileName} cannot be opened for reading
+     */
+    @Builder
+    private ParquetRowReader(@NonNull final String sourceName,
+                             final boolean skipHeaderNormalization) {
         this.sourceName = sourceName;
         final var conf = new org.apache.hadoop.conf.Configuration();
         final org.apache.hadoop.fs.Path file = new org.apache.hadoop.fs.Path(sourceName);
@@ -111,7 +127,10 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
         } catch (IOException | RuntimeException e) {
             throw new C3rRuntimeException("Error reading from file " + sourceName + ".", e);
         }
-        parquetSchema = new ParquetSchema(fileReader.getFooter().getFileMetaData().getSchema());
+        parquetSchema = ParquetSchema.builder()
+                .messageType(fileReader.getFooter().getFileMetaData().getSchema())
+                .skipHeaderNormalization(skipHeaderNormalization)
+                .build();
         if (parquetSchema.getHeaders().size() > MAX_COLUMN_COUNT) {
             throw new C3rRuntimeException("Couldn't parse input file. Please verify that column count does not exceed " + MAX_COLUMN_COUNT
                     + ".");

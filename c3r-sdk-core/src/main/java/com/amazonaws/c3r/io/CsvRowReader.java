@@ -72,6 +72,11 @@ public final class CsvRowReader extends RowReader<CsvValue> {
     private final List<ColumnHeader> headers;
 
     /**
+     * Whether headers were normalized.
+     */
+    private final boolean skipHeaderNormalization;
+
+    /**
      * Whether the reader has been closed.
      */
     private boolean closed = false;
@@ -95,10 +100,11 @@ public final class CsvRowReader extends RowReader<CsvValue> {
      * <li>else non-blank values matching `inputNullValue` after being parsed will be considered NULL.</li>
      * </ul>
      *
-     * @param sourceName      File name to be read as a CSV file path
-     * @param inputNullValue  What should be interpreted as {@code null} in the input
-     * @param externalHeaders Strings to use as column header names if the file itself does not contain a header row
-     * @param fileCharset     Character set of the file. Defaults to {@code UTF_8} if {@code null}
+     * @param sourceName              File name to be read as a CSV file path
+     * @param inputNullValue          What should be interpreted as {@code null} in the input
+     * @param externalHeaders         Strings to use as column header names if the file itself does not contain a header row
+     * @param fileCharset             Character set of the file. Defaults to {@code UTF_8} if {@code null}
+     * @param skipHeaderNormalization Whether to skip the normalization of read in headers
      * @throws C3rIllegalArgumentException If number of columns in file doesn't match number of columns in PositionalTableSchema or a parse
      *                                     error occurs
      * @throws C3rRuntimeException         If the file can't be read
@@ -107,14 +113,12 @@ public final class CsvRowReader extends RowReader<CsvValue> {
     private CsvRowReader(@NonNull final String sourceName,
                          final String inputNullValue,
                          final List<ColumnHeader> externalHeaders,
-                         final Charset fileCharset) {
+                         final Charset fileCharset,
+                         final boolean skipHeaderNormalization) {
         this.sourceName = sourceName;
         this.fileCharset = fileCharset == null ? StandardCharsets.UTF_8 : fileCharset;
-        try {
-            this.reader = new InputStreamReader(new FileInputStream(sourceName), this.fileCharset.newDecoder());
-        } catch (FileNotFoundException e) {
-            throw new C3rRuntimeException("Unable to read source file " + sourceName + ".", e);
-        }
+        this.skipHeaderNormalization = skipHeaderNormalization;
+        this.reader = openReaderForFile(sourceName, this.fileCharset);
 
         // Gather all the information we need for CSV parsing
         final ParserConfiguration state = generateParserSettings(externalHeaders, inputNullValue);
@@ -152,26 +156,26 @@ public final class CsvRowReader extends RowReader<CsvValue> {
     }
 
     /**
-     * Parse the first line in a CSV file to extract the column count.
+     * Extracts the header names from the file with no normalization (e.g., whitespace trimming, converting to lowercase, etc).
      *
-     * @param csvFileName CSV file to count columns in
-     * @param fileCharset Character encoding in file (defaults to {@link CsvRowReader} default encoding if {@code null})
-     * @return The column count for the given file
+     * @param csvFileName File to extract headers from
+     * @param fileCharset Charset for file
+     * @return CSV header names sans normalization.
      * @throws C3rRuntimeException If an I/O error occurs reading the file
      */
-    public static int getCsvColumnCount(@NonNull final String csvFileName, final Charset fileCharset) {
+    private static String[] extractHeadersWithoutNormalization(@NonNull final String csvFileName,
+                                                               final Charset fileCharset) {
         final Charset charset = fileCharset == null ? StandardCharsets.UTF_8 : fileCharset;
-        final ParserConfiguration state = generateParserSettings(null, null);
         try (var reader = openReaderForFile(csvFileName, charset)) {
-            state.csvParserSettings.setHeaderExtractionEnabled(false);
-            final CsvParser parser = new CsvParser(state.csvParserSettings);
+            final CsvParserSettings csvParserSettings = generateParserSettings(null, null).csvParserSettings;
+            csvParserSettings.trimValues(false);
+            final CsvParser parser = new CsvParser(csvParserSettings);
             beginParsing(parser, reader, charset);
-            final String[] firstLine = executeTextParsing(parser::parseNext);
-            parser.stopParsing();
-            if (firstLine == null) {
-                throw new C3rRuntimeException("Could not read a CSV line from the file " + csvFileName);
+            final String[] headerStrings = executeTextParsing(() -> parser.getRecordMetadata().headers());
+            if (headerStrings == null) {
+                throw new C3rRuntimeException("Unable to read headers from " + csvFileName);
             }
-            return firstLine.length;
+            return headerStrings;
         } catch (TextParsingException e) {
             throw new C3rRuntimeException("Could not get column count: an error occurred while parsing " + csvFileName, e);
         } catch (IOException e) {
@@ -180,13 +184,25 @@ public final class CsvRowReader extends RowReader<CsvValue> {
     }
 
     /**
+     * Parse the first line in a CSV file to extract the column count.
+     *
+     * @param csvFileName CSV file to count columns in
+     * @param fileCharset Character encoding in file (defaults to {@link CsvRowReader} default encoding if {@code null})
+     * @return The column count for the given file
+     * @throws C3rRuntimeException If an I/O error occurs reading the file
+     */
+    public static int getCsvColumnCount(@NonNull final String csvFileName, final Charset fileCharset) {
+        return extractHeadersWithoutNormalization(csvFileName, fileCharset).length;
+    }
+
+    /**
      * Takes in information on headers and null values to create settings for parsing.
      *
-     * @param headers        List of unspecified header names for if there are any (positional schemas only use this)
-     * @param inputNullValue Value to be used for a custom null
+     * @param externalHeaders List of external header names for if there are any (positional schemas only use this)
+     * @param inputNullValue  Value to be used for a custom null
      * @return All configuration information needed throughout parsing
      */
-    private static ParserConfiguration generateParserSettings(final List<ColumnHeader> headers, final String inputNullValue) {
+    private static ParserConfiguration generateParserSettings(final List<ColumnHeader> externalHeaders, final String inputNullValue) {
         final ParserConfiguration state = new ParserConfiguration();
         state.csvParserSettings = new CsvParserSettings();
 
@@ -219,13 +235,13 @@ public final class CsvRowReader extends RowReader<CsvValue> {
         state.csvParserSettings.setMaxCharsPerColumn(-1);
 
         // Check if this is a positional file and turn off header extraction if it is
-        state.csvParserSettings.setHeaderExtractionEnabled(headers == null);
+        state.csvParserSettings.setHeaderExtractionEnabled(externalHeaders == null);
 
         // Save custom null value for when we need it for substitution
         state.nullValue = inputNullValue;
 
         // Save the number of columns expected in a positional file
-        state.numberOfColumns = (headers == null) ? null : headers.size();
+        state.numberOfColumns = (externalHeaders == null) ? null : externalHeaders.size();
 
         return state;
     }
@@ -261,16 +277,26 @@ public final class CsvRowReader extends RowReader<CsvValue> {
     private List<ColumnHeader> setupForHeaderFileParsing(final ParserConfiguration state) {
         // This file has headers, read them from file
         beginParsing(parser, reader, fileCharset);
-        final String[] headersPreCheck = executeTextParsing(() -> parser.getRecordMetadata().headers());
-        if (headersPreCheck == null) {
-            throw new C3rRuntimeException(String.format("Unable to read headers from %s", sourceName));
+
+        final String[] headerStrings;
+        final List<ColumnHeader> headers;
+        if (skipHeaderNormalization) {
+            headerStrings = extractHeadersWithoutNormalization(sourceName, fileCharset);
+            headers = Arrays.stream(headerStrings).map(ColumnHeader::ofRaw).collect(Collectors.toList());
+        } else {
+            headerStrings = executeTextParsing(() -> parser.getRecordMetadata().headers());
+            if (headerStrings == null) {
+                throw new C3rRuntimeException(String.format("Unable to read headers from %s", sourceName));
+            }
+            headers = Arrays.stream(headerStrings).map(ColumnHeader::new).collect(Collectors.toList());
         }
+
         // Set null value if needed
         if (state.toNullConversionRequired) {
-            executeTextParsing(() -> parser.getRecordMetadata().convertFields(Conversions.toNull(state.nullValue)).set(headersPreCheck));
+            executeTextParsing(() -> parser.getRecordMetadata().convertFields(Conversions.toNull(state.nullValue)).set(headerStrings));
         }
-        // Return headers for mapping
-        return Arrays.stream(headersPreCheck).map(ColumnHeader::new).collect(Collectors.toList());
+
+        return headers;
     }
 
     /**

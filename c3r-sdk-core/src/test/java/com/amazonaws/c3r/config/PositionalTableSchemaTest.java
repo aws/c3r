@@ -116,18 +116,18 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
     @Test
     public void verifyAutomaticHeaderConstructionTest() {
         final List<ColumnHeader> knownGoodHeaders = List.of(
-                ColumnHeader.getColumnHeaderFromIndex(0),
-                ColumnHeader.getColumnHeaderFromIndex(1),
-                ColumnHeader.getColumnHeaderFromIndex(2),
-                ColumnHeader.getColumnHeaderFromIndex(3),
-                ColumnHeader.getColumnHeaderFromIndex(4),
-                ColumnHeader.getColumnHeaderFromIndex(5)
+                ColumnHeader.of(0),
+                ColumnHeader.of(1),
+                ColumnHeader.of(2),
+                ColumnHeader.of(3),
+                ColumnHeader.of(4),
+                ColumnHeader.of(5)
         );
         final List<ColumnHeader> knownGoodHeadersInUse = List.of(
-                ColumnHeader.getColumnHeaderFromIndex(1),
-                ColumnHeader.getColumnHeaderFromIndex(2),
-                ColumnHeader.getColumnHeaderFromIndex(4),
-                ColumnHeader.getColumnHeaderFromIndex(5)
+                ColumnHeader.of(1),
+                ColumnHeader.of(2),
+                ColumnHeader.of(4),
+                ColumnHeader.of(5)
         );
         final List<List<ColumnSchema>> positionalColumns = List.of(
                 new ArrayList<>(),
@@ -147,7 +147,7 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
     @Override
     @Test
     public void oneSourceToManyTargetsTest() {
-        final ColumnHeader knownGoodHeader = ColumnHeader.getColumnHeaderFromIndex(0);
+        final ColumnHeader knownGoodHeader = ColumnHeader.of(0);
         final PositionalTableSchema schema = new PositionalTableSchema(
                 List.of(
                         List.of(CS_1, CS_2, CS_3, CS_4, CS_5)
@@ -307,7 +307,7 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
         final var skippedEmpty = schema.getColumns();
         assertEquals(1, skippedEmpty.size());
         assertNull(emptyColumn.get(1).get(0).getSourceHeader());
-        assertEquals(ColumnHeader.getColumnHeaderFromIndex(1), skippedEmpty.get(0).getSourceHeader());
+        assertEquals(ColumnHeader.of(1), skippedEmpty.get(0).getSourceHeader());
     }
 
     // Make sure the various states of unspecified headers are correct for the child implementation.
@@ -315,9 +315,9 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
     @Test
     public void verifyGetUnspecifiedHeadersReturnValueTest() throws IllegalAccessException, NoSuchFieldException {
         final List<ColumnHeader> knownGoodColumns = List.of(
-                ColumnHeader.getColumnHeaderFromIndex(0),
-                ColumnHeader.getColumnHeaderFromIndex(1),
-                ColumnHeader.getColumnHeaderFromIndex(2)
+                ColumnHeader.of(0),
+                ColumnHeader.of(1),
+                ColumnHeader.of(2)
         );
         final var schema = mock(PositionalTableSchema.class);
         doCallRealMethod().when(schema).getPositionalColumnHeaders();
@@ -362,7 +362,7 @@ public class PositionalTableSchemaTest implements TableSchemaCommonTestInterface
     public void positionalSourceHeadersTest() {
         assertTrue(PositionalTableSchema.generatePositionalSourceHeaders(0).isEmpty());
         assertEquals(
-                List.of(ColumnHeader.getColumnHeaderFromIndex(0), ColumnHeader.getColumnHeaderFromIndex(1)),
+                List.of(ColumnHeader.of(0), ColumnHeader.of(1)),
                 PositionalTableSchema.generatePositionalSourceHeaders(2));
     }
 }

@@ -64,7 +64,10 @@ public final class ParquetRowUnmarshaller {
             @NonNull final String sourceFile,
             @NonNull final String targetFile,
             @NonNull final Map<ColumnType, Transformer> transformers) {
-        final ParquetRowReader reader = new ParquetRowReader(sourceFile);
+        final ParquetRowReader reader = ParquetRowReader.builder()
+                .sourceName(sourceFile)
+                .skipHeaderNormalization(true)
+                .build();
         final var parquetSchema = reader.getParquetSchema();
         final ParquetRowWriter writer = ParquetRowWriter.builder()
                 .targetName(targetFile)

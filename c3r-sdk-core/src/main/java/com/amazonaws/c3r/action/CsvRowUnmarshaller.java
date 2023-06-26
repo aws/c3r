@@ -72,8 +72,11 @@ public final class CsvRowUnmarshaller {
             final String csvInputNullValue,
             final String csvOutputNullValue,
             @NonNull final Map<ColumnType, Transformer> transformers) {
-        final RowReader<CsvValue> reader = CsvRowReader.builder().sourceName(sourceFile)
-                .inputNullValue(csvInputNullValue).build();
+        final RowReader<CsvValue> reader = CsvRowReader.builder()
+                .sourceName(sourceFile)
+                .inputNullValue(csvInputNullValue)
+                .skipHeaderNormalization(true)
+                .build();
         final RowWriter<CsvValue> writer = CsvRowWriter.builder()
                 .targetName(targetFile)
                 .outputNullValue(csvOutputNullValue)

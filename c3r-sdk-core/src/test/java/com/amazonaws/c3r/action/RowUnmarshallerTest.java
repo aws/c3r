@@ -19,11 +19,16 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.amazonaws.c3r.utils.GeneralTestUtility.TEST_CONFIG_MARSHALLED_DATA_SAMPLE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,5 +77,31 @@ public class RowUnmarshallerTest {
         final String file = FileUtil.readBytes(Path.of(output).toAbsolutePath().toString());
         assertFalse(file.isBlank());
         unmarshaller.close();
+    }
+
+    @Test
+    public void unmarshallDoesNotModifyHeaders() throws IOException {
+        final String content =
+                String.join("\n",
+                        String.join(",", List.of("Alfa", "Bravo ", " CHARLIE ", "\" D E L T A \"")),
+                        String.join(",", List.of("a", " b ", " s e e ", "D")));
+
+        final Path csvFile = FileTestUtility.createTempFile();
+        Files.writeString(csvFile, content, StandardCharsets.UTF_8);
+
+        final RowUnmarshaller<CsvValue> unmarshaller = CsvRowUnmarshaller.builder()
+                .sourceFile(csvFile.toString())
+                .targetFile(output)
+                .transformers(transformers)
+                .build();
+        unmarshaller.unmarshal();
+        unmarshaller.close();
+
+        try (Stream<String> stream = Files.lines(Path.of(output), StandardCharsets.UTF_8)) {
+            final List<String> expected =
+                    List.of(String.join(",", List.of("Alfa", "\"Bravo \"", "\" CHARLIE \"", "\" D E L T A \"")),
+                            String.join(",", List.of("a", "b", "\"s e e\"", "D")));
+            assertEquals(expected, stream.collect(Collectors.toList()));
+        }
     }
 }
