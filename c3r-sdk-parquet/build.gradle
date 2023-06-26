@@ -30,7 +30,7 @@ spotbugs {
     excludeFilter.set(file("../config/spotbugs/excludeFilter.xml"))
 }
 
-ext.hadoop_version = '3.3.5'
+ext.hadoop_version = '3.3.6'
 
 dependencies {
     // AWS-C3R
