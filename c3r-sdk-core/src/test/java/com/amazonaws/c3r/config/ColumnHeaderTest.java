@@ -27,6 +27,12 @@ public class ColumnHeaderTest {
     }
 
     @Test
+    public void ofRawErrorsOnNullTest() {
+        assertThrows(C3rIllegalArgumentException.class, () -> ColumnHeader.ofRaw(null));
+
+    }
+
+    @Test
     public void checkEmptyStringToConstructorTest() {
         assertThrows(C3rIllegalArgumentException.class, () -> new ColumnHeader(""));
 
@@ -96,7 +102,15 @@ public class ColumnHeaderTest {
     }
 
     @Test
-    public void checkGlueMaxLengthStringConstructorTest() {
+    public void noNormalizationToStringTest() {
+        final String rawString = "ThIs iS a WEIrD StrING ";
+        final ColumnHeader rawHeader = ColumnHeader.ofRaw(rawString);
+
+        assertEquals(rawString, rawHeader.toString());
+    }
+
+    @Test
+    public void maxLengthTest() {
         assertDoesNotThrow(
                 () -> new ColumnHeader("a".repeat(Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH)));
         assertThrows(
@@ -105,7 +119,7 @@ public class ColumnHeaderTest {
     }
 
     @Test
-    public void checkHeaderNonGlueConformantHeaderNameTest() {
+    public void invalidHeaderNameTest() {
         assertFalse(Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP.matcher("Multi Line\n Header").matches());
         assertThrows(
                 C3rIllegalArgumentException.class,
@@ -115,8 +129,8 @@ public class ColumnHeaderTest {
     // Check that we generate the expected valid and invalid results when creating a header from index.
     @Test
     public void columnHeaderFromIndexTest() {
-        assertEquals(new ColumnHeader("_c0"), ColumnHeader.getColumnHeaderFromIndex(0));
-        assertThrows(C3rIllegalArgumentException.class, () -> ColumnHeader.getColumnHeaderFromIndex(-10));
+        assertEquals(new ColumnHeader("_c0"), ColumnHeader.of(0));
+        assertThrows(C3rIllegalArgumentException.class, () -> ColumnHeader.of(-10));
     }
 
     // Make sure we check all cases of configuring potentially unnamed target headers and verify output.

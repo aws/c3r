@@ -80,7 +80,8 @@ public class SparkUnmarshallerTest {
         return SparkCsvReader.readInput(session,
                 sourceFile,
                 null,
-                columnHeaders);
+                columnHeaders,
+                /* skipHeaderNormalization */ true);
     }
 
     @Test
@@ -98,7 +99,7 @@ public class SparkUnmarshallerTest {
     @Test
     public void unmarshalDataParquetUnencryptedMixedTypesTest() {
         final Dataset<Row> mixedDataset = SparkParquetReader
-                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet");
+                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet", /* skipHeaderNormalization */ true);
         // assert there is indeed a non-String type
         assertTrue(mixedDataset.schema().toList().filter(struct -> struct.dataType() != DataTypes.StringType).size() > 0);
 

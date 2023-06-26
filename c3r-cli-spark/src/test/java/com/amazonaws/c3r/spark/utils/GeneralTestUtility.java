@@ -46,16 +46,27 @@ public abstract class GeneralTestUtility {
     /**
      * List of headers from the golden test file (data_sample.csv).
      */
+    public static final List<String> DATA_SAMPLE_HEADER_STRINGS =
+            List.of("FirstName",
+                    "LastName",
+                    "Address",
+                    "City",
+                    "State",
+                    "PhoneNumber",
+                    "Title",
+                    "Level",
+                    "Notes"
+            );
+
+    public static final List<ColumnHeader> DATA_SAMPLE_HEADERS_NO_NORMALIZATION =
+            DATA_SAMPLE_HEADER_STRINGS.stream()
+                    .map(ColumnHeader::ofRaw)
+                    .collect(Collectors.toList());
+
     public static final List<ColumnHeader> DATA_SAMPLE_HEADERS =
-            List.of(new ColumnHeader("FirstName"),
-                    new ColumnHeader("LastName"),
-                    new ColumnHeader("Address"),
-                    new ColumnHeader("City"),
-                    new ColumnHeader("State"),
-                    new ColumnHeader("PhoneNumber"),
-                    new ColumnHeader("Title"),
-                    new ColumnHeader("Level"),
-                    new ColumnHeader("Notes"));
+            DATA_SAMPLE_HEADER_STRINGS.stream()
+                    .map(ColumnHeader::new)
+                    .collect(Collectors.toList());
 
     /**
      * Schema for data_sample.csv.

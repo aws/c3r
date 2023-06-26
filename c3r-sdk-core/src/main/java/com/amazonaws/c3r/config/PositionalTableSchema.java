@@ -54,7 +54,7 @@ public class PositionalTableSchema extends TableSchema {
      */
     public static List<ColumnHeader> generatePositionalSourceHeaders(final int sourceColumnCount) {
         return IntStream.range(0, sourceColumnCount)
-                .mapToObj(ColumnHeader::getColumnHeaderFromIndex)
+                .mapToObj(ColumnHeader::of)
                 .collect(Collectors.toUnmodifiableList());
     }
 
@@ -122,7 +122,7 @@ public class PositionalTableSchema extends TableSchema {
                     "Missing target header in column " + (sourceColumnIndex + 1) + ".");
         }
         return ColumnSchema.builder()
-                .sourceHeader(ColumnHeader.getColumnHeaderFromIndex(sourceColumnIndex))
+                .sourceHeader(ColumnHeader.of(sourceColumnIndex))
                 .targetHeader(column.getTargetHeader())
                 .pad(column.getPad())
                 .type(column.getType())
@@ -146,7 +146,7 @@ public class PositionalTableSchema extends TableSchema {
             mappedColumns = mapPositionalColumns();
         }
         if (sourceHeaders == null) {
-            sourceHeaders = IntStream.range(0, columns.size()).mapToObj(ColumnHeader::getColumnHeaderFromIndex)
+            sourceHeaders = IntStream.range(0, columns.size()).mapToObj(ColumnHeader::of)
                     .collect(Collectors.toUnmodifiableList());
         }
         super.validate();

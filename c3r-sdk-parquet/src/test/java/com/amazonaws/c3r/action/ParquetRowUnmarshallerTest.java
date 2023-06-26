@@ -16,8 +16,10 @@ import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.io.ParquetRowReader;
 import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.GeneralTestUtility;
+import com.amazonaws.c3r.utils.ParquetTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -94,6 +96,35 @@ public class ParquetRowUnmarshallerTest {
                 ParquetRowUnmarshaller.newInstance(configBuilder.fileFormat(FileFormat.CSV).build()));
         assertDoesNotThrow(() ->
                 ParquetRowUnmarshaller.newInstance(configBuilder.fileFormat(FileFormat.PARQUET).build()));
+    }
+
+    @Test
+    public void unmarshallDoesNotModifyHeadersTest() throws IOException {
+        final Path tempOutput = FileTestUtility.resolve("output.parquet");
+        final var decConfig = DecryptConfig.builder()
+                .sourceFile(ParquetTestUtility.PARQUET_SAMPLE_DATA_PATH.toString())
+                .targetFile(tempOutput.toString())
+                .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
+                .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
+                .overwrite(true)
+                .build();
+        final var unmarshaller = ParquetRowUnmarshaller.newInstance(decConfig);
+
+        unmarshaller.unmarshal();
+        unmarshaller.close();
+
+        final var parquetSchema = ParquetRowReader.builder()
+                .sourceName(tempOutput.toString())
+                .skipHeaderNormalization(true)
+                .build();
+
+        assertNotEquals(
+                ParquetTestUtility.PARQUET_SAMPLE_DATA_HEADERS,
+                parquetSchema.getHeaders());
+        assertEquals(
+                ParquetTestUtility.PARQUET_SAMPLE_DATA_HEADERS_NO_NORMALIZATION,
+                parquetSchema.getHeaders());
+
     }
 
     private void endToEndUnmarshal1RowTest(final String input,

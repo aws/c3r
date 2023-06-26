@@ -100,4 +100,49 @@ public class ParquetSchemaTest {
                                 .build()
                 ))));
     }
+
+    @Test
+    public void getHeadersTest() {
+        final var messageType = new MessageType("NameAndAge", List.of(
+                Types.optional(PrimitiveType.PrimitiveTypeName.BINARY)
+                        .as(LogicalTypeAnnotation.stringType())
+                        .named("Name"),
+                Types.optional(PrimitiveType.PrimitiveTypeName.INT32)
+                        .named("Age")
+        ));
+        final var schema = ParquetSchema.builder().messageType(messageType).build();
+        assertEquals(
+                List.of(new ColumnHeader("Name"), new ColumnHeader("Age")),
+                schema.getHeaders());
+    }
+
+    @Test
+    public void getHeadersWithNormalizationTest() {
+        final var messageType = new MessageType("NameAndAge", List.of(
+                Types.optional(PrimitiveType.PrimitiveTypeName.BINARY)
+                        .as(LogicalTypeAnnotation.stringType())
+                        .named("Name"),
+                Types.optional(PrimitiveType.PrimitiveTypeName.INT32)
+                        .named("Age")
+        ));
+        final var schema = ParquetSchema.builder().messageType(messageType).skipHeaderNormalization(false).build();
+        assertEquals(
+                List.of(new ColumnHeader("name"), new ColumnHeader("age")),
+                schema.getHeaders());
+    }
+
+    @Test
+    public void getHeadersWithoutNormalizationTest() {
+        final var messageType = new MessageType("NameAndAge", List.of(
+                Types.optional(PrimitiveType.PrimitiveTypeName.BINARY)
+                        .as(LogicalTypeAnnotation.stringType())
+                        .named("Name"),
+                Types.optional(PrimitiveType.PrimitiveTypeName.INT32)
+                        .named("Age")
+        ));
+        final var schema = ParquetSchema.builder().messageType(messageType).skipHeaderNormalization(true).build();
+        assertEquals(
+                List.of(ColumnHeader.ofRaw("Name"), ColumnHeader.ofRaw("Age")),
+                schema.getHeaders());
+    }
 }

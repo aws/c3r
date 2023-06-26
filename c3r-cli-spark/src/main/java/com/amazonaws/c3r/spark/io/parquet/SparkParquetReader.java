@@ -3,12 +3,19 @@
 
 package com.amazonaws.c3r.spark.io.parquet;
 
+import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
 import lombok.NonNull;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for Spark to read Parquet files from disk.
@@ -20,7 +27,7 @@ public abstract class SparkParquetReader {
     static final int MAX_COLUMN_COUNT = 10000;
 
     /**
-     * Reads the input file for processing.
+     * Reads the input file for processing, normalizing headers.
      *
      * @param sparkSession The spark session to read with
      * @param source       Location of input data
@@ -28,7 +35,27 @@ public abstract class SparkParquetReader {
      */
     public static Dataset<Row> readInput(@NonNull final SparkSession sparkSession,
                                          @NonNull final String source) {
-        final Dataset<Row> dataset = sparkSession.read().parquet(source);
+        return readInput(sparkSession, source, false);
+    }
+
+    /**
+     * Reads the input file for processing, optionally normalizing headers.
+     *
+     * @param sparkSession            The spark session to read with
+     * @param source                  Location of input data
+     * @param skipHeaderNormalization Whether to skip the normalization of read in headers
+     * @return The source data to be processed
+     */
+    public static Dataset<Row> readInput(@NonNull final SparkSession sparkSession,
+                                         @NonNull final String source,
+                                         final boolean skipHeaderNormalization) {
+        final Map<String, String> options = new HashMap<>();
+        Dataset<Row> dataset = sparkSession.read().options(options).parquet(source);
+        if (!skipHeaderNormalization) {
+            final Map<String, String> renameMap = Arrays.stream(dataset.columns())
+                    .collect(Collectors.toMap(Function.identity(), c -> new ColumnHeader(c).toString()));
+            dataset = dataset.withColumnsRenamed(renameMap);
+        }
         validate(dataset);
         return dataset;
     }

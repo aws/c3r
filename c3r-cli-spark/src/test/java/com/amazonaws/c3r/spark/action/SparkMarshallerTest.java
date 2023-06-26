@@ -315,7 +315,7 @@ public class SparkMarshallerTest {
     @Test
     public void marshalDataParquetEncryptedMixedTypesTest() {
         final Dataset<Row> mixedDataset = SparkParquetReader
-                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet");
+                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet", /* skipHeaderNormalization */ false);
         // assert there is indeed a non-String type
         assertTrue(mixedDataset.schema().toList().filter(struct -> struct.dataType() != DataTypes.StringType).size() > 0);
 

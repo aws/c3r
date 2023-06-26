@@ -227,12 +227,16 @@ public class DecryptMode implements Callable<Integer> {
                         final Dataset<Row> csvDataset = SparkCsvReader.readInput(sparkSession,
                                 cfg.getSourceFile(),
                                 cfg.getCsvInputNullValue(),
-                                null);
+                                /* externalHeaders */ null,
+                                /* skipHeaderNormalization */ true);
                         final Dataset<Row> unmarshalledCsvDataset = SparkUnmarshaller.decrypt(csvDataset, cfg);
                         SparkCsvWriter.writeOutput(unmarshalledCsvDataset, cfg.getTargetFile(), cfg.getCsvOutputNullValue());
                         break;
                     case PARQUET:
-                        final Dataset<Row> parquetDataset = SparkParquetReader.readInput(sparkSession, cfg.getSourceFile());
+                        final Dataset<Row> parquetDataset = SparkParquetReader.readInput(
+                                sparkSession,
+                                cfg.getSourceFile(),
+                                /* skipHeaderNormalization */ true);
                         final Dataset<Row> unmarshalledParquetDataset = SparkUnmarshaller.decrypt(parquetDataset, cfg);
                         SparkParquetWriter.writeOutput(unmarshalledParquetDataset, cfg.getTargetFile());
                         break;

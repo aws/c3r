@@ -7,6 +7,7 @@ import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
+import lombok.Builder;
 import lombok.Getter;
 import org.apache.parquet.schema.MessageType;
 
@@ -54,8 +55,22 @@ public class ParquetSchema {
      * Generate a C3R schema based off of a Parquet schema.
      *
      * @param messageType Apache's Parquet schema
+     * @deprecated Use the {@link ParquetSchema#builder()} method for this class.
      */
+    @Deprecated
     public ParquetSchema(final org.apache.parquet.schema.MessageType messageType) {
+        this(messageType, false);
+    }
+
+    /**
+     * Generate a C3R schema based off of a Parquet schema.
+     *
+     * @param messageType Apache's Parquet schema
+     * @param skipHeaderNormalization Whether headers should be normalized
+     */
+    @Builder
+    private ParquetSchema(final org.apache.parquet.schema.MessageType messageType,
+                          final boolean skipHeaderNormalization) {
         this.messageType = new MessageType(messageType.getName(), messageType.getFields());
         headers = new ArrayList<>();
         columnIndices = new HashMap<>();
@@ -63,7 +78,9 @@ public class ParquetSchema {
         final var parquetTypes = new HashMap<ColumnHeader, ParquetDataType>();
         final var clientTypes = new ArrayList<ClientDataType>(messageType.getFieldCount());
         for (int i = 0; i < messageType.getFieldCount(); i++) {
-            final ColumnHeader column = new ColumnHeader(messageType.getFieldName(i));
+            final ColumnHeader column = skipHeaderNormalization
+                    ? ColumnHeader.ofRaw(messageType.getFieldName(i))
+                    : new ColumnHeader(messageType.getFieldName(i));
             headers.add(column);
             columnIndices.put(column, i);
             final org.apache.parquet.schema.Type originalType = messageType.getType(i);

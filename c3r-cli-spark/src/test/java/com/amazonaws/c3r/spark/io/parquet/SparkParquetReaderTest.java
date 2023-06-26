@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.spark.io.parquet;
 
 import com.amazonaws.c3r.config.ClientSettings;
+import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
@@ -26,6 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.DATA_SAMPLE_HEADERS;
+import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.DATA_SAMPLE_HEADERS_NO_NORMALIZATION;
 import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.EXAMPLE_SALT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,16 +68,22 @@ public class SparkParquetReaderTest {
     public void readInputColumnsTest() {
         final Dataset<Row> dataset = SparkParquetReader.readInput(session, config.getSourceFile());
         final List<String> columns = Arrays.stream(dataset.columns())
-                .map(String::toLowerCase)
                 .sorted()
                 .collect(Collectors.toList());
-        final List<String> expectedColumns = schema.getColumns().stream()
-                .map(columnSchema -> columnSchema.getSourceHeader().toString())
-                .distinct()
+        assertEquals(
+                DATA_SAMPLE_HEADERS.stream().map(ColumnHeader::toString).sorted().collect(Collectors.toList()),
+                columns);
+    }
+
+    @Test
+    public void readInputColumnsNoNormalizationTest() {
+        final Dataset<Row> dataset = SparkParquetReader.readInput(session, config.getSourceFile(), /* skipHeaderNormalization */ true);
+        final List<String> columns = Arrays.stream(dataset.columns())
                 .sorted()
                 .collect(Collectors.toList());
-        assertEquals(expectedColumns.size(), columns.size());
-        assertTrue(expectedColumns.containsAll(columns));
+        assertEquals(
+                DATA_SAMPLE_HEADERS_NO_NORMALIZATION.stream().map(ColumnHeader::toString).sorted().collect(Collectors.toList()),
+                columns);
     }
 
     @Test

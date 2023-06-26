@@ -6,6 +6,7 @@ package com.amazonaws.c3r.spark.io.csv;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.CsvRowReader;
+import com.amazonaws.c3r.spark.config.SparkConfig;
 import com.amazonaws.c3r.spark.utils.FileTestUtility;
 import com.amazonaws.c3r.spark.utils.SparkSessionTestUtility;
 import org.apache.spark.sql.Dataset;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.DATA_SAMPLE_HEADERS;
+import static com.amazonaws.c3r.spark.utils.GeneralTestUtility.DATA_SAMPLE_HEADERS_NO_NORMALIZATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,19 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SparkCsvReaderTest {
-    private final List<ColumnHeader> dataSampleHeaders =
-            Stream.of("FirstName",
-                            "LastName",
-                            "Address",
-                            "City",
-                            "State",
-                            "PhoneNumber",
-                            "Title",
-                            "Level",
-                            "Notes"
-                    )
-                    .map(ColumnHeader::new)
-                    .collect(Collectors.toList());
 
     private final SparkSession session = SparkSessionTestUtility.initSparkSession();
 
@@ -59,8 +49,20 @@ public class SparkCsvReaderTest {
         final Map<String, String> properties = new HashMap<>();
         properties.put("path", "../samples/csv/data_sample_with_quotes.csv");
         final CsvRowReader reader = SparkCsvReader.initReader(properties);
-        assertEquals(dataSampleHeaders.size(), reader.getHeaders().size());
-        assertTrue(dataSampleHeaders.containsAll(reader.getHeaders()));
+        assertEquals(
+                DATA_SAMPLE_HEADERS.stream().map(ColumnHeader::toString).sorted().collect(Collectors.toList()),
+                reader.getHeaders().stream().map(ColumnHeader::toString).sorted().collect(Collectors.toList()));
+    }
+
+    @Test
+    public void initReaderHeadersNoNormalizationTest() {
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("path", "../samples/csv/data_sample_with_quotes.csv");
+        properties.put(SparkConfig.PROPERTY_KEY_SKIP_HEADER_NORMALIZATION, "true");
+        final CsvRowReader reader = SparkCsvReader.initReader(properties);
+        assertEquals(
+                DATA_SAMPLE_HEADERS_NO_NORMALIZATION.stream().map(ColumnHeader::toString).sorted().collect(Collectors.toList()),
+                reader.getHeaders().stream().map(ColumnHeader::toString).sorted().collect(Collectors.toList()));
     }
 
     @Test
@@ -101,17 +103,20 @@ public class SparkCsvReaderTest {
         final Path file2 = tempDir.resolve("file2.csv");
         Files.writeString(file2, "column,column2\nbaz,buzz");
         final List<Row> fullDataset = SparkCsvReader.readInput(session,
-                tempDir.toString(),
-                null,
-                null).collectAsList();
+                        tempDir.toString(),
+                        null,
+                        null)
+                .collectAsList();
         final List<Row> dataset1 = SparkCsvReader.readInput(session,
-                file1.toString(),
-                null,
-                null).collectAsList();
+                        file1.toString(),
+                        null,
+                        null)
+                .collectAsList();
         final List<Row> dataset2 = SparkCsvReader.readInput(session,
-                file2.toString(),
-                null,
-                null).collectAsList();
+                        file2.toString(),
+                        null,
+                        null)
+                .collectAsList();
         assertTrue(fullDataset.containsAll(dataset1));
         assertTrue(fullDataset.containsAll(dataset2));
     }
@@ -126,17 +131,20 @@ public class SparkCsvReaderTest {
         final Path file2 = nestedTempDir.resolve("file2.csv");
         Files.writeString(file2, "column,column2\nbaz,buzz");
         final List<Row> fullDataset = SparkCsvReader.readInput(session,
-                tempDir.toString(),
-                null,
-                null).collectAsList();
+                        tempDir.toString(),
+                        null,
+                        null)
+                .collectAsList();
         final List<Row> dataset1 = SparkCsvReader.readInput(session,
-                file1.toString(),
-                null,
-                null).collectAsList();
+                        file1.toString(),
+                        null,
+                        null)
+                .collectAsList();
         final List<Row> dataset2 = SparkCsvReader.readInput(session,
-                file2.toString(),
-                null,
-                null).collectAsList();
+                        file2.toString(),
+                        null,
+                        null)
+                .collectAsList();
         assertTrue(fullDataset.containsAll(dataset1));
         // recursion currently not supported
         assertFalse(fullDataset.containsAll(dataset2));
@@ -151,17 +159,20 @@ public class SparkCsvReaderTest {
         final Path file2 = tempDir.resolve("file2.csv");
         Files.writeString(file2, duplicateFileContents);
         final List<Row> fullDataset = SparkCsvReader.readInput(session,
-                tempDir.toString(),
-                null,
-                null).collectAsList();
+                        tempDir.toString(),
+                        null,
+                        null)
+                .collectAsList();
         final List<Row> dataset1 = SparkCsvReader.readInput(session,
-                file1.toString(),
-                null,
-                null).collectAsList();
+                        file1.toString(),
+                        null,
+                        null)
+                .collectAsList();
         final List<Row> dataset2 = SparkCsvReader.readInput(session,
-                file2.toString(),
-                null,
-                null).collectAsList();
+                        file2.toString(),
+                        null,
+                        null)
+                .collectAsList();
         assertTrue(fullDataset.containsAll(dataset1));
         assertTrue(fullDataset.containsAll(dataset2));
         assertEquals(2, fullDataset.size());
@@ -175,9 +186,10 @@ public class SparkCsvReaderTest {
         final Path file2 = tempDir.resolve("file2.csv");
         Files.writeString(file2, "columnBaz,columnBuzz\nbaz,buzz");
         assertThrows(C3rRuntimeException.class, () -> SparkCsvReader.readInput(session,
-                tempDir.toString(),
-                null,
-                null).collectAsList());
+                        tempDir.toString(),
+                        null,
+                        null)
+                .collectAsList());
     }
 
     @Test
@@ -185,9 +197,10 @@ public class SparkCsvReaderTest {
         final String singleRowQuotedSpace = "column\n\" \"";
         Files.writeString(tempFile, singleRowQuotedSpace);
         final List<Row> dataset = SparkCsvReader.readInput(session,
-                tempFile.toString(),
-                null,
-                null).collectAsList();
+                        tempFile.toString(),
+                        null,
+                        null)
+                .collectAsList();
         assertEquals(" ", dataset.get(0).getString(0));
     }
 
@@ -196,9 +209,10 @@ public class SparkCsvReaderTest {
         final String singleRowQuotedSpace = "column, column2\n ,";
         Files.writeString(tempFile, singleRowQuotedSpace);
         final List<Row> dataset = SparkCsvReader.readInput(session,
-                tempFile.toString(),
-                null,
-                null).collectAsList();
+                        tempFile.toString(),
+                        null,
+                        null)
+                .collectAsList();
         assertNull(dataset.get(0).get(0));
         assertNull(dataset.get(0).get(1));
     }

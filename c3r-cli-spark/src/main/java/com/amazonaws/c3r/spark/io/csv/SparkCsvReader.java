@@ -6,6 +6,7 @@ package com.amazonaws.c3r.spark.io.csv;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.CsvRowReader;
+import com.amazonaws.c3r.spark.config.SparkConfig;
 import lombok.NonNull;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -28,20 +29,39 @@ import java.util.stream.Collectors;
 public abstract class SparkCsvReader {
 
     /**
-     * Reads the input file for processing.
+     * Reads the input file for processing, normalizing headers.
      *
-     * @param sparkSession    The spark session to read with
-     * @param source          Location of input data
-     * @param inputNullValue  What should be interpreted as {@code null} in the input
-     * @param externalHeaders Strings to use as column header names if the file itself does not contain a header row
+     * @param sparkSession            The spark session to read with
+     * @param source                  Location of input data
+     * @param inputNullValue          What should be interpreted as {@code null} in the input
+     * @param externalHeaders         Strings to use as column header names if the file itself does not contain a header row
      * @return The source data to be processed
      */
     public static Dataset<Row> readInput(@NonNull final SparkSession sparkSession,
                                          @NonNull final String source,
                                          final String inputNullValue,
                                          final List<ColumnHeader> externalHeaders) {
+        return readInput(sparkSession, source, inputNullValue, externalHeaders, false);
+    }
+
+    /**
+     * Reads the input file for processing.
+     *
+     * @param sparkSession            The spark session to read with
+     * @param source                  Location of input data
+     * @param inputNullValue          What should be interpreted as {@code null} in the input
+     * @param externalHeaders         Strings to use as column header names if the file itself does not contain a header row
+     * @param skipHeaderNormalization Whether to skip the normalization of read in headers
+     * @return The source data to be processed
+     */
+    public static Dataset<Row> readInput(@NonNull final SparkSession sparkSession,
+                                         @NonNull final String source,
+                                         final String inputNullValue,
+                                         final List<ColumnHeader> externalHeaders,
+                                         final boolean skipHeaderNormalization) {
         final Map<String, String> options = new HashMap<>();
         options.put("inputNullValue", inputNullValue);
+        options.put(SparkConfig.PROPERTY_KEY_SKIP_HEADER_NORMALIZATION, Boolean.toString(skipHeaderNormalization));
         if (externalHeaders != null && !externalHeaders.isEmpty()) {
             options.put("headers", externalHeaders.stream().map(ColumnHeader::toString).collect(Collectors.joining(",")));
         }
@@ -120,6 +140,9 @@ public abstract class SparkCsvReader {
         if (!properties.containsKey("path")) {
             throw new C3rRuntimeException("A `path` must be provided when reading.");
         }
+        final boolean skipHeaderNormalization =
+                properties.getOrDefault(SparkConfig.PROPERTY_KEY_SKIP_HEADER_NORMALIZATION, "false")
+                        .equalsIgnoreCase("true");
         final String source = properties.get("path");
         final String inputNullValue = properties.get("inputNullValue");
         final List<ColumnHeader> externalHeaders = properties.get("headers") == null ?
@@ -132,6 +155,7 @@ public abstract class SparkCsvReader {
                 .inputNullValue(inputNullValue)
                 .externalHeaders(externalHeaders)
                 .fileCharset(fileCharset)
+                .skipHeaderNormalization(skipHeaderNormalization)
                 .build();
     }
 }
