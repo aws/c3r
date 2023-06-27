@@ -38,11 +38,17 @@ C3R_VERSION=$(java -jar $C3R_CLI_DIR/c3r-cli-all.jar --version)
 echo "JAR version found: $C3R_VERSION"
 
 # Test CLI JAR
-# ./c3r-cli/src/integration-test/test_all.sh $C3R_CLI_DIR/c3r-cli-all.jar
 python3 c3r-cli/src/integration-test/integration_tests.py \
   --id-y $C3R_ALL_Y_TEST_COLLABORATION \
   --id-n $C3R_ALL_N_TEST_COLLABORATION \
   $C3R_CLI_DIR/c3r-cli-all.jar
+
+# Test CLI Spark JAR
+python3 c3r-cli-spark/src/integration-test/spark_integration_tests.py \
+  --id-y $C3R_ALL_Y_TEST_COLLABORATION \
+  --id-n $C3R_ALL_N_TEST_COLLABORATION \
+  $C3R_CLI_SPARK_DIR/c3r-cli-spark-all.jar
+
 
 mkdir -p $ARTIFACT_DIR
 
