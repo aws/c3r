@@ -7,6 +7,7 @@ import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
+import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
 import com.amazonaws.c3r.json.GsonUtil;
@@ -129,7 +130,7 @@ public class SparkParquetReaderTest {
     }
 
     @Test
-    public void maliciousColumnHeaderTest() throws IOException {
+    public void maliciousColumnHeaderWithoutNormalizationTest() throws IOException {
         final StructField maliciousColumn = DataTypes.createStructField("; DROP ALL TABLES;", DataTypes.StringType, true);
         final StructType maliciousSchema = DataTypes.createStructType(new StructField[]{maliciousColumn});
         final ArrayList<Row> data = new ArrayList<>();
@@ -137,7 +138,7 @@ public class SparkParquetReaderTest {
         final Dataset<Row> maliciousDataset = session.createDataFrame(data, maliciousSchema);
         final Path tempDir = FileTestUtility.createTempDir();
         SparkParquetWriter.writeOutput(maliciousDataset, tempDir.toString());
-        final Dataset<Row> dataset = SparkParquetReader.readInput(session, tempDir.toString());
+        final Dataset<Row> dataset = SparkParquetReader.readInput(session, tempDir.toString(), true);
 
         /*
          Assert the malicious header is like any other.
@@ -149,5 +150,20 @@ public class SparkParquetReaderTest {
 
         // Assert values still exist
         assertFalse(dataset.isEmpty());
+    }
+
+    @Test
+    public void maliciousColumnHeaderWithNormalizationTest() throws IOException {
+        final StructField maliciousColumn = DataTypes.createStructField("; DROP ALL TABLES;", DataTypes.StringType, true);
+        final StructType maliciousSchema = DataTypes.createStructType(new StructField[]{maliciousColumn});
+        final ArrayList<Row> data = new ArrayList<>();
+        data.add(Row.fromSeq(Seq.from(Iterable.single("value"))));
+        final Dataset<Row> maliciousDataset = session.createDataFrame(data, maliciousSchema);
+        final Path tempDir = FileTestUtility.createTempDir();
+        SparkParquetWriter.writeOutput(maliciousDataset, tempDir.toString());
+
+        // Assert a malicious column header can't be read
+        assertThrows(C3rIllegalArgumentException.class, () -> SparkParquetReader.readInput(session, tempDir.toString(),
+                false));
     }
 }
