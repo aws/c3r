@@ -11,6 +11,7 @@ import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
+import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
 import com.amazonaws.c3r.json.GsonUtil;
@@ -25,6 +26,8 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -117,7 +120,7 @@ public class SparkMarshallerTest {
         SparkMarshaller.updateMaxValuesPerColumn(dataset, columnInsights);
         final Map<String, ColumnInsight> targetToColumnInsight = columnInsights.stream()
                 .collect(Collectors.toMap(insight -> insight.getTargetHeader().toString(), insight -> insight));
-        // Asert all have a value set since there are no empty columns
+        // Assert all have a value set since there are no empty columns
         assertFalse(columnInsights.stream().anyMatch(insight -> insight.getMaxValueLength() <= 0));
 
         final int longestFirstnameByteLength = 5;
@@ -157,8 +160,19 @@ public class SparkMarshallerTest {
 
         SparkMarshaller.updateMaxValuesPerColumn(emptyDataset, columnInsights);
 
-        // Asert all have a max length of 0
+        // Assert all have a max length of 0
         assertFalse(columnInsights.stream().anyMatch(insight -> insight.getMaxValueLength() != 0));
+    }
+
+    @Test
+    public void updateMaxValuesPerColumnMaliciousDatasetTest() {
+        final StructField maliciousColumn = DataTypes.createStructField("; DROP ALL TABLES;", DataTypes.StringType, true);
+        final StructType maliciousSchema = dataset.schema().add(maliciousColumn);
+        final Dataset<Row> maliciousDataset = session.createDataFrame(dataset.collectAsList(), maliciousSchema);
+
+        // Assert that a malicious column header will fail
+        assertThrows(C3rIllegalArgumentException.class,
+                () -> SparkMarshaller.updateMaxValuesPerColumn(maliciousDataset, columnInsights));
     }
 
     @Test
@@ -251,12 +265,32 @@ public class SparkMarshallerTest {
     }
 
     @Test
+    public void mapSourceToTargetColumnsMaliciousDatasetTest() {
+        final StructField maliciousColumn = DataTypes.createStructField("; DROP ALL TABLES;", DataTypes.StringType, true);
+        final StructType maliciousSchema = dataset.schema().add(maliciousColumn);
+        final Dataset<Row> maliciousDataset = session.createDataFrame(dataset.collectAsList(), maliciousSchema);
+        final Dataset<Row> mappedDataset = SparkMarshaller.mapSourceToTargetColumns(maliciousDataset, columnInsights);
+        // Assert final state does not contain malicious column
+        assertFalse(mappedDataset.schema().toList().contains(maliciousColumn));
+
+        final Set<String> mappedDatasetColumns =
+                Arrays.stream(mappedDataset.columns()).map(String::toLowerCase).collect(Collectors.toSet());
+
+        final Set<String> targetColumns = columnInsights.stream()
+                .map(columnInsight -> columnInsight.getTargetHeader().toString())
+                .collect(Collectors.toSet());
+
+        // Assert remaining columns were unaffected
+        assertEquals(targetColumns, mappedDatasetColumns);
+    }
+
+    @Test
     public void populateColumnPositionsTest() {
         final Dataset<Row> mappedDataset = SparkMarshaller.mapSourceToTargetColumns(dataset, columnInsights);
         SparkMarshaller.populateColumnPositions(mappedDataset, columnInsights);
         final Map<String, ColumnInsight> targetToColumnInsight = columnInsights.stream()
                 .collect(Collectors.toMap(insight -> insight.getTargetHeader().toString(), insight -> insight));
-        // Asert all have a value set since there are no empty columns
+        // Assert all have a value set since there are no empty columns
         assertFalse(columnInsights.stream().anyMatch(insight -> insight.getSourceColumnPosition() < 0));
 
         // Spot checks

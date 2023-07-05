@@ -4,6 +4,7 @@
 package com.amazonaws.c3r.spark.io.csv;
 
 import com.amazonaws.c3r.config.ColumnHeader;
+import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.CsvRowReader;
 import com.amazonaws.c3r.spark.config.SparkConfig;
@@ -235,5 +236,17 @@ public class SparkCsvReaderTest {
         // ensure empty value respected
         assertNotNull(data.get(0).get(1));
         assertEquals("", data.get(0).getString(1));
+    }
+
+    @Test
+    public void maliciousColumnHeaderTest() throws IOException {
+        final String singleRowQuotedSpace = "'; DROP ALL TABLES;";
+        Files.writeString(tempFile, singleRowQuotedSpace);
+
+        // Assert a malicious column header can't be read
+        assertThrows(C3rIllegalArgumentException.class, () -> SparkCsvReader.readInput(session,
+                tempFile.toString(),
+                null,
+                null));
     }
 }
