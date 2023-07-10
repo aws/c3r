@@ -1,16 +1,37 @@
 # Changelog
 
+## [1.2.1] - 2023-07-10
+
+### Changed
+- Decryption no longer normalizes column headers (#243)
+- Bump Spark dependencies from 3.4.0 to 3.4.1
+- Bump software.amazon.awssdk:cleanrooms from 2.20.82 to 2.20.101
+- Bump Hadoop dependencies from 3.3.5 to 3.3.6
+- Bump freefair plugins from 8.0.1 to 8.1.0
+- Bump trufflesecurity/trufflehog from 3.39.0 to 3.43.0
+
+### Deprecated
++ Deprecated constructors for `ParquetRowReader` and `ParquetSchema`, see class builders instead
++ Deprecated `ColumnHeader.getColumnHeaderFromIndex` in favor of `ColumnHeader.of(int)`
+
 ## [1.2.0] - 2023-06-08
 
+### Added
 - Initial C3R client for Apache Spark `c3r-cli-spark` (#223)
+- Customize user agent, shared version constants (#219)
+
+### Changed
 - Use Clean Rooms header limits, deprecate Glue limit (#209)
 - Update input/output column count limits (#190)
-- Customize user agent, shared version constants (#219)
 - Bump software.amazon.awssdk:cleanrooms from 2.20.56 to 2.20.82
 - Bump org.xerial:sqlite-jdbc from 3.41.2.1 to 3.42.0.0 (#205)
 - Bump org.apache.parquet:parquet-hadoop from 1.13.0 to 1.13.1 (#201)
 - Bump info.picocli:picocli from 4.7.1 to 4.7.4 (#218)
 - Bump trufflesecurity/trufflehog from 3.33.0 to 3.39.0 (#216)
+
+### Deprecated
++ `Limits.GLUE_VALID_HEADER_REGEXP`, see `Limits.AWS_CLEAN_ROOMS_HEADER_REGEXP`
++ `Limits.GLUE_MAX_HEADER_UTF8_BYTE_LENGTH`, see `Limits.AWS_CLEAN_ROOMS_HEADER_MAX_LENGTH`
 
 ## [1.1.3] - 2023-05-01
 
