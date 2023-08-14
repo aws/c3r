@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.2] - 2023-08-14
+
+### Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.20.101 to 2.20.125
+- Bump junit_version from 5.9.3 to 5.10.0
+- Bump io.freefair.lombok from 8.1.0 to 8.2.2
+- Bump io.freefair.javadocs from 8.1.0 to 8.2.2
+- Bump com.github.spotbugs from 5.0.14 to 5.1.2
+- Bump trufflesecurity/trufflehog from 3.43.0 to 3.48.0
+
 ## [1.2.1] - 2023-07-10
 
 ### Changed
