@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.3] - 2023-09-06
+
+## Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.20.125 to 2.20.141
+- Bump org.xerial:sqlite-jdbc from 3.42.0.0 to 3.43.0.0
+- Bump info.picocli:picocli from 4.7.4 to 4.7.5
+- Bump freefair_version from 8.2.2 to 8.3
+- Bump com.github.spotbugs from 5.1.2 to 5.1.3
+
 ## [1.2.2] - 2023-08-14
 
 ### Changed
