@@ -39,7 +39,7 @@ dependencies {
     implementation project(":c3r-sdk-parquet")
 
     // AWS Clean Rooms
-    implementation 'software.amazon.awssdk:cleanrooms:2.20.160'
+    implementation 'software.amazon.awssdk:cleanrooms:2.20.161'
 
     // CLI
     implementation 'info.picocli:picocli:4.7.5'
