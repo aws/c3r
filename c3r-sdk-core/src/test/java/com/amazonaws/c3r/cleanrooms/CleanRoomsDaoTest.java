@@ -97,7 +97,7 @@ public class CleanRoomsDaoTest {
     public void customApiNameTest() throws CleanRoomsException {
         final ApiName testApiName = ApiName.builder()
                 .name("TEST_NAME")
-                .version("1.2.3")
+                .version("1.2.4")
                 .build();
         final CleanRoomsDao dao = CleanRoomsDao.builder().apiName(testApiName).build();
         assertEquals(testApiName, dao.getApiName());
