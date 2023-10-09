@@ -5,7 +5,7 @@ plugins {
 
     // SpotBugs for quality checks and reports of source files. Read more at:
     // https://spotbugs.readthedocs.io/en/stable/gradle.html
-    id "com.github.spotbugs" version "5.1.3"
+    id "com.github.spotbugs" version "5.1.4"
 }
 
 apply plugin: 'com.github.spotbugs'
