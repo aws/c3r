@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4] - 2023-10-09
+
+## Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.20.141 to 2.20.162 (#353)
+- Bump com.github.spotbugs from 5.1.3 to 5.1.4 (#354)
+- Bump trufflesecurity/trufflehog from 3.54.3 to 3.59.0 (#343)
+
 ## [1.2.3] - 2023-09-06
 
 ## Changed
