@@ -7,6 +7,8 @@
 
 name: Run Gradle Build
 on:
+  schedule:
+    - cron: '0 6 * * *' # Run daily @ 6AM UTC/2AM EST
   pull_request:
   push:
     branches: main
@@ -22,8 +24,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         java-version: ['11', '17']
     runs-on: ${{ matrix.os }}
-    needs: filter
-    if: ${{ needs.filter.outputs.should_skip != 'true' }}
     steps:
       - name: Set up repository
         uses: actions/checkout@v4
