@@ -24,8 +24,8 @@ public class ParquetRowWriterTest {
     }
 
     @Test
-    public void getTargetNameTest() throws IOException {
-        final var inReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+    public void getTargetNameTest() {
+        final var inReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
 
         final ParquetRowWriter writer =
                 ParquetRowWriter.builder().targetName(output).parquetSchema(inReader.getParquetSchema()).build();
@@ -34,16 +34,15 @@ public class ParquetRowWriterTest {
 
     @Test
     public void getHeadersTest() {
-        final var inReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        final var inReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
 
         final ParquetRowWriter writer =
                 ParquetRowWriter.builder().targetName(output).parquetSchema(inReader.getParquetSchema()).build();
         assertEquals(ParquetTestUtility.PARQUET_TEST_DATA_HEADERS, writer.getHeaders());
     }
 
-    private void roundTripAssertEquals(final String inPath, final int rowCount, final boolean nonNullEntries)
-            throws IOException {
-        final var inReader = new ParquetRowReader(inPath);
+    private void roundTripAssertEquals(final String inPath, final int rowCount, final boolean nonNullEntries) {
+        final var inReader = ParquetRowReader.builder().sourceName(inPath).build();
         final var inRows = ParquetTestUtility.readAllRows(inReader);
         assertEquals(rowCount, inRows.size());
         if (nonNullEntries) {
@@ -62,7 +61,7 @@ public class ParquetRowWriterTest {
         writer.close();
         writer.flush();
 
-        final var outReader = new ParquetRowReader(output);
+        final var outReader = ParquetRowReader.builder().sourceName(output).build();
         final var outRows = ParquetTestUtility.readAllRows(outReader);
 
         assertEquals(rowCount, outRows.size());

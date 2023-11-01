@@ -5,6 +5,7 @@ package com.amazonaws.c3r.spark.io.parquet;
 
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
@@ -85,7 +86,8 @@ public class SparkParquetReaderTest {
 
     @Test
     public void readInputColumnsNoNormalizationTest() {
-        final Dataset<Row> dataset = SparkParquetReader.readInput(session, config.getSourceFile(), /* skipHeaderNormalization */ true);
+        final Dataset<Row> dataset = SparkParquetReader.readInput(session, config.getSourceFile(), /* skipHeaderNormalization */ true,
+                ParquetConfig.DEFAULT);
         final List<String> columns = Arrays.stream(dataset.columns())
                 .sorted()
                 .collect(Collectors.toList());
@@ -138,7 +140,7 @@ public class SparkParquetReaderTest {
         final Dataset<Row> maliciousDataset = session.createDataFrame(data, maliciousSchema);
         final Path tempDir = FileTestUtility.createTempDir();
         SparkParquetWriter.writeOutput(maliciousDataset, tempDir.toString());
-        final Dataset<Row> dataset = SparkParquetReader.readInput(session, tempDir.toString(), true);
+        final Dataset<Row> dataset = SparkParquetReader.readInput(session, tempDir.toString(), true, ParquetConfig.DEFAULT);
 
         /*
          Assert the malicious header is like any other.
@@ -164,6 +166,6 @@ public class SparkParquetReaderTest {
 
         // Assert a malicious column header can't be read
         assertThrows(C3rIllegalArgumentException.class, () -> SparkParquetReader.readInput(session, tempDir.toString(),
-                false));
+                false, ParquetConfig.DEFAULT));
     }
 }

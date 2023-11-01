@@ -574,7 +574,7 @@ public final class InteractiveSchemaGenerator {
 
         final ClientDataType dataType = getCurrentSourceColumnDataType();
         final ColumnType columnType;
-        if (!dataType.supportsCryptographicComputing()) {
+        if (dataType == ClientDataType.UNKNOWN) {
             consoleOutput.println("Cryptographic computing is not supported for this column's data type.");
             consoleOutput.println("This column's data will be cleartext.");
             columnType = ColumnType.CLEARTEXT;
@@ -606,7 +606,7 @@ public final class InteractiveSchemaGenerator {
 
         final int defaultTargetColumnCount = 1;
         consoleOutput.println("\nExamining source " + columnReference + ".");
-        final boolean isSupportedType = getCurrentSourceColumnDataType().supportsCryptographicComputing();
+        final boolean isSupportedType = getCurrentSourceColumnDataType() != ClientDataType.UNKNOWN;
 
         final int targetColumnCount;
         if (isSupportedType || allowCleartextColumns) {

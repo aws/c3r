@@ -110,7 +110,7 @@ class ParquetPrimitiveConverter extends PrimitiveConverter {
      */
     @Override
     public void addInt(final int value) {
-        addValue(new ParquetValue.Int(columnType, value));
+        addValue(new ParquetValue.Int32(columnType, value));
     }
 
     /**
@@ -120,6 +120,6 @@ class ParquetPrimitiveConverter extends PrimitiveConverter {
      */
     @Override
     public void addLong(final long value) {
-        addValue(new ParquetValue.Long(columnType, value));
+        addValue(new ParquetValue.Int64(columnType, value));
     }
 }

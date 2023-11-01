@@ -44,6 +44,12 @@ public final class CliDescriptions {
             "(defaults to the empty value `,,`)";
 
     /**
+     * Description of how to process primitive Parquet Binary values as strings if they have no logical annotations.
+     */
+    public static final String PARQUET_BINARY_AS_STRING = "Treat primitive Parquet Binary types without logical annotations " +
+            "as if they had the string annotation.";
+
+    /**
      * Explanation of dry run mode.
      */
     public static final String DRY_RUN_DESCRIPTION = "Check settings and files to verify configuration is valid but skip processing " +

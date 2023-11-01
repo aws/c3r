@@ -57,6 +57,11 @@ public final class ParquetTestUtility {
                     .collect(Collectors.toList());
 
     /**
+     * A file containing only binary values without logical annotations.
+     */
+    public static final String PARQUET_BINARY_VALUES_PATH = "../samples/parquet/binary_values.parquet";
+
+    /**
      * A file containing a single row and single column of Parquet data.
      */
     public static final String PARQUET_1_ROW_PRIM_DATA_PATH = "../samples/parquet/rows_1_groups_1_prim_data.parquet";
@@ -92,15 +97,15 @@ public final class ParquetTestUtility {
      * @see #PARQUET_TEST_DATA_TYPES
      */
     public static final List<Map.Entry<ColumnHeader, ClientDataType>> PARQUET_TEST_ROW_TYPE_ENTRIES =
-            List.of(entry(new ColumnHeader("boolean"), ClientDataType.UNKNOWN),
+            List.of(entry(new ColumnHeader("boolean"), ClientDataType.BOOLEAN),
                     entry(new ColumnHeader("string"), ClientDataType.STRING),
                     entry(new ColumnHeader("int8"), ClientDataType.UNKNOWN),
-                    entry(new ColumnHeader("int16"), ClientDataType.UNKNOWN),
-                    entry(new ColumnHeader("int32"), ClientDataType.UNKNOWN),
-                    entry(new ColumnHeader("int64"), ClientDataType.UNKNOWN),
-                    entry(new ColumnHeader("float"), ClientDataType.UNKNOWN),
-                    entry(new ColumnHeader("double"), ClientDataType.UNKNOWN),
-                    entry(new ColumnHeader("timestamp"), ClientDataType.UNKNOWN));
+                    entry(new ColumnHeader("int16"), ClientDataType.SMALLINT),
+                    entry(new ColumnHeader("int32"), ClientDataType.INT),
+                    entry(new ColumnHeader("int64"), ClientDataType.BIGINT),
+                    entry(new ColumnHeader("float"), ClientDataType.FLOAT),
+                    entry(new ColumnHeader("double"), ClientDataType.DOUBLE),
+                    entry(new ColumnHeader("timestamp"), ClientDataType.TIMESTAMP));
 
     /**
      * Map of Parquet data types as column headers to C3R data type.
@@ -130,7 +135,7 @@ public final class ParquetTestUtility {
      * @throws IOException If the file could not be opened for reading
      */
     public static List<Row<ParquetValue>> readAllRows(final String filePath) {
-        return readAllRows(new ParquetRowReader(filePath));
+        return readAllRows(ParquetRowReader.builder().sourceName(filePath).build());
     }
 
     /**

@@ -54,7 +54,7 @@ public final class ParquetTestUtility {
      * @return Contents of the file as a list of rows and the rows are string values
      */
     public static List<String[]> readContentAsStringArrays(final String filePath) {
-        final ParquetRowReader reader = new ParquetRowReader(filePath);
+        final ParquetRowReader reader = ParquetRowReader.builder().sourceName(filePath).build();
         final ParquetSchema parquetSchema = reader.getParquetSchema();
         final Map<Integer, ColumnHeader> columnIndices = parquetSchema.getHeaders().stream()
                 .collect(Collectors.toMap(
@@ -95,7 +95,7 @@ public final class ParquetTestUtility {
         ParquetSchema parquetSchema = null;
 
         for (Path p : paths) {
-            reader = new ParquetRowReader(p.toString());
+            reader = ParquetRowReader.builder().sourceName(p.toString()).build();
             if (parquetSchema == null) {
                 parquetSchema = reader.getParquetSchema();
             }

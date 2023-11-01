@@ -310,8 +310,8 @@ public class SchemaModeTest {
 
     @Test
     public void schemaTemplateWithRestrictiveSettingsParquetMixedDataTest() throws IOException {
-        // only 1 column is a string, so we only expect 1 target columns
-        runTemplateGeneratorRestrictiveSettings("../samples/parquet/rows_100_groups_10_prim_data.parquet", 1, true);
+        // only 8 columns are supported types, so we only expect 8 target columns
+        runTemplateGeneratorRestrictiveSettings("../samples/parquet/rows_100_groups_10_prim_data.parquet", 8, true);
     }
 
     @Test
@@ -362,7 +362,7 @@ public class SchemaModeTest {
 
     @Test
     public void schemaInteractiveRestrictiveSettingsParquetMixedDataTest() throws IOException {
-        // Only 1 column is of type string, so we expect 1 target column only
-        runInteractiveGeneratorRestrictiveSettings("../samples/parquet/rows_100_groups_10_prim_data.parquet", 1, true);
+        // Only 8 columns are supported types, so we expect 8 target columns only
+        runInteractiveGeneratorRestrictiveSettings("../samples/parquet/rows_100_groups_10_prim_data.parquet", 8, true);
     }
 }

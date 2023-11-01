@@ -16,6 +16,7 @@ import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.Pad;
 import com.amazonaws.c3r.config.PadType;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
@@ -155,7 +156,7 @@ public final class ParquetExample {
                 .build();
 
         final RowMarshaller<ParquetValue> parquetRowMarshaller =
-                ParquetRowMarshaller.newInstance(encryptionConfig);
+                ParquetRowMarshaller.newInstance(encryptionConfig, ParquetConfig.DEFAULT);
         parquetRowMarshaller.marshal();
         parquetRowMarshaller.close();
     }

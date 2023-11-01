@@ -43,19 +43,19 @@ public class ParquetRowReaderTest {
     }
 
     public static Integer getInt8(final Row<ParquetValue> row) {
-        return ((ParquetValue.Int) row.getValue(new ColumnHeader("int8"))).getValue();
+        return ((ParquetValue.Int32) row.getValue(new ColumnHeader("int8"))).getValue();
     }
 
     public static Integer getInt16(final Row<ParquetValue> row) {
-        return ((ParquetValue.Int) row.getValue(new ColumnHeader("int16"))).getValue();
+        return ((ParquetValue.Int32) row.getValue(new ColumnHeader("int16"))).getValue();
     }
 
     public static Integer getInt32(final Row<ParquetValue> row) {
-        return ((ParquetValue.Int) row.getValue(new ColumnHeader("int32"))).getValue();
+        return ((ParquetValue.Int32) row.getValue(new ColumnHeader("int32"))).getValue();
     }
 
     public static Long getInt64(final Row<ParquetValue> row) {
-        return ((ParquetValue.Long) row.getValue(new ColumnHeader("int64"))).getValue();
+        return ((ParquetValue.Int64) row.getValue(new ColumnHeader("int64"))).getValue();
     }
 
     public static Float getFloat(final Row<ParquetValue> row) {
@@ -67,7 +67,7 @@ public class ParquetRowReaderTest {
     }
 
     public static Long getTimestamp(final Row<ParquetValue> row) {
-        return ((ParquetValue.Long) row.getValue(new ColumnHeader("timestamp"))).getValue();
+        return ((ParquetValue.Int64) row.getValue(new ColumnHeader("timestamp"))).getValue();
     }
 
     public static void validateRowsGetValueContent(final List<Row<ParquetValue>> rows) {
@@ -96,7 +96,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void getSourceNameTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
         assertEquals(
                 ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH,
                 pReader.getSourceName());
@@ -142,19 +142,19 @@ public class ParquetRowReaderTest {
 
     @Test
     public void getReadRowCountTest() {
-        var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
         assertEquals(0, pReader.getReadRowCount());
         ParquetTestUtility.readAllRows(pReader);
         assertEquals(1, pReader.getReadRowCount());
 
-        pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_100_ROWS_PRIM_DATA_PATH);
+        pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_100_ROWS_PRIM_DATA_PATH).build();
         ParquetTestUtility.readAllRows(pReader);
         assertEquals(100, pReader.getReadRowCount());
     }
 
     @Test
     public void getParquetSchemaSupportsCryptoComputingTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
         final var schema = pReader.getParquetSchema();
         ParquetTestUtility.PARQUET_TEST_DATA_TYPES.forEach((header, type) ->
                 assertEquals(type, schema.getColumnType(header).getClientDataType(),
@@ -163,7 +163,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void nextTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
         final var row = pReader.next();
         assertEquals(ParquetTestUtility.PARQUET_TEST_ROW_TYPE_ENTRIES.size(), row.size());
         for (var header : ParquetTestUtility.PARQUET_TEST_DATA_HEADERS) {
@@ -173,7 +173,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void validate1RowGetValueTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH).build();
         final var rows = ParquetTestUtility.readAllRows(pReader);
         assertEquals(rows.size(), 1);
         validateRowsGetValueContent(rows);
@@ -181,7 +181,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void validate100RowsGetValueTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_100_ROWS_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_100_ROWS_PRIM_DATA_PATH).build();
         final var rows = ParquetTestUtility.readAllRows(pReader);
         assertEquals(rows.size(), 100);
         validateRowsGetValueContent(rows);
@@ -189,7 +189,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void validate100RowsIn10GroupsGetValueTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_100_ROWS_10_GROUPS_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_100_ROWS_10_GROUPS_PRIM_DATA_PATH).build();
         final var rows = ParquetTestUtility.readAllRows(pReader);
         assertEquals(rows.size(), 100);
         validateRowsGetValueContent(rows);
@@ -198,7 +198,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void validate1NullRowGetValueTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_NULL_1_ROW_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_NULL_1_ROW_PRIM_DATA_PATH).build();
         final var rows = ParquetTestUtility.readAllRows(pReader);
         assertEquals(rows.size(), 1);
         validateRowsGetValueNullContent(rows);
@@ -206,7 +206,7 @@ public class ParquetRowReaderTest {
 
     @Test
     public void validate100NullRowsGetValueTest() {
-        final var pReader = new ParquetRowReader(ParquetTestUtility.PARQUET_NULL_100_ROWS_PRIM_DATA_PATH);
+        final var pReader = ParquetRowReader.builder().sourceName(ParquetTestUtility.PARQUET_NULL_100_ROWS_PRIM_DATA_PATH).build();
         final var rows = ParquetTestUtility.readAllRows(pReader);
         assertEquals(rows.size(), 100);
         validateRowsGetValueNullContent(rows);
@@ -235,7 +235,7 @@ public class ParquetRowReaderTest {
         writer.writeRow(row);
         writer.flush();
         writer.close();
-        assertThrows(C3rRuntimeException.class, () -> new ParquetRowReader(output));
+        assertThrows(C3rRuntimeException.class, () -> ParquetRowReader.builder().sourceName(output).build());
     }
 
 }

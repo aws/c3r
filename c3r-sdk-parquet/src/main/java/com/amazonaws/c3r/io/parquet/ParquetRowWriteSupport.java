@@ -43,7 +43,7 @@ class ParquetRowWriteSupport extends WriteSupport<Row<ParquetValue>> {
      */
     @Override
     public WriteContext init(final Configuration configuration) {
-        return new WriteContext(schema.getMessageType(), new HashMap<>());
+        return new WriteContext(schema.getReconstructedMessageType(), new HashMap<>());
     }
 
     /**

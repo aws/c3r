@@ -36,6 +36,7 @@ spotbugs {
 dependencies {
     // AWS-C3R
     implementation project(":c3r-sdk-core")
+    implementation project(":c3r-sdk-parquet")
     testImplementation project(":c3r-sdk-parquet")
 
     // AWS Clean Rooms

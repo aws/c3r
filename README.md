@@ -25,8 +25,9 @@ NOTICE: This project is released as open source under the Apache 2.0 license but
     - [Trusted Computing Environment](#trusted-computing-environment)
     - [Temporary Files](#temporary-files)
   - [Frequently Asked Questions](#frequently-asked-questions)
-    - [How can I encrypt non-string values?](#how-can-i-encrypt-non-string-values)
+    - [What data types can be encrypted?](#what-data-types-can-be-encrypted)
     - [What Parquet data types are supported?](#what-parquet-data-types-are-supported)
+    - [What is an equivalence class?](#what-is-an-equivalence-class)
     - [Does the C3R encryption client implement any non-standard cryptography?](#does-the-c3r-encryption-client-implement-any-non-standard-cryptography)
   - [License](#license)
 
@@ -45,7 +46,7 @@ The C3R encryption client command line interface and related JARs can be downloa
 
 ### Supported Data Formats
 
-CSV and Parquet file formats are supported. Details and  limitations are found in the "[Supported file and data types](https://docs.aws.amazon.com/clean-rooms/latest/userguide/crypto-computing-file-types.html)" section of the user guide.
+CSV and Parquet file formats are supported. For CSV files, the C3R encryption client treats all values as strings. For Parquet files, the data types are listed in [What Parquet data types are supported?](#what-parquet-data-types-are-supported). See [What data types can be encrypted?](#what-data-types-can-be-encrypted) for information on encryption of particular data types. Further details and  limitations are found in the "[Supported file and data types](https://docs.aws.amazon.com/clean-rooms/latest/userguide/crypto-computing-file-types.html)" section of the user guide.
 
 The core functionality of the C3R encryption client is format agnostic; the SDK can be used for any format by implementing an appropriate [RowReader](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowReader.java) and [RowWriter](https://github.com/aws/c3r/blob/main/c3r-sdk-core/src/main/java/com/amazonaws/c3r/io/RowWriter.java).
 
@@ -173,15 +174,53 @@ When encrypting a source file, the C3R encryption client will create temporary f
 
 ## Frequently Asked Questions
 
-### How can I encrypt non-string values?
-Currently only string values are supported for sealed and fingerprint columns.
+### What data types can be encrypted?
+Currently, only string values are supported by sealed columns.
+
+For fingerprint columns, types are grouped into [equivalence classes](#what-is-an-equivalence-class). Equivalence classes allow identical fingerprints to be assigned to the same semantic value regardless of the original representation. For example, the _integral value_ `42` will be assigned the same fingerprint regardless of whether it was originally an `SmallInt`, `Int`, or `BigInt`. No non-integral values, however, will ever be assigned the same fingerprint as the integral value `42`. 
+
+The following equivalence classes are supported by fingerprint columns:
+- `BOOLEAN`
+- `DATE`
+- `INTEGRAL`
+- `STRING`
 
 For CSV files, the C3R encryption client treats all values simply as UTF-8 encoded text and makes no attempt to interpret them differently prior to encryption.
 
-For Parquet files, an error will be raised if a non-string column is used for a sealed or fingerprint column.
+For Parquet files, an error will be raised if a non-supported type for a particular column type is used.
 
 ### What Parquet data types are supported?
-The C3R encryption client can process any non-complex (i.e., primitive) data in a Parquet file, but only string columns may be used for sealed or fingerprint columns.
+The C3R encryption client can process any non-complex (i.e., primitive) data in a Parquet file that represents a data type supported by Clean Rooms. The following Parquet data types are supported:
+- `Binary` with the following logical annotations:
+  - None if the `--parquetBinaryAsString` is set (`STRING` data type)
+  - `Decimal(scale, precision)` (`DECIMAL` data type)
+  - `String` (`STRING` data type)
+- `Boolean` with no logical annotation (`BOOLEAN` data type)
+- `Double` with no logical annotation (`DOUBLE` data type)
+- `Fixed_Len_Binary_Array` with the `Decimal(scale, precision)` logical annotation (`DECIMAL` data type)
+- `Float` with no logical annotation (`FLOAT` data type)
+- `Int32` with the following logical annotations:
+  - None (`INT` data type)
+  - `Date` (`DATE` data type)
+  - `Decimal(scale, precision)` (`DECIMAL` data type)
+  - `Int(16, true)` (`SMALLINT` data type)
+  - `Int(32, true)` (`INT` data type)
+- `Int64` with the following logical annotations:
+  - None (`BIGINT` data type)
+  - `Decimal(scale, precision)` (`DECIMAL` data type)
+  - `Int(64, true)` (`BIGINT` data type)
+  - `Timestamp(isUTCAdjusted, TimeUnit.MILLIS)` (`TIMESTAMP` data type)
+  - `Timestamp(isUTCAdjusted, TimeUnit.MICROS)` (`TIMESTAMP` data type)
+  - `Timestamp(isUTCAdjusted, TimeUnit.NANOS)` (`TIMESTAMP` data type)
+
+### What is an equivalence class?
+An equivalence class is a set of data types that can be unambiguously compared for equality via a representative data type.
+
+The equivalence classes are:
+- `BOOLEAN` containing data types: `BOOLEAN`
+- `DATE` containing data types: `DATE`
+- `INTEGRAL` containing data types: `BIGINT`, `INT`, `SMALLINT`
+- `STRING` containing data types: `CHAR`, `STRING`, `VARCHAR`
 
 ### Does the C3R encryption client implement any non-standard cryptography?
 
