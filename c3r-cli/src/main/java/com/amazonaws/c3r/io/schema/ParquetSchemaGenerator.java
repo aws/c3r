@@ -21,15 +21,17 @@ public final class ParquetSchemaGenerator extends SchemaGenerator {
      * @param targetJsonFile   Where to save the schema
      * @param overwrite        Whether the {@code targetJsonFile} should be overwritten (if it exists)
      * @param clientSettings   Collaboration's client settings if provided, else {@code null}
+     * @param binaryAsString   If {@code true}, treat unannounced binary values as strings
      */
     @Builder
     private ParquetSchemaGenerator(@NonNull final String inputParquetFile,
                                    @NonNull final String targetJsonFile,
                                    @NonNull final Boolean overwrite,
-                                   final ClientSettings clientSettings) {
+                                   final ClientSettings clientSettings,
+                                   final Boolean binaryAsString) {
         super(inputParquetFile, targetJsonFile, overwrite, clientSettings);
         FileUtil.verifyReadableFile(inputParquetFile);
-        final var reader = new ParquetRowReader(inputParquetFile);
+        final var reader = ParquetRowReader.builder().sourceName(inputParquetFile).binaryAsString(binaryAsString).build();
         sourceHeaders = reader.getHeaders();
         sourceColumnTypes = reader.getParquetSchema().getColumnClientDataTypes();
     }

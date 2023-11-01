@@ -7,6 +7,7 @@ import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnType;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.json.GsonUtil;
@@ -99,7 +100,8 @@ public class SparkUnmarshallerTest {
     @Test
     public void unmarshalDataParquetUnencryptedMixedTypesTest() {
         final Dataset<Row> mixedDataset = SparkParquetReader
-                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet", /* skipHeaderNormalization */ true);
+                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet", /* skipHeaderNormalization */ true,
+                        ParquetConfig.DEFAULT);
         // assert there is indeed a non-String type
         assertTrue(mixedDataset.schema().toList().filter(struct -> struct.dataType() != DataTypes.StringType).size() > 0);
 

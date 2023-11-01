@@ -3,21 +3,27 @@
 
 package com.amazonaws.c3r.action;
 
+import com.amazonaws.c3r.FingerprintTransformer;
+import com.amazonaws.c3r.SealedTransformer;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.MappedTableSchema;
+import com.amazonaws.c3r.config.Pad;
 import com.amazonaws.c3r.config.PadType;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.PositionalTableSchema;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
+import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.utils.FileTestUtility;
+import com.amazonaws.c3r.utils.ParquetTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +39,7 @@ import static com.amazonaws.c3r.utils.GeneralTestUtility.cleartextColumn;
 import static com.amazonaws.c3r.utils.GeneralTestUtility.fingerprintColumn;
 import static com.amazonaws.c3r.utils.GeneralTestUtility.sealedColumn;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_1_ROW_PRIM_DATA_PATH;
+import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_BINARY_VALUES_PATH;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_NULL_1_ROW_PRIM_DATA_PATH;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_TEST_DATA_HEADERS;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_TEST_DATA_TYPES;
@@ -40,6 +47,7 @@ import static com.amazonaws.c3r.utils.ParquetTestUtility.readAllRows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -102,9 +110,9 @@ public class ParquetRowMarshallerTest {
                 .overwrite(true);
 
         assertThrows(C3rIllegalArgumentException.class, () ->
-                ParquetRowMarshaller.newInstance(configBuilder.fileFormat(FileFormat.CSV).build()));
+                ParquetRowMarshaller.newInstance(configBuilder.fileFormat(FileFormat.CSV).build(), ParquetConfig.DEFAULT));
         assertDoesNotThrow(() ->
-                ParquetRowMarshaller.newInstance(configBuilder.fileFormat(FileFormat.PARQUET).build()));
+                ParquetRowMarshaller.newInstance(configBuilder.fileFormat(FileFormat.PARQUET).build(), ParquetConfig.DEFAULT));
     }
 
     private void marshal1RowTest(final TableSchema schema, final ClientSettings settings, final boolean isDataNull) throws IOException {
@@ -121,7 +129,7 @@ public class ParquetRowMarshallerTest {
                 .tableSchema(schema)
                 .overwrite(true)
                 .build();
-        final var marshaller = ParquetRowMarshaller.newInstance(config);
+        final var marshaller = ParquetRowMarshaller.newInstance(config, ParquetConfig.DEFAULT);
 
         marshaller.marshal();
         marshaller.close();
@@ -187,7 +195,7 @@ public class ParquetRowMarshallerTest {
                 .tableSchema(schema)
                 .overwrite(true)
                 .build();
-        return ParquetRowMarshaller.newInstance(config);
+        return ParquetRowMarshaller.newInstance(config, ParquetConfig.DEFAULT);
     }
 
     @Test
@@ -207,5 +215,64 @@ public class ParquetRowMarshallerTest {
         assertThrows(C3rIllegalArgumentException.class, () ->
                 buildRowMarshallerWithSchema(positionalSchema));
 
+    }
+
+    @Test
+    public void marshalBinaryValuesAsStringTest() {
+        final String input = PARQUET_BINARY_VALUES_PATH;
+        final ColumnHeader fingerprintHeader = new ColumnHeader("fingerprint");
+        final ColumnHeader sealedHeader = new ColumnHeader("sealed");
+        final ColumnHeader cleartextHeader = new ColumnHeader("cleartext");
+
+        // Output one column of each type
+        final MappedTableSchema schema = new MappedTableSchema(List.of(
+                ColumnSchema.builder().type(ColumnType.FINGERPRINT)
+                        .sourceHeader(fingerprintHeader).targetHeader(fingerprintHeader).build(),
+                ColumnSchema.builder().type(ColumnType.SEALED)
+                        .sourceHeader(sealedHeader).targetHeader(sealedHeader)
+                        .pad(Pad.DEFAULT).build(),
+                ColumnSchema.builder().type(ColumnType.CLEARTEXT)
+                        .sourceHeader(cleartextHeader).targetHeader(cleartextHeader)
+                        .build()
+        ));
+
+        // All configuration settings except for how to treat binary values
+        final var baseConfig = EncryptConfig.builder()
+                .sourceFile(input)
+                .targetFile(output.toString())
+                .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
+                .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
+                .tempDir(tempDir)
+                .settings(lowSecurityEncryptNull)
+                .tableSchema(schema)
+                .overwrite(true)
+                .build();
+
+        // --parquetBinaryAsString is unset should cause execution to fail on file containing binary values
+        final var nullConfig = ParquetConfig.builder().binaryAsString(null).build();
+        assertThrows(C3rRuntimeException.class, () -> ParquetRowMarshaller.newInstance(baseConfig, nullConfig));
+
+        // --parquetBinaryAsString is false should cause execution to fail on file containing binary values
+        final var falseConfig = ParquetConfig.builder().binaryAsString(false).build();
+        assertThrows(C3rRuntimeException.class, () -> ParquetRowMarshaller.newInstance(baseConfig, falseConfig));
+
+        // --parquetBinaryAsString is true should cause execution to work on file containing binary values
+        final var trueConfig = ParquetConfig.builder().binaryAsString(true).build();
+        assertDoesNotThrow(() -> {
+            final var marshaller = ParquetRowMarshaller.newInstance(baseConfig, trueConfig);
+            marshaller.marshal();
+            marshaller.close();
+        });
+
+        // Check that fingerprint, sealed and cleartext values were actually written
+        final var rows = ParquetTestUtility.readAllRows(output.toString());
+        for (var row : rows) {
+            final var fingerprintValue = row.getValue(fingerprintHeader);
+            assertTrue(fingerprintValue.toString().startsWith(FingerprintTransformer.DESCRIPTOR_PREFIX_STRING));
+            final var sealedValue = row.getValue(sealedHeader);
+            assertTrue(sealedValue.toString().startsWith(SealedTransformer.DESCRIPTOR_PREFIX_STRING));
+            final var cleartextValue = row.getValue(cleartextHeader);
+            assertNotNull(cleartextValue.toString());
+        }
     }
 }

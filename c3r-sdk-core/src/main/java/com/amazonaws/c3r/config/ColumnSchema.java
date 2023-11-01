@@ -51,11 +51,11 @@ public class ColumnSchema implements Validatable, Serializable {
     /**
      * Creates a specification for transforming data during encryption.
      *
-     * @param sourceHeader Name or index of column in the input file
-     * @param targetHeader Name of the column in the output file
+     * @param sourceHeader   Name or index of column in the input file
+     * @param targetHeader   Name of the column in the output file
      * @param internalHeader Name of the column in the temporary SQL table
-     * @param pad          What kind of padding to use if the type is {@link ColumnType#SEALED}, {@code null} otherwise
-     * @param type         What cryptographic primitive should be used
+     * @param pad            What kind of padding to use if the type is {@link ColumnType#SEALED}, {@code null} otherwise
+     * @param type           What cryptographic primitive should be used
      */
     @Builder
     private ColumnSchema(final ColumnHeader sourceHeader,

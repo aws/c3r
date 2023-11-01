@@ -7,6 +7,7 @@ import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.EncryptConfig;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ParquetRowFactory;
 import com.amazonaws.c3r.data.ParquetSchema;
@@ -36,12 +37,13 @@ public final class ParquetRowMarshaller {
      * Creates an instance of the marshaller based off of an {@link EncryptConfig}. Verifies the input file appears to contain Parquet data
      * before continuing.
      *
-     * @param config Configuration information on how data will be transformed, file locations, etc.
+     * @param config        Configuration information on how data will be transformed, file locations, etc.
+     * @param parquetConfig Configuration information specific to Parquet data transformation and processing
      * @return Parquet data marshaller
      * @throws C3rIllegalArgumentException If non-Parquet data was found to be in the file
      * @see EncryptConfig
      */
-    public static RowMarshaller<ParquetValue> newInstance(@NonNull final EncryptConfig config) {
+    public static RowMarshaller<ParquetValue> newInstance(@NonNull final EncryptConfig config, @NonNull final ParquetConfig parquetConfig) {
         if (config.getFileFormat() != FileFormat.PARQUET) {
             throw new C3rIllegalArgumentException("Expected a PARQUET encryption configuration, but found "
                     + config.getFileFormat() + ".");
@@ -54,6 +56,7 @@ public final class ParquetRowMarshaller {
                 .schema(config.getTableSchema())
                 .tempDir(config.getTempDir())
                 .transforms(Transformer.initTransformers(config))
+                .binaryAsString(parquetConfig.getBinaryAsString())
                 .build();
     }
 
@@ -61,12 +64,13 @@ public final class ParquetRowMarshaller {
     /**
      * Creates an instance of the marshaller where each setting is specified individually via {@link Builder}.
      *
-     * @param sourceFile Input Parquet data file location
-     * @param targetFile Where to write Parquet data
-     * @param tempDir    Where to write temporary files if needed
-     * @param settings   Cryptographic settings for the clean room
-     * @param schema     Specification of how data in the input file will be transformed into encrypted data in the output file
-     * @param transforms Cryptographic transforms that are possible to use
+     * @param sourceFile     Input Parquet data file location
+     * @param targetFile     Where to write Parquet data
+     * @param tempDir        Where to write temporary files if needed
+     * @param settings       Cryptographic settings for the clean room
+     * @param schema         Specification of how data in the input file will be transformed into encrypted data in the output file
+     * @param transforms     Cryptographic transforms that are possible to use
+     * @param binaryAsString If {@code true}, treat unannounced binary values as strings
      * @return Parquet data marshaller
      * @throws C3rIllegalArgumentException If given a non-mapped table schema
      */
@@ -77,11 +81,12 @@ public final class ParquetRowMarshaller {
             @NonNull final String tempDir,
             @NonNull final ClientSettings settings,
             @NonNull final TableSchema schema,
-            @NonNull final Map<ColumnType, Transformer> transforms) {
+            @NonNull final Map<ColumnType, Transformer> transforms,
+            final Boolean binaryAsString) {
         if (schema.getPositionalColumnHeaders() != null) {
             throw new C3rIllegalArgumentException("Parquet files require a mapped table schema.");
         }
-        final ParquetRowReader reader = new ParquetRowReader(sourceFile);
+        final ParquetRowReader reader = ParquetRowReader.builder().sourceName(sourceFile).binaryAsString(binaryAsString).build();
         final ParquetSchema sourceParquetSchema = reader.getParquetSchema();
         final ParquetSchema targetParquetSchema = sourceParquetSchema.deriveTargetSchema(schema);
         final ParquetRowWriter writer = ParquetRowWriter.builder()

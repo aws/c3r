@@ -146,7 +146,7 @@ public final class TemplateSchemaGenerator {
             final var entry = new JsonObject();
             entry.addProperty("sourceHeader", header.toString());
             entry.addProperty("targetHeader", header.toString());
-            if (sourceColumnTypes.get(i).supportsCryptographicComputing()) {
+            if (sourceColumnTypes.get(i) != ClientDataType.UNKNOWN) {
                 entry.addProperty("type", columnTypeOptions);
                 entry.add("pad", EXAMPLE_PAD);
             } else if (allowCleartextColumns) {
@@ -174,7 +174,7 @@ public final class TemplateSchemaGenerator {
             // template entry
             final var templateEntry = new JsonObject();
             templateEntry.addProperty("targetHeader", ColumnHeader.of(i).toString());
-            if (sourceColumnTypes.get(i).supportsCryptographicComputing()) {
+            if (sourceColumnTypes.get(i) != ClientDataType.UNKNOWN) {
                 templateEntry.addProperty("type", columnTypeOptions);
                 templateEntry.add("pad", EXAMPLE_PAD);
                 entryArray.add(templateEntry);

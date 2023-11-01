@@ -44,15 +44,15 @@ public class ParquetSchemaGeneratorTest {
     @Test
     public void getSourceColumnTypesTest() throws IOException {
         assertEquals(
-                List.of(ClientDataType.UNKNOWN,
+                List.of(ClientDataType.BOOLEAN,
                         ClientDataType.STRING,
                         ClientDataType.UNKNOWN,
-                        ClientDataType.UNKNOWN,
-                        ClientDataType.UNKNOWN,
-                        ClientDataType.UNKNOWN,
-                        ClientDataType.UNKNOWN,
-                        ClientDataType.UNKNOWN,
-                        ClientDataType.UNKNOWN),
+                        ClientDataType.SMALLINT,
+                        ClientDataType.INT,
+                        ClientDataType.BIGINT,
+                        ClientDataType.FLOAT,
+                        ClientDataType.DOUBLE,
+                        ClientDataType.TIMESTAMP),
                 getTestSchemaGenerator("../samples/parquet/rows_100_groups_10_prim_data.parquet").getSourceColumnTypes());
     }
 

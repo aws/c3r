@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import org.apache.parquet.io.api.RecordConsumer;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
 
 /**
@@ -33,11 +34,23 @@ public abstract class ParquetValue extends Value {
      *
      * @param parquetDataType Underlying data type
      * @param bytes           Binary serialization of value
+     * @throws C3rIllegalArgumentException Type not supported
      */
-    protected ParquetValue(@NonNull final ParquetDataType parquetDataType, final byte[] bytes) {
+    ParquetValue(@NonNull final ParquetDataType parquetDataType, final byte[] bytes) {
         this.parquetDataType = parquetDataType;
         this.bytes = bytes;
+        if (!validateAnnotation()) {
+            throw new C3rIllegalArgumentException("Parquet " + parquetDataType.getParquetType() + " type has invalid logical type " +
+                    "annotations.");
+        }
     }
+
+    /**
+     * Verify annotations on Parquet type are allowed on this primitive type.
+     *
+     * @return {@code true} if annotations are accepted on type
+     */
+    abstract boolean validateAnnotation();
 
     /**
      * Associates a data type with a binary encoded value.
@@ -56,21 +69,18 @@ public abstract class ParquetValue extends Value {
 
         switch (type.getParquetType().asPrimitiveType().getPrimitiveTypeName()) {
             case BOOLEAN:
-                return new Boolean(type, booleanFromBytes(bytes));
+                return new Boolean(type, ValueConverter.Boolean.fromBytes(bytes));
             case INT32:
-                return new Int(type, intFromBytes(bytes));
+                return new Int32(type, ValueConverter.Int.fromBytes(bytes));
             case INT64:
-                return new Long(type, longFromBytes(bytes));
+                return new Int64(type, ValueConverter.BigInt.fromBytes(bytes));
             case FLOAT:
-                return new Float(type, floatFromBytes(bytes));
-            case DOUBLE:
-                return new Double(type, doubleFromBytes(bytes));
+                return new Float(type, ValueConverter.Float.fromBytes(bytes));
+            case FIXED_LEN_BYTE_ARRAY:
             case BINARY:
-                org.apache.parquet.io.api.Binary binary = null;
-                if (bytes != null) {
-                    binary = org.apache.parquet.io.api.Binary.fromReusedByteArray(bytes);
-                }
-                return new Binary(type, binary);
+                return new Binary(type, (bytes != null) ? org.apache.parquet.io.api.Binary.fromReusedByteArray(bytes) : null);
+            case DOUBLE:
+                return new Double(type, ValueConverter.Double.fromBytes(bytes));
             default:
                 throw new C3rIllegalArgumentException("Unrecognized data type: " + type);
         }
@@ -135,6 +145,11 @@ public abstract class ParquetValue extends Value {
         private final org.apache.parquet.io.api.Binary value;
 
         /**
+         * If this instance of {@code Binary} represents a {@code FIXED_WIDTH_BYTE_ARRAY} a length will be specified.
+         */
+        private final int length;
+
+        /**
          * Convert a Parquet binary value to its byte representation with data type metadata.
          * This constructor takes the {@link ParquetDataType} as it contains information about
          * the binary encoding such as if it's a string.
@@ -145,10 +160,12 @@ public abstract class ParquetValue extends Value {
          */
         public Binary(final ParquetDataType type, final org.apache.parquet.io.api.Binary value) {
             super(type, binaryToBytes(value));
-            if (!isExpectedType(PrimitiveType.PrimitiveTypeName.BINARY, type)) {
+            if (!(isExpectedType(PrimitiveType.PrimitiveTypeName.BINARY, type) ||
+                    isExpectedType(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY, type))) {
                 throw new C3rRuntimeException("Parquet Binary type expected but found " + type);
             }
-            this.value = value != null ? value.copy() : null;
+            this.value = (value != null) ? value.copy() : null;
+            this.length = (value != null) ? value.length() : 0;
         }
 
         /**
@@ -162,6 +179,31 @@ public abstract class ParquetValue extends Value {
                 return null;
             }
             return value.getBytes().clone();
+        }
+
+        /**
+         * The {@code Binary} Parquet type can represent the primitive type and the logical types {@code String} and {@code Decimal}.
+         *
+         * @return {@code true} if instance is a raw primitive or valid logical type
+         */
+        @Override
+        boolean validateAnnotation() {
+            if (getParquetDataType().getParquetType().asPrimitiveType().getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
+                final LogicalTypeAnnotation annotations = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                return (annotations == null) ||
+                        (annotations instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) ||
+                        (annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
+            } else if (getParquetDataType().getParquetType().asPrimitiveType().getPrimitiveTypeName() ==
+                    PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) {
+                final LogicalTypeAnnotation annotations = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                if (getParquetDataType().getParquetType().asPrimitiveType().getTypeLength() < 0) {
+                    return false;
+                } else {
+                    return (annotations == null) ||
+                            (annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
+                }
+            }
+            return false;
         }
 
         /**
@@ -183,10 +225,28 @@ public abstract class ParquetValue extends Value {
             if (isNull()) {
                 return null;
             }
-            if (this.getParquetDataType().isStringType()) {
+            if (ClientDataType.STRING == getParquetDataType().getClientDataType() ||
+                    ClientDataType.CHAR == getParquetDataType().getClientDataType()) {
                 return value.toStringUsingUTF8();
             } else {
                 return value.toString();
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] getBytesAs(final ClientDataType type) {
+            switch (type) {
+                case STRING:
+                    if (getParquetDataType().getClientDataType() == ClientDataType.STRING) {
+                        return getBytes();
+                    } else {
+                        throw new C3rRuntimeException("Could not convert Parquet Binary to " + type + ".");
+                    }
+                default:
+                    throw new C3rRuntimeException("Could not convert Parquet Binary to " + type + ".");
             }
         }
     }
@@ -208,7 +268,7 @@ public abstract class ParquetValue extends Value {
          * @throws C3rRuntimeException If a data type other than boolean found
          */
         public Boolean(final ParquetDataType parquetDataType, final java.lang.Boolean value) {
-            super(parquetDataType, booleanToBytes(value));
+            super(parquetDataType, ValueConverter.Boolean.toBytes(value));
             if (!isExpectedType(PrimitiveType.PrimitiveTypeName.BOOLEAN, parquetDataType)) {
                 throw new C3rRuntimeException("Parquet Boolean type expected but found " + parquetDataType);
             }
@@ -222,6 +282,16 @@ public abstract class ParquetValue extends Value {
          */
         public java.lang.Boolean getValue() {
             return value;
+        }
+
+        /**
+         * The {@code Boolean} Parquet type cannot have any logical type annotations.
+         *
+         * @return {@code true} if no logical type annotations exist
+         */
+        @Override
+        boolean validateAnnotation() {
+            return getParquetDataType().getParquetType().getLogicalTypeAnnotation() == null;
         }
 
         /**
@@ -246,6 +316,18 @@ public abstract class ParquetValue extends Value {
             return String.valueOf(value);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] getBytesAs(final ClientDataType type) {
+            switch (type) {
+                case BOOLEAN:
+                    return getBytes();
+                default:
+                    throw new C3rRuntimeException("Could not convert Parquet Boolean to " + type + ".");
+            }
+        }
     }
 
     /**
@@ -266,11 +348,21 @@ public abstract class ParquetValue extends Value {
          * @throws C3rRuntimeException If a data type other than double found
          */
         public Double(final ParquetDataType parquetDataType, final java.lang.Double value) {
-            super(parquetDataType, doubleToBytes(value));
+            super(parquetDataType, ValueConverter.Double.toBytes(value));
             if (!isExpectedType(PrimitiveType.PrimitiveTypeName.DOUBLE, parquetDataType)) {
                 throw new C3rRuntimeException("Parquet Double type expected but found " + parquetDataType);
             }
             this.value = value;
+        }
+
+        /**
+         * The {@code Double} Parquet type cannot have any logical type annotations.
+         *
+         * @return {@code true} if no logical type annotations exist
+         */
+        @Override
+        boolean validateAnnotation() {
+            return getParquetDataType().getParquetType().getLogicalTypeAnnotation() == null;
         }
 
         /**
@@ -294,6 +386,17 @@ public abstract class ParquetValue extends Value {
             }
             return String.valueOf(value);
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] getBytesAs(final ClientDataType type) {
+            switch (type) {
+                default:
+                    throw new C3rRuntimeException("Could not convert Parquet Double to " + type + ".");
+            }
+        }
     }
 
 
@@ -315,11 +418,21 @@ public abstract class ParquetValue extends Value {
          * @throws C3rRuntimeException If a data type other than float found
          */
         public Float(final ParquetDataType parquetDataType, final java.lang.Float value) {
-            super(parquetDataType, floatToBytes(value));
+            super(parquetDataType, ValueConverter.Float.toBytes(value));
             if (!isExpectedType(PrimitiveType.PrimitiveTypeName.FLOAT, parquetDataType)) {
                 throw new C3rRuntimeException("Parquet Float type expected but found " + parquetDataType);
             }
             this.value = value;
+        }
+
+        /**
+         * The {@code Float} Parquet type cannot have any logical type annotations.
+         *
+         * @return {@code true} if no logical type annotations exist
+         */
+        @Override
+        boolean validateAnnotation() {
+            return getParquetDataType().getParquetType().getLogicalTypeAnnotation() == null;
         }
 
         /**
@@ -344,13 +457,23 @@ public abstract class ParquetValue extends Value {
             return String.valueOf(value);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] getBytesAs(final ClientDataType type) {
+            switch (type) {
+                default:
+                    throw new C3rRuntimeException("Could not convert Parquet Float to " + type + ".");
+            }
+        }
     }
 
     /**
      * Specific implementation for integer Parquet values.
      */
     @Getter
-    public static class Int extends ParquetValue {
+    public static class Int32 extends ParquetValue {
         /**
          * Integer value.
          */
@@ -363,12 +486,34 @@ public abstract class ParquetValue extends Value {
          * @param value           Integer to store
          * @throws C3rRuntimeException If a data type other than integer found
          */
-        public Int(final ParquetDataType parquetDataType, final java.lang.Integer value) {
-            super(parquetDataType, intToBytes(value));
+        public Int32(final ParquetDataType parquetDataType, final java.lang.Integer value) {
+            super(parquetDataType, ValueConverter.Int.toBytes(value));
             if (!isExpectedType(PrimitiveType.PrimitiveTypeName.INT32, parquetDataType)) {
                 throw new C3rRuntimeException("Parquet Integer type expected but found " + parquetDataType);
             }
             this.value = value;
+        }
+
+        /**
+         * The {@code int32} Parquet value can have no annotations or have the logical type annotations of {@code Date}, {@code Decimal}
+         * or {@code Int32}.
+         *
+         * @return {@code true} if there is no annotation or the annotation is for Date, Decimal or Int32.
+         */
+        @Override
+        boolean validateAnnotation() {
+            final LogicalTypeAnnotation logicalTypeAnnotation = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+            if (logicalTypeAnnotation != null && logicalTypeAnnotation instanceof LogicalTypeAnnotation.IntLogicalTypeAnnotation) {
+                final LogicalTypeAnnotation.IntLogicalTypeAnnotation intLogicalTypeAnnotation =
+                        (LogicalTypeAnnotation.IntLogicalTypeAnnotation) logicalTypeAnnotation;
+                return intLogicalTypeAnnotation.isSigned() &&
+                        (intLogicalTypeAnnotation.getBitWidth() == Byte.SIZE ||
+                                intLogicalTypeAnnotation.getBitWidth() == ClientDataType.INT_BIT_SIZE ||
+                                intLogicalTypeAnnotation.getBitWidth() == ClientDataType.SMALLINT_BIT_SIZE);
+            }
+            return (logicalTypeAnnotation == null) ||
+                    (logicalTypeAnnotation instanceof LogicalTypeAnnotation.DateLogicalTypeAnnotation) ||
+                    (logicalTypeAnnotation instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
         }
 
         /**
@@ -392,15 +537,30 @@ public abstract class ParquetValue extends Value {
             }
             return String.valueOf(value);
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] getBytesAs(final ClientDataType type) {
+            switch (type) {
+                case BIGINT:
+                    return ValueConverter.BigInt.toBytes(value);
+                case DATE:
+                    return ValueConverter.Date.toBytes(value);
+                default:
+                    throw new C3rRuntimeException("Could not convert Parquet Int32 to " + type + ".");
+            }
+        }
     }
 
     /**
      * Specific implementation for long Parquet values.
      */
     @Getter
-    public static class Long extends ParquetValue {
+    public static class Int64 extends ParquetValue {
         /**
-         * Long value.
+         * Int64 value.
          */
         private final java.lang.Long value;
 
@@ -408,15 +568,33 @@ public abstract class ParquetValue extends Value {
          * Convert a long value to its byte representation with data type metadata.
          *
          * @param parquetDataType The long type data
-         * @param value           Long to store
+         * @param value           Int64 to store
          * @throws C3rRuntimeException If a data type other than long found
          */
-        public Long(final ParquetDataType parquetDataType, final java.lang.Long value) {
-            super(parquetDataType, longToBytes(value));
+        public Int64(final ParquetDataType parquetDataType, final java.lang.Long value) {
+            super(parquetDataType, ValueConverter.BigInt.toBytes(value));
             if (!isExpectedType(PrimitiveType.PrimitiveTypeName.INT64, parquetDataType)) {
-                throw new C3rRuntimeException("Parquet Long type expected but found " + parquetDataType);
+                throw new C3rRuntimeException("Parquet Int64 type expected but found " + parquetDataType);
             }
             this.value = value;
+        }
+
+        /**
+         * The {@code int64} Parquet type can have no annotations or the {@code Timestamp}, {@code Decimal} or {@code Int32} annotations.
+         *
+         * @return {@code true} if no annotations exist or the annotation is timestamp, decimal or int.
+         */
+        @Override
+        boolean validateAnnotation() {
+            final LogicalTypeAnnotation logicalTypeAnnotation = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+            if (logicalTypeAnnotation instanceof LogicalTypeAnnotation.IntLogicalTypeAnnotation) {
+                final LogicalTypeAnnotation.IntLogicalTypeAnnotation intLogicalTypeAnnotation =
+                        (LogicalTypeAnnotation.IntLogicalTypeAnnotation) logicalTypeAnnotation;
+                return intLogicalTypeAnnotation.isSigned() && intLogicalTypeAnnotation.getBitWidth() == ClientDataType.BIGINT_BIT_SIZE;
+            }
+            return logicalTypeAnnotation == null ||
+                    logicalTypeAnnotation instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation ||
+                    logicalTypeAnnotation instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
         }
 
         /**
@@ -439,6 +617,19 @@ public abstract class ParquetValue extends Value {
                 return null;
             }
             return String.valueOf(value);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] getBytesAs(final ClientDataType type) {
+            switch (type) {
+                case BIGINT:
+                    return ValueConverter.BigInt.toBytes(value);
+                default:
+                    throw new C3rRuntimeException("Could not convert Parquet Int64 to " + type + ".");
+            }
         }
     }
 

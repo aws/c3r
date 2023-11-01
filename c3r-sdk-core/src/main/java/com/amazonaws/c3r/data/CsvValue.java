@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.data;
 
+import com.amazonaws.c3r.exception.C3rRuntimeException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -85,5 +86,13 @@ public class CsvValue extends Value {
         } else {
             return new String(bytes, StandardCharsets.UTF_8);
         }
+    }
+
+    @Override
+    public byte[] getBytesAs(final ClientDataType type) {
+        if (type == ClientDataType.STRING) {
+            return (bytes == null) ? null : bytes.clone();
+        }
+        throw new C3rRuntimeException("CsvValue could not be convered to type " + type);
     }
 }

@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -87,7 +86,7 @@ public class FingerprintTransformerTest {
                 FingerprintTransformer.DESCRIPTOR_PREFIX,
                 getDescriptorPrefix(hmacText));
 
-        final byte[] expectedText = "01:hmac:qpQRixU/cftGhMGkt0G+cy/bKyvui15spVTEk5YYOA8=".getBytes(StandardCharsets.UTF_8);
+        final byte[] expectedText = "02:hmac:WRtZMlbn+zFNU5YAR0UT1S9v128kUMhV2PAJSdjGzqw=".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, hmacText);
 
         final byte[] differentColumnHmacText = fingerprintTransformer.marshal(cleartext, differentColumnContext);
@@ -104,7 +103,7 @@ public class FingerprintTransformerTest {
                 FingerprintTransformer.DESCRIPTOR_PREFIX,
                 getDescriptorPrefix(hmacText));
 
-        final byte[] expectedText = "01:hmac:S2WgUaexdXJ1wbgJ829QYUfEioKyF+soXJCQuH/p020=".getBytes(StandardCharsets.UTF_8);
+        final byte[] expectedText = "02:hmac:7YchN4H6pV0CxfGNX51VXRjCNx0/V43fMkV0lkTfAeE=".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, hmacText);
 
         final byte[] differentColumnHmacText = fingerprintTransformer.marshal(cleartext, differentColumnContext);
@@ -132,14 +131,14 @@ public class FingerprintTransformerTest {
                 FingerprintTransformer.DESCRIPTOR_PREFIX,
                 getDescriptorPrefix(hmacText));
 
-        final byte[] expectedText = "01:hmac:zQOr/XFsJQCQ+rkEmBw5F8u9yTs/48vLFadq2cQ5fbs=".getBytes(StandardCharsets.UTF_8);
+        final byte[] expectedText = "02:hmac:+UJjyBG1kJXUe4u0C5FTM7WaEhGl9+PB5blhAURDvnQ=".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, hmacText);
     }
 
     @Test
     public void unmarshalFailOnUnmarshalTrueTest() {
         fingerprintTransformer = new FingerprintTransformer(secretKey, salt, ClientSettings.lowAssuranceMode(), true);
-        final byte[] hmacText = "01:hmac:i0Y63cL+J5DpQw3rd3lnnwT1LSBEv+MppUxrajPkz44=".getBytes(StandardCharsets.UTF_8);
+        final byte[] hmacText = "02:hmac:i0Y63cL+J5DpQw3rd3lnnwT1LSBEv+MppUxrajPkz44=".getBytes(StandardCharsets.UTF_8);
         assertThrows(C3rRuntimeException.class, () -> fingerprintTransformer.unmarshal(hmacText));
     }
 
@@ -169,16 +168,5 @@ public class FingerprintTransformerTest {
         assertTrue(Transformer.hasDescriptor(
                 fingerprintTransformer,
                 FingerprintTransformer.DESCRIPTOR_PREFIX_STRING.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    @Test
-    public void marshalNonStringTest() {
-        // Currently only encrypting strings is supported
-        final byte[] cleartext = ByteBuffer.allocate(Integer.BYTES).putInt(42).array();
-        final EncryptionContext context = EncryptionContext.builder()
-                .clientDataType(ClientDataType.UNKNOWN)
-                .columnLabel("label")
-                .build();
-        assertThrows(C3rIllegalArgumentException.class, () -> fingerprintTransformer.marshal(cleartext, context));
     }
 }

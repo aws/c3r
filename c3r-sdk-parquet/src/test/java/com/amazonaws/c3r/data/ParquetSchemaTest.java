@@ -26,7 +26,7 @@ public class ParquetSchemaTest {
     public void emptyParquetSchemaTest() {
         final var emptySchema = new ParquetSchema(new MessageType("Empty", List.of()));
         assertEquals(0, emptySchema.size());
-        assertEquals(0, emptySchema.getMessageType().getColumns().size());
+        assertEquals(0, emptySchema.getReconstructedMessageType().getColumns().size());
         assertEquals(0, emptySchema.getHeaders().size());
         assertEquals(0, emptySchema.getColumnParquetDataTypeMap().size());
     }
@@ -42,21 +42,17 @@ public class ParquetSchemaTest {
         ));
         final var nonEmptySchema = new ParquetSchema(messageType);
         assertEquals(2, nonEmptySchema.size());
-        assertEquals(2, nonEmptySchema.getMessageType().getColumns().size());
+        assertEquals(2, nonEmptySchema.getReconstructedMessageType().getColumns().size());
         assertEquals(
                 List.of(new ColumnHeader("int32"), new ColumnHeader("string")),
                 nonEmptySchema.getHeaders());
         assertEquals(
                 Map.of(
                         new ColumnHeader("int32"),
-                        new ParquetDataType(
-                                ClientDataType.UNKNOWN,
-                                messageType.getType(0)),
+                        ParquetDataType.fromType(messageType.getType(0)),
 
                         new ColumnHeader("string"),
-                        new ParquetDataType(
-                                ClientDataType.STRING,
-                                messageType.getType(1))),
+                        ParquetDataType.fromType(messageType.getType(1))),
                 nonEmptySchema.getColumnParquetDataTypeMap());
     }
 
@@ -77,7 +73,7 @@ public class ParquetSchemaTest {
                                 .build()
                 )));
         assertEquals(1, derivedNonEmptySchema.size());
-        assertEquals(1, derivedNonEmptySchema.getMessageType().getColumns().size());
+        assertEquals(1, derivedNonEmptySchema.getReconstructedMessageType().getColumns().size());
         assertEquals(1, derivedNonEmptySchema.getHeaders().size());
         assertEquals(1, derivedNonEmptySchema.getColumnParquetDataTypeMap().size());
     }

@@ -4,12 +4,14 @@
 package com.amazonaws.c3r.spark.io.parquet;
 
 import com.amazonaws.c3r.config.ColumnHeader;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Limits;
 import lombok.NonNull;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,7 +37,7 @@ public abstract class SparkParquetReader {
      */
     public static Dataset<Row> readInput(@NonNull final SparkSession sparkSession,
                                          @NonNull final String source) {
-        return readInput(sparkSession, source, false);
+        return readInput(sparkSession, source, false, ParquetConfig.DEFAULT);
     }
 
     /**
@@ -44,11 +46,13 @@ public abstract class SparkParquetReader {
      * @param sparkSession            The spark session to read with
      * @param source                  Location of input data
      * @param skipHeaderNormalization Whether to skip the normalization of read in headers
+     * @param parquetConfig           Parquet specific configuration information
      * @return The source data to be processed
      */
     public static Dataset<Row> readInput(@NonNull final SparkSession sparkSession,
                                          @NonNull final String source,
-                                         final boolean skipHeaderNormalization) {
+                                         final boolean skipHeaderNormalization,
+                                         @NonNull final ParquetConfig parquetConfig) {
         final Map<String, String> options = new HashMap<>();
         Dataset<Row> dataset = sparkSession.read().options(options).parquet(source);
         if (!skipHeaderNormalization) {
@@ -56,8 +60,31 @@ public abstract class SparkParquetReader {
                     .collect(Collectors.toMap(Function.identity(), c -> new ColumnHeader(c).toString()));
             dataset = dataset.withColumnsRenamed(renameMap);
         }
+        dataset = reconstructTypes(dataset, parquetConfig.getBinaryAsString());
         validate(dataset);
         return dataset;
+    }
+
+    /**
+     * Converts unannotated binary values to strings in the data set if needed.
+     *
+     * @param originalDataset The raw Parquet data
+     * @param binaryAsString {@code true} if binary values should be changed to strings
+     *
+     * @return A copy of the data set matching specifications
+     */
+    private static Dataset<Row> reconstructTypes(final Dataset<Row> originalDataset, final Boolean binaryAsString) {
+        if (binaryAsString == null || !binaryAsString) {
+            return originalDataset;
+        }
+        Dataset<Row> reconstructedDataset = originalDataset;
+        for (var field : reconstructedDataset.schema().fields()) {
+            if (field.dataType() == DataTypes.BinaryType) {
+                reconstructedDataset = reconstructedDataset.withColumn(field.name(),
+                        reconstructedDataset.col(field.name()).cast(DataTypes.StringType));
+            }
+        }
+        return reconstructedDataset;
     }
 
     /**

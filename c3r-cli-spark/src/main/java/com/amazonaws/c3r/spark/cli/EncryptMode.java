@@ -6,6 +6,7 @@ package com.amazonaws.c3r.spark.cli;
 import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnSchema;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
@@ -152,6 +153,13 @@ public class EncryptMode implements Callable<Integer> {
         private String csvOutputNullValue = null;
 
         /**
+         * {@value CliDescriptions#PARQUET_BINARY_AS_STRING}.
+         */
+        @CommandLine.Option(names = {"--parquetBinaryAsString"},
+                description = CliDescriptions.PARQUET_BINARY_AS_STRING)
+        private Boolean parquetBinaryAsString = null;
+
+        /**
          * {@value CliDescriptions#ENABLE_STACKTRACE_DESCRIPTION}.
          */
         @CommandLine.Option(names = {"--enableStackTraces", "-v"},
@@ -257,6 +265,15 @@ public class EncryptMode implements Callable<Integer> {
     }
 
     /**
+     * All the configuration information needed specifically for Parquet files.
+     *
+     * @return All the settings on processing Parquet data
+     */
+    public ParquetConfig getParquetConfig() {
+        return ParquetConfig.builder().binaryAsString(optionalArgs.parquetBinaryAsString).build();
+    }
+
+    /**
      * Ensure required settings exist.
      *
      * @throws C3rIllegalArgumentException If user input is invalid
@@ -326,12 +343,16 @@ public class EncryptMode implements Callable<Integer> {
             validate();
 
             final SparkEncryptConfig cfg = getConfig();
+            final ParquetConfig pCfg = getParquetConfig();
 
             printColumnTransformInfo(cfg.getTableSchema());
             if (!optionalArgs.dryRun) {
                 log.info("Encrypting data from {}.", cfg.getSourceFile());
                 switch (cfg.getFileFormat()) {
                     case CSV:
+                        if (pCfg.isSet()) {
+                            throw new C3rIllegalArgumentException("Parquet options specified for CSV file.");
+                        }
                         final Dataset<Row> csvDataset = SparkCsvReader.readInput(sparkSession,
                                 cfg.getSourceFile(),
                                 cfg.getCsvInputNullValue(),
@@ -343,7 +364,8 @@ public class EncryptMode implements Callable<Integer> {
                         final Dataset<Row> parquetDataset = SparkParquetReader.readInput(
                                 sparkSession,
                                 cfg.getSourceFile(),
-                                /* skipHeaderNormalization */ false);
+                                /* skipHeaderNormalization */ false,
+                                pCfg);
                         final Dataset<Row> marshalledParquetDataset = SparkMarshaller.encrypt(parquetDataset, cfg);
                         SparkParquetWriter.writeOutput(marshalledParquetDataset, cfg.getTargetFile());
                         break;

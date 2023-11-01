@@ -10,6 +10,7 @@ import com.amazonaws.c3r.config.DecryptConfig;
 import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.PadType;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.data.ParquetValue;
@@ -143,7 +144,7 @@ public class ParquetRowUnmarshallerTest {
                 .tableSchema(schema)
                 .overwrite(true)
                 .build();
-        final var marshaller = ParquetRowMarshaller.newInstance(encConfig);
+        final var marshaller = ParquetRowMarshaller.newInstance(encConfig, ParquetConfig.DEFAULT);
 
         marshaller.marshal();
         marshaller.close();

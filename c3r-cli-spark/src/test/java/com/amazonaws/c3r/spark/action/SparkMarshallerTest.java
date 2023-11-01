@@ -9,6 +9,7 @@ import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.MappedTableSchema;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
@@ -349,7 +350,8 @@ public class SparkMarshallerTest {
     @Test
     public void marshalDataParquetEncryptedMixedTypesTest() {
         final Dataset<Row> mixedDataset = SparkParquetReader
-                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet", /* skipHeaderNormalization */ false);
+                .readInput(session, "../samples/parquet/data_sample_with_non_string_types.parquet", /* skipHeaderNormalization */ false,
+                        ParquetConfig.DEFAULT);
         // assert there is indeed a non-String type
         assertTrue(mixedDataset.schema().toList().filter(struct -> struct.dataType() != DataTypes.StringType).size() > 0);
 
