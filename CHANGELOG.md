@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.0.0] - 2023-11-06
+
+### Added
+- feat: Fingerprint support for non-string types (#388)
+
+### Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.20.162 to 2.21.10 (#384)
+- Bump org.xerial:sqlite-jdbc from 3.43.0.0 to 3.43.2.2 (#383)
+- Bump log4j_version from 2.20.0 to 2.21.1 (#379)
+- Bump junit_version from 5.10.0 to 5.10.1 (#394)
+- Bump freefair_version from 8.3 to 8.4 (#352)
+- Bump com.github.spotbugs:spotbugs-annotations from 4.7.3 to 4.8.0 (#361)
+- Bump trufflesecurity/trufflehog from 3.59.0 to 3.62.1 (#389)
+- Bump fkirc/skip-duplicate-actions from 5.3.0 to 5.3.1 (#374)
+
 ## [1.2.4] - 2023-10-09
 
 ## Changed
