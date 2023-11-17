@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.spark.cli;
 
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
@@ -236,7 +237,8 @@ public class DecryptMode implements Callable<Integer> {
                         final Dataset<Row> parquetDataset = SparkParquetReader.readInput(
                                 sparkSession,
                                 cfg.getSourceFile(),
-                                /* skipHeaderNormalization */ true);
+                                /* skipHeaderNormalization */ true,
+                                ParquetConfig.DEFAULT);
                         final Dataset<Row> unmarshalledParquetDataset = SparkUnmarshaller.decrypt(parquetDataset, cfg);
                         SparkParquetWriter.writeOutput(unmarshalledParquetDataset, cfg.getTargetFile());
                         break;

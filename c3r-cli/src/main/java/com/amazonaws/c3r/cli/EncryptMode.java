@@ -10,6 +10,7 @@ import com.amazonaws.c3r.cleanrooms.CleanRoomsDao;
 import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.EncryptConfig;
+import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.data.ParquetValue;
@@ -44,7 +45,6 @@ import static com.amazonaws.c3r.cli.Main.generateCommandLine;
         descriptionHeading = "%nDescription:%n",
         description = "Encrypt data content for use in an AWS Clean Rooms collaboration.")
 public class EncryptMode implements Callable<Integer> {
-
     /**
      * Required command line arguments.
      */
@@ -146,6 +146,13 @@ public class EncryptMode implements Callable<Integer> {
                 description = CliDescriptions.ENCRYPT_CSV_OUTPUT_NULL_VALUE_DESCRIPTION,
                 paramLabel = "<value>")
         private String csvOutputNullValue = null;
+
+        /**
+         * {@value CliDescriptions#PARQUET_BINARY_AS_STRING}.
+         */
+        @CommandLine.Option(names = {"--parquetBinaryAsString"},
+                description = CliDescriptions.PARQUET_BINARY_AS_STRING)
+        private Boolean parquetBinaryAsString = null;
 
         /**
          * {@value CliDescriptions#TEMP_DIR_DESCRIPTION}.
@@ -256,6 +263,15 @@ public class EncryptMode implements Callable<Integer> {
     }
 
     /**
+     * All the configuration information needed specifically for Parquet files.
+     *
+     * @return All the settings on processing Parquet data
+     */
+    public ParquetConfig getParquetConfig() {
+        return ParquetConfig.builder().binaryAsString(optionalArgs.parquetBinaryAsString).build();
+    }
+
+    /**
      * Ensure required settings exist.
      *
      * @throws C3rIllegalArgumentException If user input is invalid
@@ -325,18 +341,22 @@ public class EncryptMode implements Callable<Integer> {
             validate();
 
             final EncryptConfig cfg = getConfig();
+            final ParquetConfig pCfg = getParquetConfig();
 
             printColumnTransformInfo(cfg.getTableSchema());
             if (!optionalArgs.dryRun) {
                 log.info("Encrypting data from {}.", cfg.getSourceFile());
                 switch (cfg.getFileFormat()) {
                     case CSV:
+                        if (pCfg.isSet()) {
+                            throw new C3rIllegalArgumentException("Parquet options specified for CSV file.");
+                        }
                         final RowMarshaller<CsvValue> csvRowMarshaller = CsvRowMarshaller.newInstance(cfg);
                         csvRowMarshaller.marshal();
                         csvRowMarshaller.close();
                         break;
                     case PARQUET:
-                        final RowMarshaller<ParquetValue> parquetRowMarshaller = ParquetRowMarshaller.newInstance(cfg);
+                        final RowMarshaller<ParquetValue> parquetRowMarshaller = ParquetRowMarshaller.newInstance(cfg, pCfg);
                         parquetRowMarshaller.marshal();
                         parquetRowMarshaller.close();
                         break;

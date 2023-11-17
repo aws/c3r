@@ -9,6 +9,7 @@ import com.amazonaws.c3r.data.ParquetRow;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Types;
@@ -26,7 +27,8 @@ public class ParquetPrimitiveConverterTest {
 
     private static final Type INT64_TYPE = Types.required(PrimitiveType.PrimitiveTypeName.INT64).named("int64");
 
-    private static final Type BINARY_TYPE = Types.required(PrimitiveType.PrimitiveTypeName.BINARY).named("binary");
+    private static final Type STRING_TYPE = Types.required(PrimitiveType.PrimitiveTypeName.BINARY).as(LogicalTypeAnnotation.stringType())
+            .named("binary");
 
     private static final Type BOOLEAN_TYPE = Types.required(PrimitiveType.PrimitiveTypeName.BOOLEAN).named("boolean");
 
@@ -62,7 +64,7 @@ public class ParquetPrimitiveConverterTest {
     @Test
     public void addMissingRowTest() {
         fooConverter = new ParquetPrimitiveConverter(FOO_HEADER, ParquetDataType.fromType(
-                BINARY_TYPE
+                STRING_TYPE
         ));
         assertThrows(C3rRuntimeException.class, () ->
                 fooConverter.addBinary(Binary.fromReusedByteArray(new byte[]{0})));
@@ -71,10 +73,10 @@ public class ParquetPrimitiveConverterTest {
     @Test
     public void addRepeatValueTest() {
         row = new ParquetRow(Map.of(
-                FOO_HEADER, ParquetDataType.fromType(BINARY_TYPE)
+                FOO_HEADER, ParquetDataType.fromType(STRING_TYPE)
         ));
         fooConverter = new ParquetPrimitiveConverter(FOO_HEADER, ParquetDataType.fromType(
-                BINARY_TYPE
+                STRING_TYPE
         ));
         fooConverter.setRow(row);
         assertDoesNotThrow(() ->
@@ -85,7 +87,7 @@ public class ParquetPrimitiveConverterTest {
 
     @Test
     public void addBinaryTest() {
-        setup(BINARY_TYPE);
+        setup(STRING_TYPE);
 
         fooConverter.addBinary(Binary.fromReusedByteArray(new byte[]{0}));
         assertArrayEquals(new byte[]{0}, row.getValue(FOO_HEADER).getBytes());
@@ -141,12 +143,12 @@ public class ParquetPrimitiveConverterTest {
         setup(INT32_TYPE);
         fooConverter.addInt(3);
         assertEquals(
-                new ParquetValue.Int(ParquetDataType.fromType(INT32_TYPE), 3),
+                new ParquetValue.Int32(ParquetDataType.fromType(INT32_TYPE), 3),
                 row.getValue(FOO_HEADER));
 
         barConverter.addInt(42);
         assertEquals(
-                new ParquetValue.Int(ParquetDataType.fromType(INT32_TYPE), 42),
+                new ParquetValue.Int32(ParquetDataType.fromType(INT32_TYPE), 42),
                 row.getValue(BAR_HEADER));
     }
 
@@ -155,13 +157,12 @@ public class ParquetPrimitiveConverterTest {
         setup(INT64_TYPE);
         fooConverter.addLong(3L);
         assertEquals(
-                new ParquetValue.Long(ParquetDataType.fromType(INT64_TYPE), 3L),
+                new ParquetValue.Int64(ParquetDataType.fromType(INT64_TYPE), 3L),
                 row.getValue(FOO_HEADER));
 
         barConverter.addLong(42L);
         assertEquals(
-                new ParquetValue.Long(ParquetDataType.fromType(INT64_TYPE), 42L),
+                new ParquetValue.Int64(ParquetDataType.fromType(INT64_TYPE), 42L),
                 row.getValue(BAR_HEADER));
     }
-
 }

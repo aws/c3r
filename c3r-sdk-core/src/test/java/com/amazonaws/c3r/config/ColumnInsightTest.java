@@ -3,13 +3,18 @@
 
 package com.amazonaws.c3r.config;
 
+import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.data.CsvValue;
+import com.amazonaws.c3r.exception.C3rRuntimeException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ColumnInsightTest {
-    private ColumnInsight createTestSealedColumnInsight(final PadType type, final int length) {
+    private ColumnInsight createTestSealedColumnInsight(final PadType type, final Integer length) {
         return new ColumnInsight(
                 ColumnSchema.builder()
                         .pad(Pad.builder().length(length).type(type).build())
@@ -42,5 +47,28 @@ public class ColumnInsightTest {
         final ColumnInsight columnInsight = createTestSealedColumnInsight(PadType.FIXED, 42);
         columnInsight.observe(new CsvValue("0123456789"));
         assertEquals(columnInsight.getMaxValueLength(), 0);
+    }
+
+    @Test
+    public void allowsUpdateWithSameType() {
+        final ColumnInsight columnInsight = createTestSealedColumnInsight(PadType.NONE, null);
+        columnInsight.observe(new CsvValue("test"));
+        columnInsight.observe(new CsvValue((String) null));
+    }
+
+    @Test
+    public void noErrorsWhenValuesAreNull() {
+        final ColumnInsight columnInsight = createTestSealedColumnInsight(PadType.NONE, null);
+        columnInsight.observe(new CsvValue((String) null));
+        columnInsight.observe(new CsvValue((String) null));
+    }
+
+    @Test
+    public void errorWhenDifferentTypesAreInColumn() {
+        final ColumnInsight columnInsight = createTestSealedColumnInsight(PadType.NONE, null);
+        columnInsight.observe(new CsvValue("test"));
+        final CsvValue nonStringCsv = mock(CsvValue.class);
+        when(nonStringCsv.getClientDataType()).thenReturn(ClientDataType.DATE);
+        assertThrowsExactly(C3rRuntimeException.class, () -> columnInsight.observe(nonStringCsv));
     }
 }

@@ -5,11 +5,17 @@ package com.amazonaws.c3r.data;
 
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnSchema;
+import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Types;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +32,7 @@ public class ParquetSchema {
      * Parquet schema.
      */
     @Getter
-    private final org.apache.parquet.schema.MessageType messageType;
+    private final org.apache.parquet.schema.MessageType reconstructedMessageType;
 
     /**
      * Column names.
@@ -59,7 +65,7 @@ public class ParquetSchema {
      */
     @Deprecated
     public ParquetSchema(final org.apache.parquet.schema.MessageType messageType) {
-        this(messageType, false);
+        this(messageType, false, false);
     }
 
     /**
@@ -67,23 +73,25 @@ public class ParquetSchema {
      *
      * @param messageType Apache's Parquet schema
      * @param skipHeaderNormalization Whether headers should be normalized
+     * @param binaryAsString If {@code true}, treat unannounced binary values as strings
      */
     @Builder
     private ParquetSchema(final org.apache.parquet.schema.MessageType messageType,
-                          final boolean skipHeaderNormalization) {
-        this.messageType = new MessageType(messageType.getName(), messageType.getFields());
+                          final boolean skipHeaderNormalization,
+                          final Boolean binaryAsString) {
+        reconstructedMessageType = reconstructMessageType(messageType, binaryAsString);
         headers = new ArrayList<>();
         columnIndices = new HashMap<>();
 
         final var parquetTypes = new HashMap<ColumnHeader, ParquetDataType>();
-        final var clientTypes = new ArrayList<ClientDataType>(messageType.getFieldCount());
-        for (int i = 0; i < messageType.getFieldCount(); i++) {
+        final var clientTypes = new ArrayList<ClientDataType>(reconstructedMessageType.getFieldCount());
+        for (int i = 0; i < reconstructedMessageType.getFieldCount(); i++) {
             final ColumnHeader column = skipHeaderNormalization
-                    ? ColumnHeader.ofRaw(messageType.getFieldName(i))
-                    : new ColumnHeader(messageType.getFieldName(i));
+                    ? ColumnHeader.ofRaw(reconstructedMessageType.getFieldName(i))
+                    : new ColumnHeader(reconstructedMessageType.getFieldName(i));
             headers.add(column);
             columnIndices.put(column, i);
-            final org.apache.parquet.schema.Type originalType = messageType.getType(i);
+            final org.apache.parquet.schema.Type originalType = reconstructedMessageType.getType(i);
 
             final ParquetDataType parquetType = ParquetDataType.fromType(originalType);
             parquetTypes.put(column, parquetType);
@@ -91,6 +99,46 @@ public class ParquetSchema {
         }
         columnParquetDataTypeMap = Collections.unmodifiableMap(parquetTypes);
         columnClientDataTypes = Collections.unmodifiableList(clientTypes);
+    }
+
+    /**
+     * If needed, examine all input Parquet types and reconstruct them according to the specifications.
+     *
+     * @param messageType    All types in the table and table name
+     * @param binaryAsString If {@code true}, treat unannounced binary values as strings
+     * @return Parquet types to use for marshalling
+     */
+    private MessageType reconstructMessageType(final MessageType messageType, final Boolean binaryAsString) {
+        if (binaryAsString == null || !binaryAsString) {
+            return new MessageType(messageType.getName(), messageType.getFields());
+        }
+
+        final List<Type> reconstructedFields = messageType.getFields().stream().map(this::reconstructType).collect(Collectors.toList());
+        return new MessageType(messageType.getName(), reconstructedFields);
+    }
+
+    /**
+     * Reconstruct Parquet types as needed. Currently only examines binary values,
+     * adding the string annotation if needed as this is commonly left off.
+     *
+     * @param type Parquet type information to modify if needed
+     * @return Finalized Parquet type information
+     */
+    private Type reconstructType(final Type type) {
+        if (type.isPrimitive() && type.asPrimitiveType().getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
+            if (type.getLogicalTypeAnnotation() == null) {
+                final Types.PrimitiveBuilder<PrimitiveType> construct;
+                if (type.getRepetition() == Type.Repetition.OPTIONAL) {
+                    construct = Types.optional(PrimitiveType.PrimitiveTypeName.BINARY);
+                } else if (type.getRepetition() == Type.Repetition.REQUIRED) {
+                    construct = Types.required(PrimitiveType.PrimitiveTypeName.BINARY);
+                } else {
+                    construct = Types.repeated(PrimitiveType.PrimitiveTypeName.BINARY);
+                }
+                return construct.as(LogicalTypeAnnotation.stringType()).named(type.getName());
+            }
+        }
+        return type;
     }
 
     /**
@@ -142,9 +190,30 @@ public class ParquetSchema {
         }
 
         final List<org.apache.parquet.schema.Type> fields = tableSchema.getColumns().stream()
-                .map(c -> columnParquetDataTypeMap.get(c.getSourceHeader()).toTypeWithName(c.getTargetHeader().toString()))
+                .map(c -> targetColumnParquetDataType(columnParquetDataTypeMap.get(c.getSourceHeader()), c.getType())
+                        .toTypeWithName(c.getTargetHeader().toString()))
                 .collect(Collectors.toList());
 
         return new ParquetSchema(new org.apache.parquet.schema.MessageType("EncryptedTable", fields));
+    }
+
+    /**
+     * Check if target column type does not match input column type and set the target type.
+     *
+     * @param type       Input Parquet data type
+     * @param columnType Targeted column type
+     * @return Required type for output column
+     */
+    private ParquetDataType targetColumnParquetDataType(@NonNull final ParquetDataType type, @NonNull final ColumnType columnType) {
+        if (type.getClientDataType() == ClientDataType.STRING) {
+            return type;
+        }
+
+        if (columnType == ColumnType.FINGERPRINT || columnType == ColumnType.SEALED) {
+            return ParquetDataType.fromType(Types.optional(PrimitiveType.PrimitiveTypeName.BINARY).as(LogicalTypeAnnotation.stringType())
+                    .named(type.getParquetType().getName()));
+        }
+
+        return type;
     }
 }

@@ -45,6 +45,11 @@ public final class EncryptCliConfigTestUtility {
     private String csvOutputNullValue;
 
     /**
+     * Value to use to see if binary parquet values should be treated as strings.
+     */
+    private Boolean parquetBinaryAsString;
+
+    /**
      * Location to write the output file.
      */
     @Getter

@@ -4,6 +4,7 @@
 package com.amazonaws.c3r;
 
 import com.amazonaws.c3r.config.ClientSettings;
+import com.amazonaws.c3r.data.ClientDataInfo;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
@@ -50,7 +51,7 @@ public class FingerprintTransformer extends Transformer {
     /**
      * The version of the {@code FingerprintTransformer} for compatability support.
      */
-    private static final byte[] FORMAT_VERSION = "01:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] FORMAT_VERSION = "02:".getBytes(StandardCharsets.UTF_8);
 
     /**
      * Combined format version and encryption description that will be attached as a prefix to the ciphertext so the correct processing is
@@ -150,25 +151,30 @@ public class FingerprintTransformer extends Transformer {
     @Override
     public byte[] marshal(final byte[] cleartext, final EncryptionContext encryptionContext) {
         if (encryptionContext == null) {
-            throw new C3rIllegalArgumentException("An EncryptionContext must always be provided when HMAC-ing.");
+            throw new C3rIllegalArgumentException("An EncryptionContext must be provided when marshaling.");
         }
-        if (encryptionContext.getClientDataType() != ClientDataType.STRING) {
-            throw new C3rIllegalArgumentException("Only string columns can be encrypted, but encountered non-string column "
-                    + encryptionContext.getColumnLabel() + ".");
+        if (encryptionContext.getClientDataType() == null) {
+            throw new C3rIllegalArgumentException("EncryptionContext missing ClientDataType when encrypting data for column `"
+                    + encryptionContext.getColumnLabel() + "`.");
+        }
+        if (!encryptionContext.getClientDataType().supportsFingerprintColumns()) {
+            throw new C3rIllegalArgumentException(encryptionContext.getClientDataType() + " is not a type supported by " +
+                    "fingerprint columns.");
+        }
+        if (!encryptionContext.getClientDataType().isEquivalenceClassRepresentativeType()) {
+            throw new C3rIllegalArgumentException(encryptionContext.getClientDataType() + " is not the parent type of its equivalence " +
+                    "class. Expected parent type is " + encryptionContext.getClientDataType().getRepresentativeType() + ".");
         }
 
-        // Normalize null values if needed
-        final byte[] normalizedCleartext;
+        // Check if a plain null value should be used
         if (cleartext == null) {
             if (clientSettings.isPreserveNulls()) {
                 return null;
-            } else {
-                normalizedCleartext = new byte[NULL_RANDOM_SIZE_BYTES];
-                RANDOM.nextBytes(normalizedCleartext);
             }
-        } else {
-            normalizedCleartext = cleartext.clone();
         }
+
+        // Create final value to be HMAC'd
+        final byte[] normalizedCleartext = buildFinalizedValue(cleartext, encryptionContext.getClientDataType());
 
         final byte[] key;
         if (clientSettings.isAllowJoinsOnColumnsWithDifferentNames()) {
@@ -235,4 +241,28 @@ public class FingerprintTransformer extends Transformer {
     byte[] getEncryptionDescriptor() {
         return ENCRYPTION_DESCRIPTOR.clone();
     }
+
+    /**
+     * Build the bytes to be HMAC'd. This includes replacing {@code null} values with a random string and adding the
+     * equivalence class information to the value.
+     *
+     * @param cleartext The data to be HMAC'd
+     * @param type      The equivalence class for the data
+     * @return          The value with the equivalence class information and {@code null}s replaced with random data
+     */
+    private byte[] buildFinalizedValue(final byte[] cleartext, final ClientDataType type) {
+        final byte[] typedCleartext;
+        if (cleartext == null) {
+            typedCleartext = new byte[NULL_RANDOM_SIZE_BYTES + 1];
+            RANDOM.nextBytes(typedCleartext);
+            typedCleartext[NULL_RANDOM_SIZE_BYTES] = ClientDataInfo.builder().type(type).isNull(true).build().encode();
+        } else {
+            typedCleartext = ByteBuffer.allocate(cleartext.length + 1)
+                    .put(cleartext)
+                    .put(ClientDataInfo.builder().type(type).isNull(false).build().encode())
+                    .array();
+        }
+        return typedCleartext;
+    }
+
 }

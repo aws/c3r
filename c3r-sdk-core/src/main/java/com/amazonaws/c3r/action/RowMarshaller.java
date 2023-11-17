@@ -11,9 +11,11 @@ import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.TableSchema;
+import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.data.RowFactory;
 import com.amazonaws.c3r.data.Value;
+import com.amazonaws.c3r.data.ValueConverter;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Nonce;
@@ -40,6 +42,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -297,9 +300,11 @@ public final class RowMarshaller<T extends Value> {
                         // re-encrypting when being sent to the final output. In the interim, it is based on the running max byte length,
                         // sampled in batches.
                         final Transformer transformer = transformers.get(columnInsight.getType());
-                        final byte[] bytesToMarshall = value.getBytes();
+                        final byte[] bytesToMarshall = ValueConverter.getBytesForColumn(value, columnInsight.getType());
+                        final ClientDataType finalType = Objects.requireNonNullElse(columnInsight.getClientDataType(),
+                                ClientDataType.STRING);
 
-                        final var encryptionContext = new EncryptionContext(columnInsight, nonce, value.getClientDataType());
+                        final var encryptionContext = new EncryptionContext(columnInsight, nonce, finalType);
 
                         try {
                             targetRow.putBytes(

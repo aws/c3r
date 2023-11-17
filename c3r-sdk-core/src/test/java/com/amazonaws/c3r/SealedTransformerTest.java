@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 
+import static com.amazonaws.c3r.data.ClientDataType.INT_BYTE_SIZE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -400,7 +401,7 @@ public class SealedTransformerTest {
     @Test
     public void marshalMissingClientDataTypeTest() {
         // Currently only encrypting strings is supported
-        final byte[] cleartext = ByteBuffer.allocate(Integer.BYTES).putInt(42).array();
+        final byte[] cleartext = ByteBuffer.allocate(INT_BYTE_SIZE).putInt(42).array();
         final EncryptionContext context = EncryptionContext.builder()
                 .clientDataType(null)
                 .columnLabel("label")
@@ -412,7 +413,7 @@ public class SealedTransformerTest {
     @Test
     public void marshalNonStringTest() {
         // Currently only encrypting strings is supported
-        final byte[] cleartext = ByteBuffer.allocate(Integer.BYTES).putInt(42).array();
+        final byte[] cleartext = ByteBuffer.allocate(INT_BYTE_SIZE).putInt(42).array();
         final EncryptionContext context = EncryptionContext.builder()
                 .clientDataType(ClientDataType.UNKNOWN)
                 .columnLabel("label")

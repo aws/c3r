@@ -3,7 +3,10 @@
 
 package com.amazonaws.c3r.config;
 
+import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.data.Value;
+import com.amazonaws.c3r.data.ValueConverter;
+import com.amazonaws.c3r.exception.C3rRuntimeException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -37,6 +40,12 @@ public class ColumnInsight extends ColumnSchema {
     private boolean seenNull = false;
 
     /**
+     * Tracks the type seen in the column so far to make sure a column doesn't contain multiple types.
+     */
+    @Getter
+    private ClientDataType clientDataType = null;
+
+    /**
      * Create metadata wrapper around a {@link ColumnSchema}.
      *
      * @param columnSchema Column to wrap with metadata
@@ -51,6 +60,7 @@ public class ColumnInsight extends ColumnSchema {
      * {@code padType == PadType.MAX}, etc).
      *
      * @param value Seen value
+     * @throws C3rRuntimeException if more than two client data types are found in a single column
      */
     public void observe(@NonNull final Value value) {
         if (value.isNull()) {
@@ -60,6 +70,12 @@ public class ColumnInsight extends ColumnSchema {
         final var length = value.byteLength();
         if (getPad() != null && getPad().getType() == PadType.MAX && maxValueLength < length) {
             maxValueLength = length;
+        }
+        if (clientDataType == null) {
+            clientDataType = ValueConverter.getClientDataTypeForColumn(value, getType());
+        } else if (clientDataType != value.getClientDataType()) {
+            throw new C3rRuntimeException("Multiple client data types found in a single column: " + clientDataType + " and " +
+                    value.getClientDataType() + ".");
         }
     }
 

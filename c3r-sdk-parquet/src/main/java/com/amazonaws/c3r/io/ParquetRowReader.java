@@ -80,6 +80,11 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
     private long rowsLeftInGroup;
 
     /**
+     * Whether {@code Binary} values without annotations should be processed like they have a string logical annotation.
+     */
+    private final Boolean binaryAsString;
+
+    /**
      * Handles reading Parquet data from some data source.
      */
     private RecordReader<Row<ParquetValue>> rowReader;
@@ -103,20 +108,23 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
      */
     @Deprecated
     public ParquetRowReader(@NonNull final String sourceName) {
-        this(sourceName, false);
+        this(sourceName, false, null);
     }
 
     /**
      * Creates a record reader for a Parquet file.
      *
-     * @param sourceName Path to be read as a Parquet file path
+     * @param sourceName              Path to be read as a Parquet file path
      * @param skipHeaderNormalization Whether to skip the normalization of read in headers
+     * @param binaryAsString          If {@code true}, treat unannounced binary values as strings
      * @throws C3rRuntimeException If {@code fileName} cannot be opened for reading
      */
     @Builder
     private ParquetRowReader(@NonNull final String sourceName,
-                             final boolean skipHeaderNormalization) {
+                             final boolean skipHeaderNormalization,
+                             final Boolean binaryAsString) {
         this.sourceName = sourceName;
+        this.binaryAsString = binaryAsString;
         final var conf = new org.apache.hadoop.conf.Configuration();
         final org.apache.hadoop.fs.Path file = new org.apache.hadoop.fs.Path(sourceName);
 
@@ -130,6 +138,7 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
         parquetSchema = ParquetSchema.builder()
                 .messageType(fileReader.getFooter().getFileMetaData().getSchema())
                 .skipHeaderNormalization(skipHeaderNormalization)
+                .binaryAsString(binaryAsString)
                 .build();
         if (parquetSchema.getHeaders().size() > MAX_COLUMN_COUNT) {
             throw new C3rRuntimeException("Couldn't parse input file. Please verify that column count does not exceed " + MAX_COLUMN_COUNT
@@ -167,7 +176,7 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
             rowsLeftInGroup = rowGroup.getRowCount();
             maxRowGroupSize = Math.max(maxRowGroupSize,
                     rowsLeftInGroup > Integer.MAX_VALUE ? Integer.MAX_VALUE : Long.valueOf(rowsLeftInGroup).intValue());
-            final MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(parquetSchema.getMessageType());
+            final MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(parquetSchema.getReconstructedMessageType());
             rowReader = columnIO.getRecordReader(rowGroup, new ParquetRowMaterializer(parquetSchema, rowFactory));
         }
     }
