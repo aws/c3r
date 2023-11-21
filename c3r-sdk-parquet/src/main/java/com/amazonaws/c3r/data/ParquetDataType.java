@@ -54,7 +54,7 @@ public final class ParquetDataType implements Validatable {
 
     /**
      * Checks if the Parquet type is supported by C3R.
-     * Must be a primitive type that is not an {@code INT96} or {@code FIXED_LEN_BYTE_ARRAY}.
+     * Must be a primitive type that is not an {@code INT96}.
      *
      * @param type Parquet type
      * @return {@code true} if supported
@@ -62,7 +62,8 @@ public final class ParquetDataType implements Validatable {
     public static boolean isSupportedType(final org.apache.parquet.schema.Type type) {
         return type.isPrimitive()
                 && type.getRepetition() != Type.Repetition.REPEATED
-                && type.asPrimitiveType().getPrimitiveTypeName() != PrimitiveTypeName.INT96;
+                && type.asPrimitiveType().getPrimitiveTypeName() != PrimitiveTypeName.INT96
+                && getClientDataType(type) != ClientDataType.UNKNOWN;
     }
 
     /**
@@ -74,7 +75,7 @@ public final class ParquetDataType implements Validatable {
      */
     public static ParquetDataType fromType(final org.apache.parquet.schema.Type type) {
         if (!ParquetDataType.isSupportedType(type)) {
-            throw new C3rIllegalArgumentException("Unsupported parquet type: " + type);
+            return new ParquetDataType(type, ClientDataType.UNKNOWN);
         }
         return new ParquetDataType(type, getClientDataType(type));
     }
@@ -281,14 +282,7 @@ public final class ParquetDataType implements Validatable {
      * @return If the type represents a fixed width byte array
      */
     static boolean isCharType(final org.apache.parquet.schema.Type type) {
-        if (!type.isPrimitive()) {
-            return false;
-        }
-        final PrimitiveType pt = type.asPrimitiveType();
-        final LogicalTypeAnnotation annotation = pt.getLogicalTypeAnnotation();
-        return pt.getPrimitiveTypeName().equals(PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
-                && pt.getTypeLength() > 0
-                && (annotation == null || annotation instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
+        return false;
     }
 
     /**
@@ -353,7 +347,7 @@ public final class ParquetDataType implements Validatable {
         if (parquetType == null) {
             return;
         }
-        if (parquetType == NONCE_PARQUET_TYPE) {
+        if (clientDataType == ClientDataType.UNKNOWN) {
             return;
         }
         if (!isSupportedType(parquetType)) {
@@ -370,8 +364,6 @@ public final class ParquetDataType implements Validatable {
                         logicalTypeAnnotation.equals(LogicalTypeAnnotation.intType(ClientDataType.BIGINT_BIT_SIZE, false))) {
                     throw new C3rRuntimeException("Unsigned integer values are not supported.");
                 }
-            } else if (name == PrimitiveTypeName.BINARY && parquetType.getLogicalTypeAnnotation() != LogicalTypeAnnotation.stringType()) {
-                throw new C3rRuntimeException("Binary values must be annotated with the string logical type.");
             }
         }
     }

@@ -41,8 +41,12 @@ class ParquetPrimitiveConverter extends PrimitiveConverter {
      *
      * @param column     The column the value will be associated with
      * @param columnType Type of data in this column
+     * @throws C3rRuntimeException if the Parquet type is a group
      */
     ParquetPrimitiveConverter(@NonNull final ColumnHeader column, @NonNull final ParquetDataType columnType) {
+        if (!columnType.getParquetType().isPrimitive()) {
+            throw new C3rRuntimeException("C3R only supports Parquet primitive types.");
+        }
         this.column = column;
         this.columnType = columnType;
     }
