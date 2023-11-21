@@ -71,9 +71,13 @@ public class ColumnInsight extends ColumnSchema {
         if (getPad() != null && getPad().getType() == PadType.MAX && maxValueLength < length) {
             maxValueLength = length;
         }
+
+        final var clientTypeForValue = ValueConverter.getClientDataTypeForColumn(value, getType());
         if (clientDataType == null) {
-            clientDataType = ValueConverter.getClientDataTypeForColumn(value, getType());
-        } else if (clientDataType != value.getClientDataType()) {
+            // First time observing a value, set the data type.
+            clientDataType = clientTypeForValue;
+        } else if (clientDataType != clientTypeForValue) {
+            // This value's data type does not match the rest of the column.
             throw new C3rRuntimeException("Multiple client data types found in a single column: " + clientDataType + " and " +
                     value.getClientDataType() + ".");
         }

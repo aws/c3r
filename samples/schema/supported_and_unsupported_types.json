@@ -1,0 +1,89 @@
+{
+  "headerRow": true,
+  "columns": [
+    {
+      "sourceHeader": "strings",
+      "targetHeader": "strings_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "strings",
+      "targetHeader": "strings_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "strings",
+      "targetHeader": "strings_sealed",
+      "type": "sealed",
+      "pad": {
+        "type": "max",
+        "length": 0
+      }
+    },
+    {
+      "sourceHeader": "small_ints",
+      "targetHeader": "small_ints_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "small_ints",
+      "targetHeader": "small_ints_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "ints",
+      "targetHeader": "ints_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "ints",
+      "targetHeader": "ints_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "big_ints",
+      "targetHeader": "big_ints_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "big_ints",
+      "targetHeader": "big_ints_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "bools",
+      "targetHeader": "bools_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "bools",
+      "targetHeader": "bools_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "dates32",
+      "targetHeader": "dates32_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "dates32",
+      "targetHeader": "dates32_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "dates64",
+      "targetHeader": "dates64_cleartext",
+      "type": "cleartext"
+    },
+    {
+      "sourceHeader": "dates64",
+      "targetHeader": "dates64_fingerprint",
+      "type": "fingerprint"
+    },
+    {
+      "sourceHeader": "binary",
+      "targetHeader": "binary_cleartext",
+      "type": "cleartext"
+    }
+  ]
+}

@@ -17,20 +17,26 @@ import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.PositionalTableSchema;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ClientDataType;
+import com.amazonaws.c3r.data.ParquetDataType;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.FileFormat;
+import com.amazonaws.c3r.json.GsonUtil;
 import com.amazonaws.c3r.utils.FileTestUtility;
 import com.amazonaws.c3r.utils.ParquetTestUtility;
+import com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,6 +50,8 @@ import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_NULL_1_ROW_PRIM
 import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_TEST_DATA_HEADERS;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.PARQUET_TEST_DATA_TYPES;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.readAllRows;
+import static java.util.Map.entry;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -248,13 +256,15 @@ public class ParquetRowMarshallerTest {
                 .overwrite(true)
                 .build();
 
-        // --parquetBinaryAsString is unset should cause execution to fail on file containing binary values
+        // --parquetBinaryAsString is unset should cause binaries to be treated as an unsupported value which can't be marshalled
         final var nullConfig = ParquetConfig.builder().binaryAsString(null).build();
-        assertThrows(C3rRuntimeException.class, () -> ParquetRowMarshaller.newInstance(baseConfig, nullConfig));
+        final RowMarshaller<ParquetValue> nullMarshaller = ParquetRowMarshaller.newInstance(baseConfig, nullConfig);
+        assertThrows(C3rRuntimeException.class, () -> nullMarshaller.marshal());
 
-        // --parquetBinaryAsString is false should cause execution to fail on file containing binary values
+        // --parquetBinaryAsString is false should cause binaries to be treated as an unsupported value which can't be marshalled
         final var falseConfig = ParquetConfig.builder().binaryAsString(false).build();
-        assertThrows(C3rRuntimeException.class, () -> ParquetRowMarshaller.newInstance(baseConfig, falseConfig));
+        final RowMarshaller<ParquetValue> falseMarshaller = ParquetRowMarshaller.newInstance(baseConfig, falseConfig);
+        assertThrows(C3rRuntimeException.class, () -> falseMarshaller.marshal());
 
         // --parquetBinaryAsString is true should cause execution to work on file containing binary values
         final var trueConfig = ParquetConfig.builder().binaryAsString(true).build();
@@ -274,5 +284,108 @@ public class ParquetRowMarshallerTest {
             final var cleartextValue = row.getValue(cleartextHeader);
             assertNotNull(cleartextValue.toString());
         }
+    }
+
+    @Test
+    public void fileCannotBeReadWithGroupColumnType() throws IOException {
+        final String input = "../samples/parquet/all_valid_types_and_list.parquet";
+        final TableSchema schema = GsonUtil.fromJson(Files.readString(Path.of("../samples/schema/all_valid_types_and_list_schema.json")),
+                TableSchema.class);
+        final EncryptConfig encryptConfig = EncryptConfig.builder()
+                .sourceFile(input)
+                .targetFile(output.toString())
+                .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
+                .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
+                .tempDir(tempDir)
+                .settings(ClientSettings.lowAssuranceMode())
+                .tableSchema(schema)
+                .overwrite(true)
+                .build();
+        assertThrows(C3rRuntimeException.class,
+                () -> ParquetRowMarshaller.newInstance(encryptConfig, ParquetConfig.builder().binaryAsString(true).build()));
+    }
+
+    @Test
+    public void fileCanBeMarshalledWithUnsupportedColumnType() throws IOException {
+        final String input = "../samples/parquet/supported_and_unsupported_types.parquet";
+        final TableSchema schema = GsonUtil.fromJson(Files.readString(Path.of("../samples/schema/supported_and_unsupported_types.json")),
+                TableSchema.class);
+        final EncryptConfig encryptConfig = EncryptConfig.builder()
+                .sourceFile(input)
+                .targetFile(output.toString())
+                .secretKey(TEST_CONFIG_DATA_SAMPLE.getKey())
+                .salt(TEST_CONFIG_DATA_SAMPLE.getSalt())
+                .tempDir(tempDir)
+                .settings(ClientSettings.lowAssuranceMode())
+                .tableSchema(schema)
+                .overwrite(true)
+                .build();
+        final RowMarshaller<ParquetValue> marshaller = ParquetRowMarshaller.newInstance(encryptConfig,
+                ParquetConfig.builder().binaryAsString(true).build());
+
+        assertDoesNotThrow(() -> {
+            marshaller.marshal();
+            marshaller.close();
+        });
+
+        final List<Row<ParquetValue>> rows = ParquetTestUtility.readAllRows(output.toString());
+        final Map<ColumnHeader, ParquetValue> expectedValuesForRow0 = Map.ofEntries(
+                entry(new ColumnHeader("strings_fingerprint"),
+                        ParquetValue.fromBytes(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE),
+                                "02:hmac:fo5/pWuUN3inaftbnE6a1tAx3JH6TsxC1P8vqIfIRBU=".getBytes(StandardCharsets.UTF_8))),
+                entry(new ColumnHeader("small_ints_cleartext"),
+                        new ParquetValue.Int32(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_INT_16_TRUE_TYPE),
+                                100)),
+                entry(new ColumnHeader("small_ints_fingerprint"),
+                        ParquetValue.fromBytes(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE),
+                                "02:hmac:4Hw6YtZFNIYYWbQMpOjdnIOMMzq5Kzzi0DWa3V5NBvg=".getBytes(StandardCharsets.UTF_8))),
+                entry(new ColumnHeader("ints_cleartext"),
+                        new ParquetValue.Int32(ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_TYPE),
+                                100)),
+                entry(new ColumnHeader("ints_fingerprint"),
+                        ParquetValue.fromBytes(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE),
+                                "02:hmac:4Hw6YtZFNIYYWbQMpOjdnIOMMzq5Kzzi0DWa3V5NBvg=".getBytes(StandardCharsets.UTF_8))),
+                entry(new ColumnHeader("big_ints_cleartext"),
+                        new ParquetValue.Int64(ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT64_TYPE),
+                                100L)),
+                entry(new ColumnHeader("big_ints_fingerprint"),
+                        ParquetValue.fromBytes(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE),
+                                "02:hmac:4Hw6YtZFNIYYWbQMpOjdnIOMMzq5Kzzi0DWa3V5NBvg=".getBytes(StandardCharsets.UTF_8))),
+                entry(new ColumnHeader("bools_cleartext"),
+                        new ParquetValue.Boolean(ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BOOLEAN_TYPE),
+                                true)),
+                entry(new ColumnHeader("bools_fingerprint"),
+                        ParquetValue.fromBytes(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE),
+                                "02:hmac:uW2l4SJrRdcch0N+twOptppUcOxpCB9Xe3qkJglhWQI=".getBytes(StandardCharsets.UTF_8))),
+                entry(new ColumnHeader("dates32_cleartext"),
+                        new ParquetValue.Int32(ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_DATE_TYPE),
+                                99)),
+                entry(new ColumnHeader("dates32_fingerprint"),
+                        ParquetValue.fromBytes(
+                                ParquetDataType.fromType(ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE),
+                                "02:hmac:uBJMpqWkIO76V4zO7g20uQiegwbZ9W6zaMns1fcZz7o=".getBytes(StandardCharsets.UTF_8))),
+                entry(new ColumnHeader("binary_cleartext"),
+                        ParquetValue.fromBytes(ParquetDataType.fromType(ParquetTypeDefsTestUtility.UnsupportedTypes.OPTIONAL_BINARY_TYPE),
+                                new byte[]{49, 48, 48}))
+        );
+        boolean seen = false;
+        for (Row<ParquetValue> row : rows) {
+            if (row.getValue(new ColumnHeader("strings_cleartext")).toString().equals("100")) {
+                seen = true;
+                final Set<ColumnHeader> keys = expectedValuesForRow0.keySet();
+                for (ColumnHeader header : keys) {
+                    final ParquetValue v1 = expectedValuesForRow0.get(header);
+                    final ParquetValue v2 = row.getValue(header);
+                    assertArrayEquals(v1.getBytes(), v2.getBytes());
+                }
+            }
+        }
+        assertTrue(seen);
     }
 }

@@ -25,6 +25,12 @@ public abstract class ParquetValue extends Value {
     private final ParquetDataType parquetDataType;
 
     /**
+     * C3R data type that corresponds to this Parquet type.
+     */
+    @Getter
+    private final ClientDataType clientDataType;
+
+    /**
      * Byte array encoding of the value. Uses big-endian format for numerical values.
      */
     private final byte[] bytes;
@@ -40,8 +46,9 @@ public abstract class ParquetValue extends Value {
         this.parquetDataType = parquetDataType;
         this.bytes = bytes;
         if (!validateAnnotation()) {
-            throw new C3rIllegalArgumentException("Parquet " + parquetDataType.getParquetType() + " type has invalid logical type " +
-                    "annotations.");
+            clientDataType = ClientDataType.UNKNOWN;
+        } else {
+            clientDataType = parquetDataType.getClientDataType();
         }
     }
 
@@ -61,9 +68,6 @@ public abstract class ParquetValue extends Value {
      * @throws C3rIllegalArgumentException If the data type is not supported
      */
     public static ParquetValue fromBytes(final ParquetDataType type, final byte[] bytes) {
-        if (!ParquetDataType.isSupportedType(type.getParquetType())) {
-            throw new C3rIllegalArgumentException("Unsupported parquet type: " + type.getParquetType());
-        }
         // asPrimitiveType() is guaranteed to work here because ParquetDataType.isSupportedType only
         // returns true for a subset of primitive types
 
@@ -117,14 +121,6 @@ public abstract class ParquetValue extends Value {
     @Override
     public boolean isNull() {
         return bytes == null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ClientDataType getClientDataType() {
-        return parquetDataType.getClientDataType();
     }
 
     /**
@@ -190,8 +186,7 @@ public abstract class ParquetValue extends Value {
         boolean validateAnnotation() {
             if (getParquetDataType().getParquetType().asPrimitiveType().getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
                 final LogicalTypeAnnotation annotations = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-                return (annotations == null) ||
-                        (annotations instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) ||
+                return (annotations instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) ||
                         (annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
             } else if (getParquetDataType().getParquetType().asPrimitiveType().getPrimitiveTypeName() ==
                     PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) {
@@ -199,8 +194,7 @@ public abstract class ParquetValue extends Value {
                 if (getParquetDataType().getParquetType().asPrimitiveType().getTypeLength() < 0) {
                     return false;
                 } else {
-                    return (annotations == null) ||
-                            (annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
+                    return annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
                 }
             }
             return false;
@@ -503,12 +497,11 @@ public abstract class ParquetValue extends Value {
         @Override
         boolean validateAnnotation() {
             final LogicalTypeAnnotation logicalTypeAnnotation = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-            if (logicalTypeAnnotation != null && logicalTypeAnnotation instanceof LogicalTypeAnnotation.IntLogicalTypeAnnotation) {
+            if (logicalTypeAnnotation instanceof LogicalTypeAnnotation.IntLogicalTypeAnnotation) {
                 final LogicalTypeAnnotation.IntLogicalTypeAnnotation intLogicalTypeAnnotation =
                         (LogicalTypeAnnotation.IntLogicalTypeAnnotation) logicalTypeAnnotation;
                 return intLogicalTypeAnnotation.isSigned() &&
-                        (intLogicalTypeAnnotation.getBitWidth() == Byte.SIZE ||
-                                intLogicalTypeAnnotation.getBitWidth() == ClientDataType.INT_BIT_SIZE ||
+                        (intLogicalTypeAnnotation.getBitWidth() == ClientDataType.INT_BIT_SIZE ||
                                 intLogicalTypeAnnotation.getBitWidth() == ClientDataType.SMALLINT_BIT_SIZE);
             }
             return (logicalTypeAnnotation == null) ||

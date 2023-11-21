@@ -106,7 +106,7 @@ public final class ValueConverter {
          * @param value Long
          * @return Big-endian byte encoding of value
          */
-        static byte[] toBytes(final Long value) {
+        public static byte[] toBytes(final Long value) {
             if (value == null) {
                 return null;
             }
@@ -212,7 +212,7 @@ public final class ValueConverter {
          * @param value Double
          * @return Big-endian encoding of value
          */
-        static byte[] toBytes(final java.lang.Double value) {
+        public static byte[] toBytes(final java.lang.Double value) {
             if (value == null) {
                 return null;
             }

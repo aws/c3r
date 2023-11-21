@@ -36,29 +36,28 @@ import static com.amazonaws.c3r.data.ClientDataType.BIGINT_BYTE_SIZE;
 import static com.amazonaws.c3r.data.ClientDataType.INT_BYTE_SIZE;
 import static com.amazonaws.c3r.utils.GeneralTestUtility.TEST_CONFIG_DATA_SAMPLE;
 import static com.amazonaws.c3r.utils.ParquetTestUtility.readAllRows;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_BOOLEAN_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_DATE_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_DOUBLE_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_FLOAT_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_INT16_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_INT32_ANNOTATED_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_INT32_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_INT64_ANNOTATED_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_INT64_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_STRING_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.OPTIONAL_TIMESTAMP_UTC_NANO_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_BOOLEAN_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_DATE_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_DOUBLE_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_FLOAT_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_INT16_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_INT32_ANNOTATED_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_INT32_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_INT64_ANNOTATED_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_INT64_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_STRING_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_TIMESTAMP_NANO_TYPE;
-import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.REQUIRED_TIMESTAMP_UTC_NANO_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BOOLEAN_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_DOUBLE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_FLOAT_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_DATE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_INT_16_TRUE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_INT_32_TRUE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT64_INT_64_TRUE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT64_TIMESTAMP_UTC_NANOS_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT64_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_BINARY_STRING_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_BOOLEAN_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_DOUBLE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_FLOAT_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT32_DATE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT32_INT_16_TRUE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT32_INT_32_TRUE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT32_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT64_INT_64_TRUE_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT64_TIMESTAMP_UTC_NANOS_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT64_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -67,10 +66,10 @@ public class ParquetEquivalenceTypesTest {
     private static final ColumnInsight EMPTY_COLUMN_INSIGHT = new ColumnInsight(ColumnSchema.builder().type(ColumnType.FINGERPRINT)
             .sourceHeader(ColumnHeader.ofRaw("Empty")).build());
 
-    private static final ParquetValue.Binary NULL_STRING_VALUE = new ParquetValue.Binary(ParquetDataType.fromType(OPTIONAL_STRING_TYPE),
-            null);
+    private static final ParquetValue.Binary NULL_STRING_VALUE =
+            new ParquetValue.Binary(ParquetDataType.fromType(OPTIONAL_BINARY_STRING_TYPE), null);
 
-    private static final ParquetValue.Binary STRING_VALUE = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_STRING_TYPE),
+    private static final ParquetValue.Binary STRING_VALUE = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_STRING_TYPE),
             org.apache.parquet.io.api.Binary.fromReusedByteArray("hello".getBytes(StandardCharsets.UTF_8)));
 
     private static final ParquetValue.Boolean NULL_BOOLEAN_VALUE = new ParquetValue.Boolean(ParquetDataType.fromType(OPTIONAL_BOOLEAN_TYPE),
@@ -93,40 +92,43 @@ public class ParquetEquivalenceTypesTest {
     private static final ParquetValue.Int32 INT_32_VALUE = new ParquetValue.Int32(ParquetDataType.fromType(REQUIRED_INT32_TYPE), 1);
 
     private static final ParquetValue.Int32 NULL_ANNOTATED_INT_32_VALUE = new ParquetValue.Int32(
-            ParquetDataType.fromType(OPTIONAL_INT32_ANNOTATED_TYPE), null);
+            ParquetDataType.fromType(OPTIONAL_INT32_INT_32_TRUE_TYPE), null);
 
     private static final ParquetValue.Int32 ANNOTATED_INT_32_VALUE = new ParquetValue.Int32(
-            ParquetDataType.fromType(REQUIRED_INT32_ANNOTATED_TYPE), 1);
+            ParquetDataType.fromType(REQUIRED_INT32_INT_32_TRUE_TYPE), 1);
 
     private static final ParquetValue.Int64 NULL_INT_64_VALUE = new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_INT64_TYPE), null);
 
     private static final ParquetValue.Int64 INT_64_VALUE = new ParquetValue.Int64(ParquetDataType.fromType(REQUIRED_INT64_TYPE), 1L);
 
     private static final ParquetValue.Int64 NULL_ANNOTATED_INT_64_VALUE = new ParquetValue.Int64(
-            ParquetDataType.fromType(OPTIONAL_INT64_ANNOTATED_TYPE), null);
+            ParquetDataType.fromType(OPTIONAL_INT64_INT_64_TRUE_TYPE), null);
 
     private static final ParquetValue.Int64 ANNOTATED_INT_64_VALUE = new ParquetValue.Int64(
-            ParquetDataType.fromType(REQUIRED_INT64_ANNOTATED_TYPE), 1L);
+            ParquetDataType.fromType(REQUIRED_INT64_INT_64_TRUE_TYPE), 1L);
 
-    private static final ParquetValue.Int32 NULL_DATE_VALUE = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_DATE_TYPE), null);
+    private static final ParquetValue.Int32 NULL_DATE_VALUE =
+            new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT32_DATE_TYPE), null);
 
-    private static final ParquetValue.Int32 DATE_VALUE = new ParquetValue.Int32(ParquetDataType.fromType(REQUIRED_DATE_TYPE), 1);
+    private static final ParquetValue.Int32 DATE_VALUE = new ParquetValue.Int32(ParquetDataType.fromType(REQUIRED_INT32_DATE_TYPE), 1);
 
-    private static final ParquetValue.Int32 NULL_INT_16_VALUE = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT16_TYPE), null);
+    private static final ParquetValue.Int32 NULL_INT_16_VALUE =
+            new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT32_INT_16_TRUE_TYPE), null);
 
-    private static final ParquetValue.Int32 INT_16_VALUE = new ParquetValue.Int32(ParquetDataType.fromType(REQUIRED_INT16_TYPE), 1);
+    private static final ParquetValue.Int32 INT_16_VALUE =
+            new ParquetValue.Int32(ParquetDataType.fromType(REQUIRED_INT32_INT_16_TRUE_TYPE), 1);
 
     private static final ParquetValue.Int64 NULL_UTC_TIMESTAMP_VALUE =
-            new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_TIMESTAMP_UTC_NANO_TYPE), null);
+            new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_INT64_TIMESTAMP_UTC_NANOS_TYPE), null);
 
     private static final ParquetValue.Int64 UTC_TIMESTAMP_VALUE =
-            new ParquetValue.Int64(ParquetDataType.fromType(REQUIRED_TIMESTAMP_UTC_NANO_TYPE), 1L);
+            new ParquetValue.Int64(ParquetDataType.fromType(REQUIRED_INT64_TIMESTAMP_UTC_NANOS_TYPE), 1L);
 
     private static final ParquetValue.Int64 NULL_TIMESTAMP_VALUE =
-            new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_TIMESTAMP_UTC_NANO_TYPE), null);
+            new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_INT64_TIMESTAMP_UTC_NANOS_TYPE), null);
 
     private static final ParquetValue.Int64 TIMESTAMP_VALUE =
-            new ParquetValue.Int64(ParquetDataType.fromType(REQUIRED_TIMESTAMP_NANO_TYPE), 1L);
+            new ParquetValue.Int64(ParquetDataType.fromType(REQUIRED_INT64_TIMESTAMP_UTC_NANOS_TYPE), 1L);
 
     private static final Function<byte[], String> LONG_BYTES_TO_STRING = (val) -> String.valueOf(ByteBuffer.wrap(val).getLong());
 
@@ -210,11 +212,11 @@ public class ParquetEquivalenceTypesTest {
 
     @Test
     public void marshallerWritesSameValuesTest() throws IOException {
-        final ColumnHeader int16Header = new ColumnHeader("opt_int16");
-        final ColumnHeader int32Header = new ColumnHeader("opt_int32");
-        final ColumnHeader annotatedInt32Header = new ColumnHeader("opt_annotated_int32");
-        final ColumnHeader int64Header = new ColumnHeader("opt_int64");
-        final ColumnHeader annotatedInt64Header = new ColumnHeader("opt_annotated_int64");
+        final ColumnHeader int16Header = new ColumnHeader(OPTIONAL_INT32_INT_16_TRUE_TYPE.getName());
+        final ColumnHeader int32Header = new ColumnHeader(OPTIONAL_INT32_TYPE.getName());
+        final ColumnHeader annotatedInt32Header = new ColumnHeader(OPTIONAL_INT32_INT_32_TRUE_TYPE.getName());
+        final ColumnHeader int64Header = new ColumnHeader(OPTIONAL_INT64_TYPE.getName());
+        final ColumnHeader annotatedInt64Header = new ColumnHeader(OPTIONAL_INT64_INT_64_TRUE_TYPE.getName());
 
         final TableSchema schema = new MappedTableSchema(List.of(
                 ColumnSchema.builder().type(ColumnType.FINGERPRINT).sourceHeader(int16Header).targetHeader(int16Header).build(),
@@ -226,15 +228,15 @@ public class ParquetEquivalenceTypesTest {
                         .build()
         ));
 
-        final ParquetValue.Int32 int16 = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT16_TYPE), 27);
+        final ParquetValue.Int32 int16 = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT32_INT_16_TRUE_TYPE), 27);
 
         final ParquetValue.Int32 int32 = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT32_TYPE), 27);
 
-        final ParquetValue.Int32 annotatedInt32 = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT32_ANNOTATED_TYPE), 27);
+        final ParquetValue.Int32 annotatedInt32 = new ParquetValue.Int32(ParquetDataType.fromType(OPTIONAL_INT32_INT_32_TRUE_TYPE), 27);
 
         final ParquetValue.Int64 int64 = new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_INT64_TYPE), 27L);
 
-        final ParquetValue.Int64 annotatedInt64 = new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_INT64_ANNOTATED_TYPE), 27L);
+        final ParquetValue.Int64 annotatedInt64 = new ParquetValue.Int64(ParquetDataType.fromType(OPTIONAL_INT64_INT_64_TRUE_TYPE), 27L);
 
         final HashMap<ColumnHeader, ParquetDataType> rowMap = new HashMap<>();
         rowMap.put(int16Header, int16.getParquetDataType());
@@ -253,11 +255,11 @@ public class ParquetEquivalenceTypesTest {
 
         final ParquetSchema parquetSchema = ParquetSchema.builder().messageType(
                 new MessageType("IntegralTypes", List.of(
-                        OPTIONAL_INT16_TYPE,
+                        OPTIONAL_INT32_INT_16_TRUE_TYPE,
                         OPTIONAL_INT32_TYPE,
-                        OPTIONAL_INT32_ANNOTATED_TYPE,
+                        OPTIONAL_INT32_INT_32_TRUE_TYPE,
                         OPTIONAL_INT64_TYPE,
-                        OPTIONAL_INT64_ANNOTATED_TYPE
+                        OPTIONAL_INT64_INT_64_TRUE_TYPE
                 ))
         ).build();
 
