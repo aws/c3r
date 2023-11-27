@@ -23,7 +23,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.functions;
 import scala.jdk.CollectionConverters;
 
@@ -323,7 +322,7 @@ public final class SparkExample {
      * @return The encrypted data
      */
     static Dataset<Row> marshalData(final Dataset<Row> rawInputData) {
-        final ExpressionEncoder<Row> rowEncoder = RowEncoder.apply(rawInputData.schema());
+        final ExpressionEncoder<Row> rowEncoder = ExpressionEncoder.apply(rawInputData.schema());
         return rawInputData.map((MapFunction<Row, Row>) row -> {
             // Grab a nonce for the row
             final Nonce nonce = Nonce.nextNonce();
@@ -356,7 +355,7 @@ public final class SparkExample {
      * @return The cleartext data
      */
     static Dataset<Row> unmarshalData(final Dataset<Row> rawInputData) {
-        final ExpressionEncoder<Row> rowEncoder = RowEncoder.apply(rawInputData.schema());
+        final ExpressionEncoder<Row> rowEncoder = ExpressionEncoder.apply(rawInputData.schema());
         return rawInputData.map((MapFunction<Row, Row>) row -> {
             // Build a list of transformers for each row, limiting state to keys/salts/settings POJOs
             final Map<ColumnType, Transformer> transformers = Transformer.initTransformers(

@@ -13,7 +13,6 @@ import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import scala.jdk.CollectionConverters;
@@ -92,7 +91,7 @@ public abstract class SparkUnmarshaller {
         final String base64EncodedKey = Base64.getEncoder().encodeToString(decryptConfig.getSecretKey().getEncoded());
         final boolean failOnFingerprintColumns = decryptConfig.isFailOnFingerprintColumns();
 
-        final ExpressionEncoder<Row> rowEncoder = RowEncoder.apply(rawInputData.schema());
+        final ExpressionEncoder<Row> rowEncoder = ExpressionEncoder.apply(rawInputData.schema());
         final StructField[] fields = rawInputData.schema().fields();
         try {
             return rawInputData.map((MapFunction<Row, Row>) row -> {

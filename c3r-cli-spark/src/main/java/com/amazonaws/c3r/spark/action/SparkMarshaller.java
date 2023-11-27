@@ -22,7 +22,6 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
@@ -248,7 +247,7 @@ public abstract class SparkMarshaller {
         final String salt = encryptConfig.getSalt();
         final String base64EncodedKey = Base64.getEncoder().encodeToString(encryptConfig.getSecretKey().getEncoded());
 
-        final ExpressionEncoder<Row> rowEncoder = RowEncoder.apply(rawInputData.schema());
+        final ExpressionEncoder<Row> rowEncoder = ExpressionEncoder.apply(rawInputData.schema());
         final StructField[] fields = rawInputData.schema().fields();
         try {
             return rawInputData.map((MapFunction<Row, Row>) row -> {
