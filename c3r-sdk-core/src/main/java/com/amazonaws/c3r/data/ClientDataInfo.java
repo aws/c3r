@@ -16,7 +16,7 @@ public final class ClientDataInfo {
     /**
      * How many bytes are used to store data info.
      */
-    static final int BYTE_LENGTH = 1;
+    public static final int BYTE_LENGTH = 1;
 
     /**
      * Number of metadata flags.

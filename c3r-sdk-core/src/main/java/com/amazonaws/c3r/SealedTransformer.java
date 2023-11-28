@@ -57,12 +57,6 @@ public class SealedTransformer extends Transformer {
     private static final AdditionalAuthenticatedData AAD = new AdditionalAuthenticatedData(DESCRIPTOR_PREFIX);
 
     /**
-     * How many bytes of the output will be used to store information about the encrypted data since type information and null status is
-     * lost during encryption.
-     */
-    private static final int DATA_INFO_TAG_BYTE_LENGTH = 1;
-
-    /**
      * Handles encrypting and decrypting data given the cryptographic settings such as {@code AAD} and key.
      */
     private final Encryptor encryptor;
@@ -129,7 +123,7 @@ public class SealedTransformer extends Transformer {
 
         final byte[] paddedMessage = PadUtil.padMessage(cleartext, encryptionContext);
         final InitializationVector iv = InitializationVector.deriveIv(encryptionContext.getColumnLabel(), encryptionContext.getNonce());
-        final byte[] fullPayload = ByteBuffer.allocate(DATA_INFO_TAG_BYTE_LENGTH + paddedMessage.length)
+        final byte[] fullPayload = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + paddedMessage.length)
                 .put(valueInfo.encode())
                 .put(paddedMessage).array();
         final byte[] ciphertext = encryptor.encrypt(fullPayload, iv, AAD, encryptionContext);
@@ -200,7 +194,7 @@ public class SealedTransformer extends Transformer {
             return null;
         }
 
-        final byte[] paddedCleartext = Arrays.copyOfRange(payload, DATA_INFO_TAG_BYTE_LENGTH, payload.length);
+        final byte[] paddedCleartext = Arrays.copyOfRange(payload, ClientDataInfo.BYTE_LENGTH, payload.length);
         // Remove padding
         return PadUtil.removePadding(paddedCleartext);
     }
