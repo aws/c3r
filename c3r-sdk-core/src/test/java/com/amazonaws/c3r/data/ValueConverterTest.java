@@ -11,15 +11,20 @@ import com.amazonaws.c3r.config.Pad;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatchers;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.amazonaws.c3r.data.ClientDataType.BIGINT_BYTE_SIZE;
 import static com.amazonaws.c3r.data.ClientDataType.INT_BYTE_SIZE;
+import static com.amazonaws.c3r.data.ClientDataType.SMALLINT_BYTE_SIZE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -128,9 +133,9 @@ public class ValueConverterTest {
         assertNull(ValueConverter.Date.fromBytes(null));
         assertNull(ValueConverter.Date.toBytes(null));
         // Date values can be only INT_BYTE_LEN long
-        final byte[] tooFewBytes = new byte[INT_BYTE_SIZE - 1];
-        final byte[] exactBytes = new byte[INT_BYTE_SIZE];
-        final byte[] tooManyBytes = new byte[INT_BYTE_SIZE + 1];
+        final byte[] tooFewBytes = new byte[Integer.BYTES - 1];
+        final byte[] exactBytes = new byte[Integer.BYTES];
+        final byte[] tooManyBytes = new byte[Integer.BYTES + 1];
         assertThrows(C3rRuntimeException.class, () -> ValueConverter.Date.fromBytes(tooFewBytes));
         assertDoesNotThrow(() -> ValueConverter.Date.fromBytes(exactBytes));
         assertThrows(C3rRuntimeException.class, () -> ValueConverter.Date.fromBytes(tooManyBytes));
@@ -185,9 +190,119 @@ public class ValueConverterTest {
     }
 
     @Test
+    public void smallIntBytesTest() {
+        assertEquals(
+                (short) 42,
+                ValueConverter.SmallInt.fromBytes(ValueConverter.SmallInt.toBytes((short) 42)));
+        assertNull(ValueConverter.BigInt.fromBytes(null));
+        assertNull(ValueConverter.BigInt.toBytes((Integer) null));
+        assertNull(ValueConverter.BigInt.toBytes((Long) null));
+        // SmallInt values can only be at most BIGINT_BYTE_LEN in length
+        final byte[] tooFewBytes = new byte[SMALLINT_BYTE_SIZE - 1];
+        final byte[] exactBytes = new byte[SMALLINT_BYTE_SIZE];
+        final byte[] tooManyBytes = new byte[SMALLINT_BYTE_SIZE + 1];
+        assertDoesNotThrow(() -> ValueConverter.SmallInt.fromBytes(tooFewBytes));
+        assertDoesNotThrow(() -> ValueConverter.SmallInt.fromBytes(exactBytes));
+        assertThrows(C3rRuntimeException.class, () -> ValueConverter.SmallInt.fromBytes(tooManyBytes));
+    }
+
+    @Test
     public void stringBytesTest() {
         assertEquals("hello", ValueConverter.String.fromBytes(ValueConverter.String.toBytes("hello")));
         assertNull(ValueConverter.String.fromBytes(null));
         assertNull(ValueConverter.String.toBytes(null));
+    }
+
+    private static Stream<Arguments> encodeDecodeInputs() {
+        return Stream.of(
+                Arguments.of(Long.MAX_VALUE, ClientDataType.BIGINT),
+                Arguments.of(true, ClientDataType.BOOLEAN),
+                Arguments.of(false, ClientDataType.BOOLEAN),
+                Arguments.of(Integer.MIN_VALUE, ClientDataType.DATE),
+                Arguments.of(Double.MAX_VALUE, ClientDataType.DOUBLE),
+                Arguments.of(Float.MIN_VALUE, ClientDataType.FLOAT),
+                Arguments.of(Integer.MAX_VALUE, ClientDataType.INT),
+                Arguments.of(Short.MIN_VALUE, ClientDataType.SMALLINT),
+                Arguments.of("hello world", ClientDataType.STRING)
+        );
+    }
+
+    private <T> Function<T, byte[]> getEncoder(final ClientDataType type) {
+        switch (type) {
+            case BIGINT:
+                final Function<Long, byte[]> encBigInt = ValueConverter.BigInt::encode;
+                return (Function<T, byte[]>) encBigInt;
+            case BOOLEAN:
+                final Function<Boolean, byte[]> encBool = ValueConverter.Boolean::encode;
+                return (Function<T, byte[]>) encBool;
+            case DATE:
+                final Function<Integer, byte[]> encDate = ValueConverter.Date::encode;
+                return (Function<T, byte[]>) encDate;
+            case DOUBLE:
+                final Function<Double, byte[]> encDouble = ValueConverter.Double::encode;
+                return (Function<T, byte[]>) encDouble;
+            case FLOAT:
+                final Function<Float, byte[]> encFloat = ValueConverter.Float::encode;
+                return (Function<T, byte[]>) encFloat;
+            case INT:
+                final Function<Integer, byte[]> encInt = ValueConverter.Int::encode;
+                return (Function<T, byte[]>) encInt;
+            case SMALLINT:
+                final Function<Short, byte[]> encSmallInt = ValueConverter.SmallInt::encode;
+                return (Function<T, byte[]>) encSmallInt;
+            case STRING:
+                final Function<String, byte[]> encString = ValueConverter.String::encode;
+                return (Function<T, byte[]>) encString;
+            default:
+                throw new RuntimeException(type + " doesn't match an encode function.");
+        }
+    }
+
+    private <T> Function<byte[], T> getDecoder(final ClientDataType type) {
+        switch (type) {
+            case BIGINT:
+                final Function<byte[], Long> decBigInt = ValueConverter.BigInt::decode;
+                return (Function<byte[], T>) decBigInt;
+            case BOOLEAN:
+                final Function<byte[], Boolean> decBool = ValueConverter.Boolean::decode;
+                return (Function<byte[], T>) decBool;
+            case DATE:
+                final Function<byte[], Integer> decDate = ValueConverter.Date::decode;
+                return (Function<byte[], T>) decDate;
+            case DOUBLE:
+                final Function<byte[], Double> decDouble = ValueConverter.Double::decode;
+                return (Function<byte[], T>) decDouble;
+            case FLOAT:
+                final Function<byte[], Float> decFloat = ValueConverter.Float::decode;
+                return (Function<byte[], T>) decFloat;
+            case INT:
+                final Function<byte[], Integer> decInt = ValueConverter.Int::decode;
+                return (Function<byte[], T>) decInt;
+            case SMALLINT:
+                final Function<byte[], Short> decSmallInt = ValueConverter.SmallInt::decode;
+                return (Function<byte[], T>) decSmallInt;
+            case STRING:
+                final Function<byte[], String> decString = ValueConverter.String::decode;
+                return (Function<byte[], T>) decString;
+            default:
+                throw new RuntimeException(type + " doesn't match an encode function.");
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("encodeDecodeInputs")
+    public <T> void basicEncodeDecodeTest(final T value, final ClientDataType type) {
+        final Function<T, byte[]> encoder = getEncoder(type);
+        final Function<byte[], T> decoder = getDecoder(type);
+        assertEquals(value, decoder.apply(encoder.apply(value)));
+        assertNull(decoder.apply(encoder.apply(null)));
+        assertArrayEquals(new byte[]{ClientDataInfo.builder().type(type).isNull(true).build().encode()}, encoder.apply(null));
+        assertThrows(NullPointerException.class, () -> decoder.apply(null));
+        assertThrows(C3rRuntimeException.class, () -> decoder.apply(new byte[0]));
+        final byte[] badTypeValue = ByteBuffer.allocate(2)
+                .put(ClientDataInfo.builder().type(ClientDataType.UNKNOWN).isNull(false).build().encode())
+                .put((byte) 10)
+                .array();
+        assertThrows(C3rRuntimeException.class, () -> decoder.apply(badTypeValue));
     }
 }
