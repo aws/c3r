@@ -16,6 +16,8 @@ import org.apache.parquet.schema.PrimitiveType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 /**
  * Implementation of {@link Value} for the Parquet data format.
@@ -256,7 +258,7 @@ public abstract class ParquetValue extends Value {
                     return ValueConverter.String.encode(str);
                 case DECIMAL:
                     final LogicalTypeAnnotation.DecimalLogicalTypeAnnotation decimalInfo = (LogicalTypeAnnotation.DecimalLogicalTypeAnnotation) getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-                    final BigDecimal bigDecimal = value == null ? null : new BigDecimal(new BigInteger(value.getBytes()), decimalInfo.getScale());
+                    final BigDecimal bigDecimal = value == null ? null : new BigDecimal(new BigInteger(value.getBytes()), decimalInfo.getScale(), new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
                     return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
                 default:
                     throw new C3rRuntimeException("Binary data type cannot be encoded as " + getClientDataType() + ".");
@@ -587,12 +589,13 @@ public abstract class ParquetValue extends Value {
                     return ValueConverter.Date.encode(value);
                 case DECIMAL:
                     final LogicalTypeAnnotation.DecimalLogicalTypeAnnotation decimalInfo = (LogicalTypeAnnotation.DecimalLogicalTypeAnnotation) getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-                    final BigDecimal bigDecimal = new BigDecimal(new BigInteger(String.valueOf(value)), decimalInfo.getScale());
+                    final BigDecimal bigDecimal = value == null ? null : new BigDecimal(new BigInteger(String.valueOf(value)), decimalInfo.getScale(), new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
                     return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
                 case INT:
                     return ValueConverter.Int.encode(value);
                 case SMALLINT:
-                    return ValueConverter.SmallInt.encode(BigInteger.valueOf(value.longValue()).shortValueExact());
+                    Short asShort = value == null ? null : BigInteger.valueOf(value.longValue()).shortValueExact();
+                    return ValueConverter.SmallInt.encode(asShort);
                 default:
                     throw new C3rRuntimeException("Int data type cannot be encoded as " + getClientDataType() + ".");
             }
@@ -608,6 +611,19 @@ public abstract class ParquetValue extends Value {
          * Int64 value.
          */
         private final java.lang.Long value;
+
+        private static Units.Seconds convertParquetUnits(LogicalTypeAnnotation.TimeUnit unit) {
+            switch (unit) {
+                case MILLIS:
+                    return Units.Seconds.MILLIS;
+                case MICROS:
+                    return Units.Seconds.MICROS;
+                case NANOS:
+                    return Units.Seconds.NANOS;
+                default:
+                    throw new C3rRuntimeException("Unexpected Parquet TimeUnit value.");
+            }
+        }
 
         /**
          * Convert a long value to its byte representation with data type metadata.
@@ -683,7 +699,12 @@ public abstract class ParquetValue extends Value {
                 case BIGINT:
                     return ValueConverter.BigInt.encode(value);
                 case DECIMAL:
+                    final LogicalTypeAnnotation.DecimalLogicalTypeAnnotation decimalInfo = (LogicalTypeAnnotation.DecimalLogicalTypeAnnotation) getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                    final BigDecimal bigDecimal = value == null ? null : new BigDecimal(new BigInteger(String.valueOf(value)), decimalInfo.getScale(), new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
+                    return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
                 case TIMESTAMP:
+                    final LogicalTypeAnnotation.TimestampLogicalTypeAnnotation timestampInfo = (LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                    return ValueConverter.Timestamp.encode(value, timestampInfo.isAdjustedToUTC(), convertParquetUnits(timestampInfo.getUnit()));
                 default:
                     throw new C3rRuntimeException("BigInt data type cannot be encoded as " + getClientDataType() + ".");
             }

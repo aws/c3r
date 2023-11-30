@@ -309,12 +309,12 @@ public final class ParquetTypeDefsTestUtility {
 
         public static final Type OPTIONAL_INT64_DECIMAL_TYPE =
                 Types.optional(PrimitiveType.PrimitiveTypeName.INT64)
-                        .as(LogicalTypeAnnotation.decimalType(18, 18))
+                        .as(LogicalTypeAnnotation.decimalType(10, 18))
                         .named("OPTIONAL_INT64_DECIMAL_TYPE");
 
         public static final Type REQUIRED_INT64_DECIMAL_TYPE =
                 Types.required(PrimitiveType.PrimitiveTypeName.INT64)
-                        .as(LogicalTypeAnnotation.decimalType(18, 18))
+                        .as(LogicalTypeAnnotation.decimalType(10, 18))
                         .named("REQUIRED_INT64_DECIMAL_TYPE");
 
         private SupportedTypes() {
