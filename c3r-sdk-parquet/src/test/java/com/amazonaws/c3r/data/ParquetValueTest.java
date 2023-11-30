@@ -4,13 +4,16 @@
 package com.amazonaws.c3r.data;
 
 import com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility;
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.Type;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.stream.Stream;
 
 import static com.amazonaws.c3r.data.ClientDataType.BIGINT_BYTE_SIZE;
 import static com.amazonaws.c3r.data.ClientDataType.INT_BYTE_SIZE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_DECIMAL_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BINARY_STRING_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_BOOLEAN_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_DOUBLE_TYPE;
@@ -26,6 +30,7 @@ import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_INT_16_TRUE_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT32_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.OPTIONAL_INT64_TYPE;
+import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_BINARY_DECIMAL_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_BINARY_STRING_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_BOOLEAN_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_DOUBLE_TYPE;
@@ -288,5 +293,101 @@ public class ParquetValueTest {
         assertFalse(ParquetValue.isExpectedType(
                 int32DataType.getParquetType().asPrimitiveType().getPrimitiveTypeName(),
                 int64DataType));
+    }
+
+    @Test
+    public void encodeBinaryStringTest() {
+        final ParquetValue.Binary nullBinary = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_STRING_TYPE), null);
+        final String empty = "";
+        final ParquetValue.Binary emptyBinary = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_STRING_TYPE), Binary.fromString(empty));
+        final String value = "hello";
+        final ParquetValue.Binary valueBinary = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_STRING_TYPE), Binary.fromString(value));
+
+        assertNull(ValueConverter.String.decode(nullBinary.getEncodedBytes()));
+        assertEquals(empty, ValueConverter.String.decode(emptyBinary.getEncodedBytes()));
+        assertEquals(value, ValueConverter.String.decode(valueBinary.getEncodedBytes()));
+    }
+
+    @Test
+    public void encodeBinaryDecimalTest() {
+        final ParquetValue.Binary nullFLBA = new ParquetValue.Binary(
+                ParquetDataType.fromType(OPTIONAL_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE), null);
+        final ParquetValue.Binary nullBinary = new ParquetValue.Binary(ParquetDataType.fromType(OPTIONAL_BINARY_DECIMAL_TYPE), null);
+        final int precision = 20;
+        final int scale = 12;
+        final BigDecimal wholeNumber = new BigDecimal("1000", new MathContext(precision)).setScale(scale);
+        final ParquetValue.Binary wholeNumberFLBA = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE), Binary.fromReusedByteArray(wholeNumber.unscaledValue().toByteArray()));
+        final ParquetValue.Binary wholeNumberBinary = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_DECIMAL_TYPE), Binary.fromReusedByteArray(wholeNumber.unscaledValue().toByteArray()));
+        final BigDecimal overlappingNumber = new BigDecimal("1000.999", new MathContext(precision)).setScale(scale);
+        final ParquetValue.Binary overlappingNumberFLBA = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE), Binary.fromReusedByteArray(overlappingNumber.unscaledValue().toByteArray()));
+        final ParquetValue.Binary overlappingNumberBinary = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_DECIMAL_TYPE), Binary.fromReusedByteArray(overlappingNumber.unscaledValue().toByteArray()));
+        final BigDecimal fractionalNumber = new BigDecimal("0.11102", new MathContext(precision)).setScale(scale);
+        final ParquetValue.Binary fractionalNumberFLBA = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE), Binary.fromReusedByteArray(fractionalNumber.unscaledValue().toByteArray()));
+        final ParquetValue.Binary fractionalNumberBinary = new ParquetValue.Binary(ParquetDataType.fromType(REQUIRED_BINARY_DECIMAL_TYPE), Binary.fromReusedByteArray(fractionalNumber.unscaledValue().toByteArray()));
+
+        final ClientValueWithMetadata.Decimal nullFLBAResults = ValueConverter.Decimal.decode(nullFLBA.getEncodedBytes());
+        assertNull(nullFLBAResults.getValue());
+        assertEquals(precision, nullFLBAResults.getPrecision());
+        assertEquals(scale, nullFLBAResults.getScale());
+        final ClientValueWithMetadata.Decimal nullBinaryResults = ValueConverter.Decimal.decode(nullBinary.getEncodedBytes());
+        assertNull(nullBinaryResults.getValue());
+        assertEquals(precision, nullBinaryResults.getPrecision());
+        assertEquals(scale, nullBinaryResults.getScale());
+        final ClientValueWithMetadata.Decimal wholeNumberFLBAResults = ValueConverter.Decimal.decode(wholeNumberFLBA.getEncodedBytes());
+        assertEquals(new BigDecimal("1000.000000000000"), wholeNumberFLBAResults.getValue());
+        final ClientValueWithMetadata.Decimal wholeNumberBinaryResults = ValueConverter.Decimal.decode(wholeNumberBinary.getEncodedBytes());
+        final ClientValueWithMetadata.Decimal overlappingNumberFLBAResults = ValueConverter.Decimal.decode(overlappingNumberFLBA.getEncodedBytes());
+        assertEquals(new BigDecimal("1000.999000000000"), overlappingNumberFLBAResults.getValue());
+        final ClientValueWithMetadata.Decimal overlappingNumberBinaryResults = ValueConverter.Decimal.decode(overlappingNumberBinary.getEncodedBytes());
+        final ClientValueWithMetadata.Decimal fractionalNumberFLBAResults = ValueConverter.Decimal.decode(fractionalNumberFLBA.getEncodedBytes());
+        assertEquals(new BigDecimal("0.111020000000"), fractionalNumberFLBAResults.getValue());
+        final ClientValueWithMetadata.Decimal fractionalNumberBinaryResults = ValueConverter.Decimal.decode(fractionalNumberBinary.getEncodedBytes());
+    }
+
+    @Test
+    public void encodeBooleanTest() {
+        assertNull(ValueConverter.Boolean.decode(new ParquetValue.Boolean(ParquetDataType.fromType(OPTIONAL_BOOLEAN_TYPE), null).getEncodedBytes()));
+        assertTrue(ValueConverter.Boolean.decode(new ParquetValue.Boolean(ParquetDataType.fromType(REQUIRED_BOOLEAN_TYPE), true).getEncodedBytes()));
+        assertFalse(ValueConverter.Boolean.decode(new ParquetValue.Boolean(ParquetDataType.fromType(REQUIRED_BOOLEAN_TYPE), false).getEncodedBytes()));
+    }
+
+    @Test
+    public void encodeDoubleTest() {
+        assertNull(ValueConverter.Double.decode(new ParquetValue.Double(ParquetDataType.fromType(OPTIONAL_DOUBLE_TYPE), null).getEncodedBytes()));
+        assertEquals(Double.MAX_VALUE, ValueConverter.Double.decode(new ParquetValue.Double(ParquetDataType.fromType(REQUIRED_DOUBLE_TYPE), Double.MAX_VALUE).getEncodedBytes()));
+    }
+
+    @Test
+    public void encodeFloatTest() {
+        assertNull(ValueConverter.Float.decode(new ParquetValue.Float(ParquetDataType.fromType(OPTIONAL_FLOAT_TYPE), null).getEncodedBytes()));
+        assertEquals(Float.MAX_VALUE, ValueConverter.Float.decode(new ParquetValue.Float(ParquetDataType.fromType(REQUIRED_FLOAT_TYPE), Float.MAX_VALUE).getEncodedBytes()));
+    }
+
+    @Test
+    public void encodeDateTest() {
+    }
+
+    @Test
+    public void encodeIntDecimalTest() {
+    }
+
+    @Test
+    public void encodeIntTest() {
+    }
+
+    @Test
+    public void encodeSmallIntTest() {
+    }
+
+    @Test
+    public void encodeBigIntTest() {
+    }
+
+    @Test
+    public void encodeBigIntDecimalTest() {
+    }
+
+    @Test
+    public void encodeTimestampTest() {
     }
 }
