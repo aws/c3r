@@ -606,25 +606,6 @@ public abstract class ParquetValue extends Value {
                     throw new C3rRuntimeException("Int data type cannot be encoded as " + getClientDataType() + ".");
             }
         }
-
-        @Override
-        public byte[] getEncodedBytes() {
-            switch (getClientDataType()) {
-                case DATE:
-                    return ValueConverter.Date.encode(value);
-                case DECIMAL:
-                    final LogicalTypeAnnotation.DecimalLogicalTypeAnnotation decimalInfo = (LogicalTypeAnnotation.DecimalLogicalTypeAnnotation) getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-                    final BigDecimal bigDecimal = value == null ? null : new BigDecimal(new BigInteger(String.valueOf(value)), decimalInfo.getScale(), new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
-                    return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
-                case INT:
-                    return ValueConverter.Int.encode(value);
-                case SMALLINT:
-                    Short asShort = value == null ? null : BigInteger.valueOf(value.longValue()).shortValueExact();
-                    return ValueConverter.SmallInt.encode(asShort);
-                default:
-                    throw new C3rRuntimeException("Int data type cannot be encoded as " + getClientDataType() + ".");
-            }
-        }
     }
 
     /**
