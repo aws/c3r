@@ -79,6 +79,8 @@ public abstract class Value {
 
     /**
      * Encode a value along with all metadata to accurately recreate it to a byte array.
+     *
+     * @return Array of bytes with all information needed to accurately recreate the value
      */
     public abstract byte[] getEncodedBytes();
 
