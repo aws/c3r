@@ -5,13 +5,16 @@
 
 version: 2
 updates:
-  - package-ecosystem: "gradle" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "gradle"
+    directory: "/"
     schedule:
       interval: "daily"
       time: "08:00"
     commit-message:
       prefix: "build(gradle)"
+    ignore:
+      # Temporary until conflicts with new Spotbugs version may be updated
+      - dependency-name: "com.github.spotbugs"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
