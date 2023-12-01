@@ -11,7 +11,15 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
+import org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 /**
  * Implementation of {@link Value} for the Parquet data format.
@@ -187,14 +195,14 @@ public abstract class ParquetValue extends Value {
             if (getParquetDataType().getParquetType().asPrimitiveType().getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
                 final LogicalTypeAnnotation annotations = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
                 return (annotations instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) ||
-                        (annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
+                        (annotations instanceof DecimalLogicalTypeAnnotation);
             } else if (getParquetDataType().getParquetType().asPrimitiveType().getPrimitiveTypeName() ==
                     PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) {
                 final LogicalTypeAnnotation annotations = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
                 if (getParquetDataType().getParquetType().asPrimitiveType().getTypeLength() < 0) {
                     return false;
                 } else {
-                    return annotations instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+                    return annotations instanceof DecimalLogicalTypeAnnotation;
                 }
             }
             return false;
@@ -241,6 +249,24 @@ public abstract class ParquetValue extends Value {
                     }
                 default:
                     throw new C3rRuntimeException("Could not convert Parquet Binary to " + type + ".");
+            }
+        }
+
+        @Override
+        public byte[] getEncodedBytes() {
+            switch (getClientDataType()) {
+                case STRING:
+                    final String str = ValueConverter.String.fromBytes(getBytes());
+                    return ValueConverter.String.encode(str);
+                case DECIMAL:
+                    final DecimalLogicalTypeAnnotation decimalInfo = (DecimalLogicalTypeAnnotation)
+                            getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                    final BigDecimal bigDecimal = value == null ? null :
+                            new BigDecimal(new BigInteger(value.getBytes()), decimalInfo.getScale(),
+                                    new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
+                    return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
+                default:
+                    throw new C3rRuntimeException("Binary data type cannot be encoded as " + getClientDataType() + ".");
             }
         }
     }
@@ -322,6 +348,11 @@ public abstract class ParquetValue extends Value {
                     throw new C3rRuntimeException("Could not convert Parquet Boolean to " + type + ".");
             }
         }
+
+        @Override
+        public byte[] getEncodedBytes() {
+            return ValueConverter.Boolean.encode(value);
+        }
     }
 
     /**
@@ -390,6 +421,11 @@ public abstract class ParquetValue extends Value {
                 default:
                     throw new C3rRuntimeException("Could not convert Parquet Double to " + type + ".");
             }
+        }
+
+        @Override
+        public byte[] getEncodedBytes() {
+            return ValueConverter.Double.encode(value);
         }
     }
 
@@ -461,6 +497,11 @@ public abstract class ParquetValue extends Value {
                     throw new C3rRuntimeException("Could not convert Parquet Float to " + type + ".");
             }
         }
+
+        @Override
+        public byte[] getEncodedBytes() {
+            return ValueConverter.Float.encode(value);
+        }
     }
 
     /**
@@ -497,16 +538,15 @@ public abstract class ParquetValue extends Value {
         @Override
         boolean validateAnnotation() {
             final LogicalTypeAnnotation logicalTypeAnnotation = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-            if (logicalTypeAnnotation instanceof LogicalTypeAnnotation.IntLogicalTypeAnnotation) {
-                final LogicalTypeAnnotation.IntLogicalTypeAnnotation intLogicalTypeAnnotation =
-                        (LogicalTypeAnnotation.IntLogicalTypeAnnotation) logicalTypeAnnotation;
+            if (logicalTypeAnnotation instanceof IntLogicalTypeAnnotation) {
+                final IntLogicalTypeAnnotation intLogicalTypeAnnotation = (IntLogicalTypeAnnotation) logicalTypeAnnotation;
                 return intLogicalTypeAnnotation.isSigned() &&
                         (intLogicalTypeAnnotation.getBitWidth() == ClientDataType.INT_BIT_SIZE ||
                                 intLogicalTypeAnnotation.getBitWidth() == ClientDataType.SMALLINT_BIT_SIZE);
             }
             return (logicalTypeAnnotation == null) ||
                     (logicalTypeAnnotation instanceof LogicalTypeAnnotation.DateLogicalTypeAnnotation) ||
-                    (logicalTypeAnnotation instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation);
+                    (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation);
         }
 
         /**
@@ -545,6 +585,27 @@ public abstract class ParquetValue extends Value {
                     throw new C3rRuntimeException("Could not convert Parquet Int32 to " + type + ".");
             }
         }
+
+        @Override
+        public byte[] getEncodedBytes() {
+            switch (getClientDataType()) {
+                case DATE:
+                    return ValueConverter.Date.encode(value);
+                case DECIMAL:
+                    final DecimalLogicalTypeAnnotation decimalInfo = (DecimalLogicalTypeAnnotation)
+                            getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                    final BigDecimal bigDecimal = value == null ? null : new BigDecimal(new BigInteger(String.valueOf(value)),
+                            decimalInfo.getScale(), new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
+                    return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
+                case INT:
+                    return ValueConverter.Int.encode(value);
+                case SMALLINT:
+                    final Short asShort = value == null ? null : BigInteger.valueOf(value.longValue()).shortValueExact();
+                    return ValueConverter.SmallInt.encode(asShort);
+                default:
+                    throw new C3rRuntimeException("Int data type cannot be encoded as " + getClientDataType() + ".");
+            }
+        }
     }
 
     /**
@@ -573,6 +634,27 @@ public abstract class ParquetValue extends Value {
         }
 
         /**
+         * Converts a Parquet TimeUnit into a C3R {@code Units.Seconds}. Both types contain the same unit values:
+         * milliseconds, microseconds and nanoseconds.
+         *
+         * @param unit Time unit in Parquet date type
+         * @return Equivalent C3R unit
+         * @throws C3rRuntimeException if an unknown Parquet unit is found
+         */
+        private static Units.Seconds convertParquetUnits(final LogicalTypeAnnotation.TimeUnit unit) {
+            switch (unit) {
+                case MILLIS:
+                    return Units.Seconds.MILLIS;
+                case MICROS:
+                    return Units.Seconds.MICROS;
+                case NANOS:
+                    return Units.Seconds.NANOS;
+                default:
+                    throw new C3rRuntimeException("Unexpected Parquet TimeUnit value.");
+            }
+        }
+
+        /**
          * The {@code int64} Parquet type can have no annotations or the {@code Timestamp}, {@code Decimal} or {@code Int32} annotations.
          *
          * @return {@code true} if no annotations exist or the annotation is timestamp, decimal or int.
@@ -580,14 +662,13 @@ public abstract class ParquetValue extends Value {
         @Override
         boolean validateAnnotation() {
             final LogicalTypeAnnotation logicalTypeAnnotation = getParquetDataType().getParquetType().getLogicalTypeAnnotation();
-            if (logicalTypeAnnotation instanceof LogicalTypeAnnotation.IntLogicalTypeAnnotation) {
-                final LogicalTypeAnnotation.IntLogicalTypeAnnotation intLogicalTypeAnnotation =
-                        (LogicalTypeAnnotation.IntLogicalTypeAnnotation) logicalTypeAnnotation;
+            if (logicalTypeAnnotation instanceof IntLogicalTypeAnnotation) {
+                final IntLogicalTypeAnnotation intLogicalTypeAnnotation = (IntLogicalTypeAnnotation) logicalTypeAnnotation;
                 return intLogicalTypeAnnotation.isSigned() && intLogicalTypeAnnotation.getBitWidth() == ClientDataType.BIGINT_BIT_SIZE;
             }
             return logicalTypeAnnotation == null ||
-                    logicalTypeAnnotation instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation ||
-                    logicalTypeAnnotation instanceof LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
+                    logicalTypeAnnotation instanceof TimestampLogicalTypeAnnotation ||
+                    logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation;
         }
 
         /**
@@ -622,6 +703,28 @@ public abstract class ParquetValue extends Value {
                     return ValueConverter.BigInt.toBytes(value);
                 default:
                     throw new C3rRuntimeException("Could not convert Parquet Int64 to " + type + ".");
+            }
+        }
+
+        @Override
+        public byte[] getEncodedBytes() {
+            switch (getClientDataType()) {
+                case BIGINT:
+                    return ValueConverter.BigInt.encode(value);
+                case DECIMAL:
+                    final DecimalLogicalTypeAnnotation decimalInfo = (DecimalLogicalTypeAnnotation)
+                            getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                    final BigDecimal bigDecimal = value == null ? null :
+                            new BigDecimal(new BigInteger(String.valueOf(value)), decimalInfo.getScale(),
+                                    new MathContext(decimalInfo.getPrecision(), RoundingMode.HALF_UP));
+                    return ValueConverter.Decimal.encode(bigDecimal, decimalInfo.getPrecision(), decimalInfo.getScale());
+                case TIMESTAMP:
+                    final TimestampLogicalTypeAnnotation timestampInfo = (TimestampLogicalTypeAnnotation)
+                            getParquetDataType().getParquetType().getLogicalTypeAnnotation();
+                    return ValueConverter.Timestamp.encode(value, timestampInfo.isAdjustedToUTC(),
+                            convertParquetUnits(timestampInfo.getUnit()));
+                default:
+                    throw new C3rRuntimeException("BigInt data type cannot be encoded as " + getClientDataType() + ".");
             }
         }
     }
