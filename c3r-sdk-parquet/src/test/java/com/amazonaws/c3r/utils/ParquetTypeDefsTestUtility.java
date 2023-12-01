@@ -70,7 +70,7 @@ public final class ParquetTypeDefsTestUtility {
          */
         public static final Type OPTIONAL_BINARY_DECIMAL_TYPE =
                 Types.optional(PrimitiveType.PrimitiveTypeName.BINARY)
-                        .as(LogicalTypeAnnotation.decimalType(16, 16))
+                        .as(LogicalTypeAnnotation.decimalType(12, 20))
                         .named("OPTIONAL_BINARY_DECIMAL_TYPE");
 
         /**
@@ -78,7 +78,7 @@ public final class ParquetTypeDefsTestUtility {
          */
         public static final Type REQUIRED_BINARY_DECIMAL_TYPE =
                 Types.required(PrimitiveType.PrimitiveTypeName.BINARY)
-                        .as(LogicalTypeAnnotation.decimalType(16, 16))
+                        .as(LogicalTypeAnnotation.decimalType(12, 20))
                         .named("REQUIRED_BINARY_DECIMAL_TYPE");
 
         /**
@@ -103,7 +103,7 @@ public final class ParquetTypeDefsTestUtility {
         public static final Type OPTIONAL_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE =
                 Types.optional(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
                         .length(32)
-                        .as(LogicalTypeAnnotation.decimalType(16, 16))
+                        .as(LogicalTypeAnnotation.decimalType(12, 20))
                         .named("OPTIONAL_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE");
 
         /**
@@ -112,7 +112,7 @@ public final class ParquetTypeDefsTestUtility {
         public static final Type REQUIRED_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE =
                 Types.required(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
                         .length(32)
-                        .as(LogicalTypeAnnotation.decimalType(16, 16))
+                        .as(LogicalTypeAnnotation.decimalType(12, 20))
                         .named("REQUIRED_FIXED_LEN_BYTE_ARRAY_DECIMAL_TYPE");
 
         /**
@@ -309,12 +309,12 @@ public final class ParquetTypeDefsTestUtility {
 
         public static final Type OPTIONAL_INT64_DECIMAL_TYPE =
                 Types.optional(PrimitiveType.PrimitiveTypeName.INT64)
-                        .as(LogicalTypeAnnotation.decimalType(18, 18))
+                        .as(LogicalTypeAnnotation.decimalType(10, 18))
                         .named("OPTIONAL_INT64_DECIMAL_TYPE");
 
         public static final Type REQUIRED_INT64_DECIMAL_TYPE =
                 Types.required(PrimitiveType.PrimitiveTypeName.INT64)
-                        .as(LogicalTypeAnnotation.decimalType(18, 18))
+                        .as(LogicalTypeAnnotation.decimalType(10, 18))
                         .named("REQUIRED_INT64_DECIMAL_TYPE");
 
         private SupportedTypes() {

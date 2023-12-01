@@ -31,4 +31,11 @@ public class CsvValueTest {
         assertArrayEquals("42".getBytes(StandardCharsets.UTF_8), new CsvValue("42").getBytes());
         assertArrayEquals("42".getBytes(StandardCharsets.UTF_8), new CsvValue("42".getBytes(StandardCharsets.UTF_8)).getBytes());
     }
+
+    @Test
+    public void encodeTest() {
+        assertNull(ValueConverter.String.decode(new CsvValue((String) null).getEncodedBytes()));
+        assertEquals("", ValueConverter.String.decode(new CsvValue("").getEncodedBytes()));
+        assertEquals("hello world!", ValueConverter.String.decode(new CsvValue("hello world!").getEncodedBytes()));
+    }
 }
