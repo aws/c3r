@@ -142,21 +142,19 @@ public final class ValueConverter {
      * Determines how many bytes will be added to the output. If the value is specified, the metadata parameters must all be specified.
      * If the value is null the metadata parameters can either all be specified as null or non-null values but not a mix.
      *
-     * @param value              Value being encoded
-     * @param metadataValues     Array of metadata parameters
-     * @param nonNullValueLength How many bytes will be needed to store metadata for a non-null value
-     * @param nullValueLength    How many bytes will be needed to store metadata when the value is null but the metadata is all non-null
-     * @param <T>                Type of the value being stored
+     * @param value          Value being encoded
+     * @param metadataValues Array of metadata parameters
+     * @param metadataLength How many bytes will be needed to store metadata
+     * @param <T>            The data type for the value
      * @return Number of bytes that will be needed to store metadata.
      */
-    private static <T> int getMetaDataByteLength(final T value, @NonNull final Object[] metadataValues, final int nonNullValueLength,
-                                                 final int nullValueLength) {
+    private static <T> int getMetaDataByteLength(final T value, @NonNull final Object[] metadataValues, final int metadataLength) {
         if (value == null && Arrays.stream(metadataValues).allMatch(Objects::nonNull)) {
-            return nullValueLength;
+            return metadataLength;
         } else if (value == null) {
             return 0;
         }
-        return nonNullValueLength;
+        return metadataLength;
     }
 
     /**
@@ -214,7 +212,7 @@ public final class ValueConverter {
      * @param value  Value being encoded
      * @param type   Client data type being encoded
      * @param size   Expected size of the value in bytes
-     * @param putter Function to call on {@ByteBuffer} to store the value
+     * @param putter Function to call on {@code ByteBuffer} to store the value
      * @param <T>    Java type being converted to bytes
      * @return Byte representation of value
      */
@@ -224,7 +222,41 @@ public final class ValueConverter {
         final int length = (value == null) ? 0 : size;
         final ByteBuffer buffer = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + length)
                 .put(info.encode());
-        return encodeValue(value, buffer, x -> putter.apply(buffer, x));
+        final byte[] bytes = encodeValue(value, buffer, x -> putter.apply(buffer, x));
+        checkBufferHasNoRemaining(buffer);
+        return bytes;
+    }
+
+    /**
+     * Encodes a string based value and its length into a byte array. Length is included to verify correct decoding of the value.
+     *
+     * <p>
+     * For a non-null value, the encoded byte array is of the form:<br/>
+     * Byte 1: {@link ClientDataInfo}<br/>
+     * Bytes 2-5: Length of the String<br/>
+     * Bytes 6+: Bytes for the UTF-8 formatted version of the string
+     * </p>
+     *
+     * <p>
+     * For a null value, the encoded byte array is of the form:<br/>
+     * Byte 1: {@code ClientDataInfo}
+     * </p>
+     *
+     * @param type  The specific C3R string based data type
+     * @param value String value
+     * @return Byte array with all the information to correctly reconstruct the string
+     */
+    private static byte[] encodeString(@NonNull final ClientDataType type, final java.lang.String value) {
+        final ClientDataInfo info = ClientDataInfo.builder().type(type).isNull(value == null).build();
+        final byte[] bytes = stringToBytes(value);
+        final int length = (bytes == null) ? 0 : bytes.length;
+        final ByteBuffer buffer = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + length)
+                .put(info.encode());
+        if (value != null) {
+            buffer.put(bytes);
+        }
+        checkBufferHasNoRemaining(buffer);
+        return buffer.array();
     }
 
     /**
@@ -240,17 +272,41 @@ public final class ValueConverter {
     private static <T> T basicDecode(final byte[] bytes, @NonNull final ClientDataType type,
                                      @NonNull final Function<ByteBuffer, T> getter) {
         final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        T value = null;
+        if (!info.isNull()) {
+            try {
+                value = getter.apply(buffer);
+            } catch (BufferUnderflowException e) {
+                throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
+            }
+        }
+        checkBufferHasNoRemaining(buffer);
+        return value;
+    }
+
+    /**
+     * Decodes a byte array into the original string based value. Verifies the string is of the expected length.
+     *
+     * @param type  The specific C3R string based data type
+     * @param bytes Encoded string based value with information needed to recreate the correct value
+     * @return Decoded String value
+     * @throws C3rRuntimeException if not enough bytes are present, the wrong type is found or the length checks fail
+     */
+    private static java.lang.String stringDecode(@NonNull final ClientDataType type, final byte[] bytes) {
+        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
         final ClientDataInfo info = stripClientDataInfo(buffer, type);
-        if (info.isNull()) {
-            return null;
+        java.lang.String value = null;
+        if (!info.isNull()) {
+            try {
+                final byte[] strBytes = new byte[buffer.remaining()];
+                buffer.get(strBytes);
+                value = stringFromBytes(strBytes);
+            } catch (BufferUnderflowException e) {
+                throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
+            }
         }
-        try {
-            final T value = getter.apply(buffer);
-            checkBuffer(buffer);
-            return value;
-        } catch (BufferUnderflowException e) {
-            throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
-        }
+        checkBufferHasNoRemaining(buffer);
+        return value;
     }
 
     /**
@@ -259,7 +315,8 @@ public final class ValueConverter {
      * @param value Boolean to turn into bytes
      * @return Byte array of 1 byte that stores a representation of the boolean value
      */
-    private static byte[] getBytesFromBoolean(final boolean value) {
+
+    private static byte[] booleanToBytes(final boolean value) {
         if (value) {
             return new byte[]{(byte) 1};
         } else {
@@ -274,7 +331,7 @@ public final class ValueConverter {
      * @return The boolean value the byte represents
      * @throws C3rIllegalArgumentException if the byte does not represent a valid boolean value
      */
-    private static boolean getBooleanFromByte(final byte value) {
+    private static boolean booleanFromByte(final byte value) {
         if (value == (byte) 0) {
             return false;
         } else if (value == (byte) 1) {
@@ -290,7 +347,7 @@ public final class ValueConverter {
      * @param buffer {@code ByteBuffer} that should have no remaining bytes to read
      * @throws C3rRuntimeException If there are still bytes left in the array
      */
-    private static void checkBuffer(@NonNull final ByteBuffer buffer) {
+    private static void checkBufferHasNoRemaining(@NonNull final ByteBuffer buffer) {
         if (buffer.hasRemaining()) {
             throw new C3rRuntimeException(buffer.remaining() + " bytes still left but expected number of bytes have been decoded.");
         }
@@ -416,7 +473,7 @@ public final class ValueConverter {
             } else if (bytes.length != 1) {
                 throw new C3rRuntimeException("Boolean value expected to be a single byte.");
             }
-            return getBooleanFromByte(bytes[0]);
+            return booleanFromByte(bytes[0]);
         }
 
         /**
@@ -429,7 +486,7 @@ public final class ValueConverter {
             if (value == null) {
                 return null;
             }
-            return getBytesFromBoolean(value);
+            return booleanToBytes(value);
         }
 
         /**
@@ -453,17 +510,18 @@ public final class ValueConverter {
         public static java.lang.Boolean decode(final byte[] bytes) {
             final ByteBuffer buffer = ByteBuffer.wrap(bytes);
             final ClientDataInfo info = stripClientDataInfo(buffer, ClientDataType.BOOLEAN);
-            if (info.isNull()) {
-                return null;
+            java.lang.Boolean value = null;
+            if (!info.isNull()) {
+                try {
+                    final byte[] remaining = new byte[buffer.remaining()];
+                    buffer.get(remaining);
+                    value = fromBytes(remaining);
+                } catch (BufferUnderflowException e) {
+                    throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
+                }
             }
-            try {
-                final byte[] remaining = new byte[buffer.remaining()];
-                buffer.get(remaining);
-                checkBuffer(buffer);
-                return fromBytes(remaining);
-            } catch (BufferUnderflowException e) {
-                throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
-            }
+            checkBufferHasNoRemaining(buffer);
+            return value;
         }
     }
 
@@ -472,49 +530,34 @@ public final class ValueConverter {
      */
     public static final class Char {
         /**
-         * Number of bytes of metadata needed to reconstruct a fixed length character array correctly.
-         */
-        private static final int TOTAL_METADATA_BYTES = Integer.BYTES;
-
-        /**
          * Converts bytes to a fixed length character array.
          *
          * @param bytes UTF-8 encoded bytes to convert
          * @return Fixed length character array
          */
-        public static char[] fromBytes(final byte[] bytes) {
-            final java.lang.String value = stringFromBytes(bytes);
-            return value == null ? null : value.toCharArray();
+        public static java.lang.String fromBytes(final byte[] bytes) {
+            return stringFromBytes(bytes);
         }
 
         /**
          * Convert a fixed length character array to a byte array.
          *
-         * @param characters Character ta turn into UTF-8 encoded bytes
+         * @param value Character ta turn into UTF-8 encoded bytes
          * @return UTF-8 byte encoding of string
          */
-        public static byte[] toBytes(final char[] characters) {
-            final java.lang.String value = characters == null ? null : new java.lang.String(characters);
+        public static byte[] toBytes(final java.lang.String value) {
             return stringToBytes(value);
         }
 
         /**
          * Encodes a fixed length character array along with necessary metadata to reconstitute the value for encryption.
+         * See {@link ValueConverter#encodeString} for byte format.
          *
          * @param value Character array  to encrypt
          * @return Byte representation of the value and its metadata
          */
-        public static byte[] encode(final char[] value) {
-            final ClientDataInfo info = ClientDataInfo.builder().type(ClientDataType.CHAR).isNull(value == null).build();
-            final byte[] bytes = (value == null) ? null : StandardCharsets.UTF_8.encode(CharBuffer.wrap(value)).array();
-            final int length = (value == null) ? 0 : TOTAL_METADATA_BYTES + bytes.length;
-            final ByteBuffer buffer = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + length)
-                    .put(info.encode());
-            if (value != null) {
-                buffer.putInt(value.length);
-                buffer.put(bytes);
-            }
-            return buffer.array();
+        public static byte[] encode(final java.lang.String value) {
+            return encodeString(ClientDataType.CHAR, value);
         }
 
         /**
@@ -524,24 +567,8 @@ public final class ValueConverter {
          * @return Char value
          * @throws C3rRuntimeException if not enough bytes are in the encoded value or the data type is not Char
          */
-        public static char[] decode(final byte[] bytes) {
-            final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            final ClientDataInfo info = stripClientDataInfo(buffer, ClientDataType.CHAR);
-            if (info.isNull()) {
-                return null;
-            }
-            try {
-                final int length = buffer.getInt();
-                final char[] value = StandardCharsets.UTF_8.decode(buffer).array();
-                if (value.length != length) {
-                    throw new C3rRuntimeException("Fixed length character array expected to be of length " + length + " but was " +
-                            value.length + ".");
-                }
-                checkBuffer(buffer);
-                return value;
-            } catch (BufferUnderflowException e) {
-                throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
-            }
+        public static java.lang.String decode(final byte[] bytes) {
+            return stringDecode(ClientDataType.CHAR, bytes);
         }
     }
 
@@ -602,6 +629,23 @@ public final class ValueConverter {
         private static final int TOTAL_METADATA_BYTES = 2 * Integer.BYTES;
 
         /**
+         * Checks that the scale and precision on the value are within the bounds of the specified scale and precision.
+         *
+         * @param specifiedPrecision Precision in metadata
+         * @param valuePrecision     Precision of decoded value
+         * @param specifiedScale     Scale in metadata
+         * @param valueScale         Scale of decoded value
+         * @return {@code true} if the decoded scale and precision are within the bounds of the values in the metadata.
+         */
+        private static boolean isValueInvalid(final int specifiedPrecision, final int valuePrecision,
+                                              final int specifiedScale, final int valueScale) {
+            return (specifiedPrecision < valuePrecision) ||
+                    (specifiedScale > 0 && specifiedScale < valueScale) ||
+                    (specifiedScale < 0 && specifiedScale > valueScale) ||
+                    (specifiedScale == 0 && valueScale != 0);
+        }
+
+        /**
          * Takes a byte array and returns the fixed point number it represents. This is done by transforming the byte array into
          * a string and then a {@code BigDecimal} value. Precision and scale may be smaller than they were originally since they
          * are calculated using the digits present in the string value only.
@@ -656,7 +700,7 @@ public final class ValueConverter {
          * @param scale     How many digits are to the right of the decimal point
          * @return Byte array encoding all the information to recreate the decimal value
          * @throws C3rIllegalArgumentException if precision and scale are missing for a non-null value
-         *                                     or have non-matching null status for a null value
+         * @throws C3rRuntimeException if value is outside the limits imposed by precision and scale
          */
         public static byte[] encode(final BigDecimal value, final Integer precision, final Integer scale) {
             final Object[] metadata = new Object[]{precision, scale};
@@ -664,22 +708,24 @@ public final class ValueConverter {
                 throw new C3rIllegalArgumentException("Precision and scale must both be specified unless value is null, " +
                         "then they may optionally be null.");
             }
-            final ClientDataInfo info = ClientDataInfo.builder().type(ClientDataType.DECIMAL).isNull(value == null).build();
-            final char[] plainString = (value == null) ? null : value.toPlainString().toCharArray();
-            int length = ClientDataInfo.BYTE_LENGTH;
-            length += getMetaDataByteLength(value, metadata, TOTAL_METADATA_BYTES, TOTAL_METADATA_BYTES);
-            length += (value == null) ? 0 : plainString.length * Character.BYTES;
-            final ByteBuffer buffer = ByteBuffer.allocate(length)
+
+            final byte[] plainString = (value == null) ? null : value.toPlainString().getBytes(StandardCharsets.UTF_8);
+            int length = getMetaDataByteLength(value, metadata, TOTAL_METADATA_BYTES);
+            length += (value == null) ? 0 : plainString.length;
+            final ByteBuffer buffer = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + length)
                     .put(info.encode());
             if (value != null) {
+                if (isValueInvalid(precision, value.precision(), scale, value.scale())) {
+                    throw new C3rRuntimeException("Value is outside of the limits imposed by precision and scale");
+                }
                 buffer.putInt(precision);
                 buffer.putInt(scale);
-                buffer.asCharBuffer().put(plainString);
-                return buffer.array();
+                buffer.put(plainString);
             } else if (precision != null && scale != null) {
                 buffer.putInt(precision);
                 buffer.putInt(scale);
             }
+            checkBufferHasNoRemaining(buffer);
             return buffer.array();
         }
 
@@ -687,8 +733,8 @@ public final class ValueConverter {
          * Decodes a byte array into the original decimal value. Verifies valid values for UTC flag and units.
          *
          * @param bytes Encoded timestamp with information needed to recreate the correct value
-         * @return Information needed to create the value
-         * @throws C3rRuntimeException if not enough bytes are present or the bytes do not represent a {@code BigDecimal} value
+         * @throws C3rRuntimeException if not enough bytes are present, the bytes do not represent a {@code BigDecimal} value
+         *                             or the value is outside the limits imposed by precision and scale
          */
         public static ClientValueWithMetadata.Decimal decode(final byte[] bytes) {
             final ByteBuffer buffer = ByteBuffer.wrap(bytes);
@@ -701,12 +747,16 @@ public final class ValueConverter {
                     scale = buffer.getInt();
                 }
                 BigDecimal value = null;
-                if (!info.isNull()) {
-                    final java.lang.String stringValue = buffer.asCharBuffer().toString();
-                    buffer.position(buffer.limit());
+
+                    final byte[] strBytes = new byte[buffer.remaining()];
+                    buffer.get(strBytes);
+                    final java.lang.String stringValue = stringFromBytes(strBytes);
                     value = new BigDecimal(stringValue);
+                    if (isValueInvalid(precision, value.precision(), scale, value.scale())) {
+                        throw new C3rRuntimeException("Value is outside of the limits imposed by precision and scale");
+                    }
                 }
-                checkBuffer(buffer);
+                checkBufferHasNoRemaining(buffer);
                 return new ClientValueWithMetadata.Decimal(value, precision, scale);
             } catch (BufferUnderflowException bue) {
                 throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", bue);
@@ -728,7 +778,7 @@ public final class ValueConverter {
          * @return Corresponding float value
          * @throws C3rRuntimeException If the byte array is not the expected length
          */
-        static java.lang.Double fromBytes(final byte[] bytes) {
+        public static java.lang.Double fromBytes(final byte[] bytes) {
             return basicFromBytes(bytes, java.lang.Double.BYTES, ClientDataType.DOUBLE, ByteBuffer::getDouble);
         }
 
@@ -934,14 +984,13 @@ public final class ValueConverter {
 
         /**
          * Encodes a String value along with necessary metadata to reconstitute the value for encryption.
+         * See {@link ValueConverter#encodeString} for byte format.
          *
          * @param value String value to encrypt
          * @return Byte representation of the value and its metadata
          */
         public static byte[] encode(final java.lang.String value) {
-            final byte[] asBytes = toBytes(value);
-            final int size = asBytes == null ? 0 : asBytes.length;
-            return basicEncode(asBytes, ClientDataType.STRING, size, ByteBuffer::put);
+            return encodeString(ClientDataType.STRING, value);
         }
 
         /**
@@ -952,16 +1001,234 @@ public final class ValueConverter {
          * @throws C3rRuntimeException if not enough bytes are in the encoded value or the data type is not String
          */
         public static java.lang.String decode(final byte[] bytes) {
-            final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            final ClientDataInfo info = stripClientDataInfo(buffer, ClientDataType.STRING);
-            if (info.isNull()) {
+            return stringDecode(ClientDataType.STRING, bytes);
+        }
+    }
+
+    /**
+     * Utility functions for converting a C3R Timestamp to and from various representations. Timestamps are relative to epoch.
+     */
+    public static final class Timestamp {
+        /**
+         * Number of bytes the metadata uses.
+         */
+        private static final int TOTAL_METADATA_BYTES = Byte.BYTES + Integer.BYTES;
+
+        /**
+         * Takes a byte array representing a {@code BigInteger} value and converts it back to a {@code BigInteger} value
+         * which is a timestamp value in nanoseconds.
+         *
+         * @param bytes Byte array used by a {@code BigInteger} to store a nanosecond-based timestamp
+         * @return A timestamp relative to epoch in nanoseconds
+         */
+        public static BigInteger fromBytes(final byte[] bytes) {
+            if (bytes == null) {
                 return null;
             }
+            return new BigInteger(bytes);
+        }
+
+        /**
+         * Converts a timestamp into its raw byte representation. All values are converted to nanoseconds as unit information
+         * is not conserved and using nanoseconds prevents loss of information.
+         *
+         * @param value Timestamp value
+         * @param units What unit of time the value is in
+         * @return Bytes from a {@code BigInteger} that represents the timestamp in nanoseconds
+         */
+        public static byte[] toBytes(final Long value, final Units.Seconds units) {
+            if (value == null) {
+                return null;
+            }
+            final BigInteger asNanos = Units.Seconds.convert(BigInteger.valueOf(value), units, Units.Seconds.NANOS);
+            return asNanos.toByteArray();
+        }
+
+        /**
+         * Takes a timestamp value plus if the value is in UTC time and unit for the value and creates a byte array with
+         * all the information needed to recreate the value.
+         *
+         * <p>
+         * For a non-null value, the encoded byte array is of the form:<br/>
+         * Byte 1: {@link ClientDataInfo}<br/>
+         * Byte 2: Whether the timestamp is in UTC<br/>
+         * Bytes 3-6: Unit of time for the value<br/>
+         * Bytes 7-14: Timestamp value
+         * </p>
+         *
+         * <p>
+         * For a null value, the encoded byte array is of the form:<br/>
+         * Byte 1: {@code ClientDataInfo}<br/>
+         * Optionally:
+         * Byte 2: Whether the timestamp is in UTC<br/>
+         * Bytes 3-6: Unit of time for the value<br/>
+         * </p>
+         *
+         * @param value Timestamp value
+         * @param isUtc If the timestamp is in UTC time or not
+         * @param unit  What time unit the value is in
+         * @return Byte array with all information needed to reconstruct the value as intended
+         * @throws C3rIllegalArgumentException if the UTC or unit information is missing for a non-null value
+         *                                     or only one value is specified when value is null
+         */
+        public static byte[] encode(final Long value, final java.lang.Boolean isUtc, final Units.Seconds unit) {
+            final Object[] metadata = new Object[]{isUtc, unit};
+            if (metadataSpecifiedIncorrectly(value, metadata)) {
+                throw new C3rIllegalArgumentException("isUtc and unit must all be specified " +
+                        "unless value is null then they may optionally be null.");
+            }
+            final ClientDataInfo info = ClientDataInfo.builder().type(ClientDataType.TIMESTAMP).isNull(value == null).build();
+            int length = ClientDataInfo.BYTE_LENGTH;
+            length += getMetaDataByteLength(value, metadata, TOTAL_METADATA_BYTES);
+            length += (value == null) ? 0 : Long.BYTES;
+            final ByteBuffer buffer = ByteBuffer.allocate(length).put(info.encode());
+            if (buffer.remaining() >= TOTAL_METADATA_BYTES) {
+                buffer.put(booleanToBytes(isUtc));
+                buffer.putInt(unit.ordinal());
+            }
+            if (!info.isNull()) {
+                buffer.putLong(value);
+            }
+            checkBufferHasNoRemaining(buffer);
+            return buffer.array();
+        }
+
+        /**
+         * Decodes a byte array into the original timestamp value. Verifies valid values for UTC flag and units.
+         *
+         * @param bytes Encoded timestamp with information needed to recreate the correct value
+         * @return Information needed to create the value
+         * @throws C3rRuntimeException if not enough bytes are present, the wrong type is found or metadata fails verification
+         */
+        public static ClientValueWithMetadata.Timestamp decode(final byte[] bytes) {
+            final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            final ClientDataInfo info = stripClientDataInfo(buffer, ClientDataType.TIMESTAMP);
             try {
-                final byte[] strBuffer = new byte[bytes.length - ClientDataInfo.BYTE_LENGTH];
-                buffer.get(strBuffer, 0, strBuffer.length);
-                checkBuffer(buffer);
-                return fromBytes(strBuffer);
+                java.lang.Boolean isUtc = null;
+                Units.Seconds unit = null;
+                if (buffer.remaining() >= TOTAL_METADATA_BYTES) {
+                    isUtc = booleanFromByte(buffer.get());
+                    final int index = buffer.getInt();
+                    if (index >= Units.Seconds.values().length) {
+                        throw new C3rRuntimeException("Could not decode unit for timestamp.");
+                    }
+                    unit = Units.Seconds.values()[index];
+                }
+                Long value = null;
+                if (!info.isNull()) {
+                    value = buffer.getLong();
+                }
+                checkBufferHasNoRemaining(buffer);
+                return new ClientValueWithMetadata.Timestamp(value, isUtc, unit);
+            } catch (BufferUnderflowException e) {
+                throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
+            }
+        }
+    }
+
+    /**
+     * Utility functions for converting a C3R Varchar to and from various representations.
+     */
+    public static final class Varchar {
+        /**
+         * How many bytes are needed to store the metadata.
+         */
+        private static final int TOTAL_METADATA_BYTES = Integer.BYTES;
+
+        /**
+         * Convert the byte array into a UTF-8 variable length character array.
+         *
+         * @param bytes Bytes representing a variable length character array
+         * @return Variable length character array
+         */
+        public static java.lang.String fromBytes(final byte[] bytes) {
+            return stringFromBytes(bytes);
+        }
+
+        /**
+         * Converts a variable length character array into its UTF-8 byte representation.
+         *
+         * @param value Variable length character array
+         * @return Byte array that holds the UTF-8 encoding of the character array
+         */
+        public static byte[] toBytes(final java.lang.String value) {
+            return stringToBytes(value);
+        }
+
+        /**
+         * Takes a variable length character array value and creates a byte array with all the information needed to recreate the value.
+         *
+         * <p>
+         * For a non-null value, the encoded byte array is of the form:<br/>
+         * Byte 1: {@link ClientDataInfo}<br/>
+         * Bytes 2-5: Maximum length the array can be<br/>
+         * Bytes 6-9: Length of the string (Used to validate data was properly decoded)<br/>
+         * Bytes 10+: Bytes for the UTF-8 formatted version of the variable length character array
+         * </p>
+         *
+         * <p>
+         * For a null value, the encoded byte array is of the form:<br/>
+         * Byte 1: {@code ClientDataInfo}<br/>
+         * Optionally:<br/>
+         * Bytes 2-5: Maximum length the array can be
+         * </p>
+         *
+         * @param value     Character array value
+         * @param maxLength Longest length the variable length character array can be
+         * @return Byte array with all information needed to reconstruct the value as intended
+         * @throws C3rIllegalArgumentException if the value is longer than the allowed maximum length or the maximum length is unspecified
+         */
+        public static byte[] encode(final java.lang.String value, final Integer maxLength) {
+            final Object[] metadata = new Object[]{maxLength};
+            if (metadataSpecifiedIncorrectly(value, metadata)) {
+                throw new C3rIllegalArgumentException("Max length must be specified unless value is null.");
+            }
+            if (value != null && value.length() > maxLength) {
+                throw new C3rIllegalArgumentException("Value is greater than allowed maximum length for varchar field.");
+            }
+            final ClientDataInfo info = ClientDataInfo.builder().type(ClientDataType.VARCHAR).isNull(value == null).build();
+            int length = getMetaDataByteLength(value, metadata, TOTAL_METADATA_BYTES);
+            length += (value == null) ? 0 : value.getBytes(StandardCharsets.UTF_8).length;
+            final ByteBuffer buffer = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + length)
+                    .put(info.encode());
+            if (maxLength != null) {
+                buffer.putInt(maxLength);
+            }
+            if (value != null) {
+                buffer.put(value.getBytes(StandardCharsets.UTF_8));
+            }
+            checkBufferHasNoRemaining(buffer);
+            return buffer.array();
+        }
+
+        /**
+         * Decodes a byte array into the original variable length character array. Verifies the string is of the expected length and
+         * less than or equal to the maximum length.
+         *
+         * @param bytes Encoded variable length character array with information needed to recreate the correct value
+         * @return Information needed to create the value
+         * @throws C3rRuntimeException if not enough bytes are present, the wrong type is found or the length checks fail
+         */
+        public static ClientValueWithMetadata.Varchar decode(final byte[] bytes) {
+            final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            final ClientDataInfo info = stripClientDataInfo(buffer, ClientDataType.VARCHAR);
+            try {
+                Integer maxLength = null;
+                if (buffer.remaining() >= TOTAL_METADATA_BYTES) {
+                    maxLength = buffer.getInt();
+                }
+                java.lang.String value = null;
+                if (!info.isNull()) {
+                    final byte[] strBytes = new byte[buffer.remaining()];
+                    buffer.get(strBytes);
+                    value = stringFromBytes(strBytes);
+                    if (value.length() > maxLength) {
+                        throw new C3rRuntimeException("Varchar expected to be " + maxLength + " characters long at most but was " +
+                                value.length() + " characters long.");
+                    }
+                }
+                checkBufferHasNoRemaining(buffer);
+                return new ClientValueWithMetadata.Varchar(value, maxLength);
             } catch (BufferUnderflowException e) {
                 throw new C3rRuntimeException("Value could not be decoded, not enough bytes.", e);
             }

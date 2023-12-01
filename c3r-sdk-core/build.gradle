@@ -32,7 +32,7 @@ spotbugs {
 
 dependencies {
     // AWS Clean Rooms
-    implementation 'software.amazon.awssdk:cleanrooms:2.21.33'
+    implementation 'software.amazon.awssdk:cleanrooms:2.21.35'
 
     // SQL
     implementation 'org.xerial:sqlite-jdbc:3.44.1.0'
@@ -44,7 +44,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
 
     // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.8.1'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.8.2'
 
     // Logging test tools
     testImplementation 'io.github.hakky54:logcaptor:2.9.1'
