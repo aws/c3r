@@ -559,4 +559,25 @@ public class ValueConverterTest {
         assertEquals(nullMetadata, ValueConverter.Varchar.decode(ValueConverter.Varchar.encode(null, emptyMetadata.getMaxLength())));
         assertEquals(emptyMetadata, ValueConverter.Varchar.decode(ValueConverter.Varchar.encode(empty, emptyMetadata.getMaxLength())));
     }
+
+    @Test
+    public void clientDataTypeForEncodedValueTest() {
+        assertEquals(ClientDataType.UNKNOWN, ValueConverter.clientDataTypeForEncodedValue(null));
+        assertEquals(ClientDataType.UNKNOWN, ValueConverter.clientDataTypeForEncodedValue(new byte[0]));
+
+        final byte decType = ClientDataInfo.builder().type(ClientDataType.DECIMAL).build().encode();
+        assertEquals(ClientDataType.DECIMAL, ValueConverter.clientDataTypeForEncodedValue(new byte[]{decType}));
+        assertEquals(ClientDataType.DECIMAL,
+                ValueConverter.clientDataTypeForEncodedValue(
+                        new byte[]{ClientDataInfo.builder().type(ClientDataType.DECIMAL).build().encode(), 1}));
+    }
+
+    @Test
+    public void getClientDataTypeFromEncodedValueTest() {
+        assertEquals(ClientDataType.UNKNOWN, ValueConverter.clientDataTypeForEncodedValue(null));
+        assertEquals(ClientDataType.UNKNOWN, ValueConverter.clientDataTypeForEncodedValue(new byte[0]));
+        assertEquals(ClientDataType.SMALLINT,
+                ValueConverter.clientDataTypeForEncodedValue(
+                        new byte[]{ClientDataInfo.builder().type(ClientDataType.SMALLINT).isNull(true).build().encode()}));
+    }
 }

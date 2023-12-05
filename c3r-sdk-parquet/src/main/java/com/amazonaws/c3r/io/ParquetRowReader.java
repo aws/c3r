@@ -5,9 +5,9 @@ package com.amazonaws.c3r.io;
 
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.data.ParquetDataType;
-import com.amazonaws.c3r.data.ParquetRowFactory;
 import com.amazonaws.c3r.data.ParquetSchema;
 import com.amazonaws.c3r.data.ParquetValue;
+import com.amazonaws.c3r.data.ParquetValueFactory;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.parquet.ParquetRowMaterializer;
@@ -61,7 +61,7 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
     /**
      * Creates an empty row for Parquet data to be written in to.
      */
-    private final ParquetRowFactory rowFactory;
+    private final ParquetValueFactory valueFactory;
 
     /**
      * Headers for columns in the Parquet file.
@@ -147,7 +147,7 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
         final Map<ColumnHeader, ParquetDataType> columnTypeMap = parquetSchema.getHeaders().stream()
                 .collect(Collectors.toMap(Function.identity(), parquetSchema::getColumnType));
 
-        rowFactory = new ParquetRowFactory(columnTypeMap);
+        valueFactory = new ParquetValueFactory(columnTypeMap);
 
         refreshNextRow();
     }
@@ -177,7 +177,7 @@ public final class ParquetRowReader extends RowReader<ParquetValue> {
             maxRowGroupSize = Math.max(maxRowGroupSize,
                     rowsLeftInGroup > Integer.MAX_VALUE ? Integer.MAX_VALUE : Long.valueOf(rowsLeftInGroup).intValue());
             final MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(parquetSchema.getReconstructedMessageType());
-            rowReader = columnIO.getRecordReader(rowGroup, new ParquetRowMaterializer(parquetSchema, rowFactory));
+            rowReader = columnIO.getRecordReader(rowGroup, new ParquetRowMaterializer(parquetSchema, valueFactory));
         }
     }
 

@@ -252,6 +252,9 @@ public abstract class ParquetValue extends Value {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public byte[] getEncodedBytes() {
             switch (getClientDataType()) {
@@ -349,6 +352,9 @@ public abstract class ParquetValue extends Value {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public byte[] getEncodedBytes() {
             return ValueConverter.Boolean.encode(value);
@@ -423,6 +429,9 @@ public abstract class ParquetValue extends Value {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public byte[] getEncodedBytes() {
             return ValueConverter.Double.encode(value);
@@ -498,6 +507,9 @@ public abstract class ParquetValue extends Value {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public byte[] getEncodedBytes() {
             return ValueConverter.Float.encode(value);
@@ -586,6 +598,9 @@ public abstract class ParquetValue extends Value {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public byte[] getEncodedBytes() {
             switch (getClientDataType()) {
@@ -706,6 +721,9 @@ public abstract class ParquetValue extends Value {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public byte[] getEncodedBytes() {
             switch (getClientDataType()) {

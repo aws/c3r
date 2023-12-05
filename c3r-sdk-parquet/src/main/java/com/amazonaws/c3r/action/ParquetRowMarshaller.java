@@ -9,9 +9,9 @@ import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
-import com.amazonaws.c3r.data.ParquetRowFactory;
 import com.amazonaws.c3r.data.ParquetSchema;
 import com.amazonaws.c3r.data.ParquetValue;
+import com.amazonaws.c3r.data.ParquetValueFactory;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.io.ParquetRowReader;
@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * Used to instantiate an instance of {@link RowMarshaller} that handles Parquet data. {@link RowMarshaller} provides all the functionality
- * except for creating the Parquet file reader ({@link ParquetRowReader}), writer ({@link ParquetRowWriter}) and {@link ParquetRowFactory}
+ * except for creating the Parquet file reader ({@link ParquetRowReader}), writer ({@link ParquetRowWriter}) and {@link ParquetValueFactory}
  * which is done here.
  */
 public final class ParquetRowMarshaller {
@@ -99,7 +99,7 @@ public final class ParquetRowMarshaller {
                 .schema(schema)
                 .tempDir(tempDir)
                 .inputReader(reader)
-                .rowFactory(new ParquetRowFactory(targetParquetSchema.getColumnParquetDataTypeMap()))
+                .valueFactory(new ParquetValueFactory(targetParquetSchema.getColumnParquetDataTypeMap()))
                 .outputWriter(writer)
                 .transformers(transforms)
                 .build();

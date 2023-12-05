@@ -6,8 +6,8 @@ package com.amazonaws.c3r.action;
 import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.DecryptConfig;
-import com.amazonaws.c3r.data.ParquetRowFactory;
 import com.amazonaws.c3r.data.ParquetValue;
+import com.amazonaws.c3r.data.ParquetValueFactory;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.FileFormat;
 import com.amazonaws.c3r.io.ParquetRowReader;
@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Used to instantiate an instance of {@link RowUnmarshaller} that handles Parquet data. {@link RowUnmarshaller} provides all the
  * functionality except for creating the Parquet file reader ({@link ParquetRowReader}), writer ({@link ParquetRowWriter}) and
- * {@link ParquetRowFactory} which is done here.
+ * {@link ParquetValueFactory} which is done here.
  */
 public final class ParquetRowUnmarshaller {
     /**
@@ -76,7 +76,7 @@ public final class ParquetRowUnmarshaller {
 
         return RowUnmarshaller.<ParquetValue>builder()
                 .inputReader(reader)
-                .rowFactory(new ParquetRowFactory(parquetSchema.getColumnParquetDataTypeMap()))
+                .valueFactory(new ParquetValueFactory(parquetSchema.getColumnParquetDataTypeMap()))
                 .outputWriter(writer)
                 .transformers(transformers)
                 .build();

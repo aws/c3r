@@ -6,7 +6,7 @@ package com.amazonaws.c3r.io.parquet;
 import com.amazonaws.c3r.data.ParquetSchema;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
-import com.amazonaws.c3r.data.RowFactory;
+import com.amazonaws.c3r.data.ValueFactory;
 import lombok.Getter;
 import lombok.NonNull;
 import org.apache.parquet.io.api.Converter;
@@ -27,7 +27,7 @@ public class ParquetRowConverter extends GroupConverter {
     /**
      * Creates a new, empty row for Parquet values.
      */
-    private final RowFactory<ParquetValue> rowFactory;
+    private final ValueFactory<ParquetValue> valueFactory;
 
     /**
      * Description of the data types plus metadata and which columns they map to.
@@ -44,11 +44,11 @@ public class ParquetRowConverter extends GroupConverter {
      * Sets up for converting data from raw Parquet data into Java objects.
      *
      * @param schema     Description of the data types plus metadata and which columns they map to
-     * @param rowFactory Creates a new, empty row for Parquet values
+     * @param valueFactory Creates a new, empty row for Parquet values
      */
-    ParquetRowConverter(@NonNull final ParquetSchema schema, @NonNull final RowFactory<ParquetValue> rowFactory) {
+    ParquetRowConverter(@NonNull final ParquetSchema schema, @NonNull final ValueFactory<ParquetValue> valueFactory) {
         this.schema = schema;
-        this.rowFactory = rowFactory;
+        this.valueFactory = valueFactory;
         converters = schema.getHeaders().stream()
                 .map(c -> new ParquetPrimitiveConverter(c, schema.getColumnType(c)))
                 .collect(Collectors.toList());
@@ -67,7 +67,7 @@ public class ParquetRowConverter extends GroupConverter {
      */
     @Override
     public void start() {
-        row = rowFactory.newRow();
+        row = valueFactory.newRow();
         for (var converter : converters) {
             converter.setRow(row);
         }

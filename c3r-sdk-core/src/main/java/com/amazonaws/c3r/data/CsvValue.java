@@ -96,6 +96,9 @@ public class CsvValue extends Value {
         throw new C3rRuntimeException("CsvValue could not be convered to type " + type);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public byte[] getEncodedBytes() {
         final String value = (bytes == null) ? null : new java.lang.String(bytes, StandardCharsets.UTF_8);

@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class CsvValueTest {
-
     @Test
     public void stringConstructorNullTest() {
         assertNull(new CsvValue((String) null).getBytes());

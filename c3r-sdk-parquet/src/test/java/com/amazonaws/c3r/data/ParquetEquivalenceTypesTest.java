@@ -245,8 +245,8 @@ public class ParquetEquivalenceTypesTest {
         rowMap.put(int64Header, int64.getParquetDataType());
         rowMap.put(annotatedInt64Header, annotatedInt64.getParquetDataType());
 
-        final ParquetRowFactory rowFactory = new ParquetRowFactory(rowMap);
-        final Row<ParquetValue> row = rowFactory.newRow();
+        final ParquetValueFactory valueFactory = new ParquetValueFactory(rowMap);
+        final Row<ParquetValue> row = valueFactory.newRow();
         row.putValue(int16Header, int16);
         row.putValue(int32Header, int32);
         row.putValue(annotatedInt32Header, annotatedInt32);
