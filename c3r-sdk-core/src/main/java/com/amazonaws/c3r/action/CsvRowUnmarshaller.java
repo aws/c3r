@@ -6,8 +6,8 @@ package com.amazonaws.c3r.action;
 import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.DecryptConfig;
-import com.amazonaws.c3r.data.CsvRowFactory;
 import com.amazonaws.c3r.data.CsvValue;
+import com.amazonaws.c3r.data.CsvValueFactory;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.CsvRowReader;
 import com.amazonaws.c3r.io.CsvRowWriter;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Used to instantiate an instance of {@link RowUnmarshaller} that handles CSV data. {@link RowUnmarshaller} provides all the functionality
- * except for creating the CSV file reader ({@link CsvRowReader}), writer ({@link CsvRowWriter}) and {@link CsvRowFactory} which is done
+ * except for creating the CSV file reader ({@link CsvRowReader}), writer ({@link CsvRowWriter}) and {@link CsvValueFactory} which is done
  * here.
  */
 public final class CsvRowUnmarshaller {
@@ -85,7 +85,7 @@ public final class CsvRowUnmarshaller {
 
         return RowUnmarshaller.<CsvValue>builder()
                 .inputReader(reader)
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .outputWriter(writer)
                 .transformers(transformers)
                 .build();

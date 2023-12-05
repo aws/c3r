@@ -7,8 +7,8 @@ import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.data.Row;
-import com.amazonaws.c3r.data.RowFactory;
 import com.amazonaws.c3r.data.Value;
+import com.amazonaws.c3r.data.ValueFactory;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Nonce;
 import com.amazonaws.c3r.io.sql.SqlTable;
@@ -55,7 +55,7 @@ public class SqlRowReader<T extends Value> extends RowReader<T> {
     /**
      * Creates an empty row for the specified data type.
      */
-    private final RowFactory<T> rowFactory;
+    private final ValueFactory<T> valueFactory;
 
     /**
      * Name of the column that contains the nonce for each row.
@@ -83,15 +83,15 @@ public class SqlRowReader<T extends Value> extends RowReader<T> {
      *
      * @param columnInsights Metadata about columns
      * @param nonceHeader    Name of the column in the database that contains the nonce value for each row
-     * @param rowFactory     Creates empty rows of the specified type
+     * @param valueFactory     Creates empty rows of the specified type
      * @param sqlTable       SQL database instance
      * @throws C3rRuntimeException If the SQL database couldn't be accessed
      */
     public SqlRowReader(@NonNull final Collection<ColumnInsight> columnInsights,
                         @NonNull final ColumnHeader nonceHeader,
-                        @NonNull final RowFactory<T> rowFactory,
+                        @NonNull final ValueFactory<T> valueFactory,
                         @NonNull final SqlTable sqlTable) {
-        this.rowFactory = rowFactory;
+        this.valueFactory = valueFactory;
         this.sqlTable = sqlTable;
         this.internalToTargetColumnHeaders = columnInsights.stream()
                 .collect(Collectors.toMap(ColumnSchema::getInternalHeader, ColumnSchema::getTargetHeader));
@@ -167,7 +167,7 @@ public class SqlRowReader<T extends Value> extends RowReader<T> {
     protected void refreshNextRow() {
         try {
             if (resultSet.next()) {
-                nextRow = rowFactory.newRow();
+                nextRow = valueFactory.newRow();
                 for (ColumnHeader column : headers) {
                     nextRow.putBytes(internalToTargetColumnHeaders.get(column), resultSet.getBytes(column.toString()));
                 }

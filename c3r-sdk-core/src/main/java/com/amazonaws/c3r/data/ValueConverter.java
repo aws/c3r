@@ -353,6 +353,19 @@ public final class ValueConverter {
     }
 
     /**
+     * Gets the data type from an encoded value.
+     *
+     * @param bytes Byes containing an encoded value and its metadata
+     * @return C3R data type for the value
+     */
+    public static ClientDataType clientDataTypeForEncodedValue(final byte[] bytes) {
+        if (bytes != null && bytes.length >= ClientDataInfo.BYTE_LENGTH) {
+            return ClientDataInfo.decode(bytes[0]).getType();
+        }
+        return ClientDataType.UNKNOWN;
+    }
+
+    /**
      * Find the equivalence class super type for the value and return the value represented in that byte format.
      *
      * @param value Value to convert to equivalence class super type

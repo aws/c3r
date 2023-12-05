@@ -7,8 +7,8 @@ import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.data.Row;
-import com.amazonaws.c3r.data.RowFactory;
 import com.amazonaws.c3r.data.Value;
+import com.amazonaws.c3r.data.ValueFactory;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.RowReader;
 import com.amazonaws.c3r.io.RowWriter;
@@ -45,7 +45,7 @@ public final class RowUnmarshaller<T extends Value> {
     /**
      * Creates an empty row to be filled with data.
      */
-    private final RowFactory<T> rowFactory;
+    private final ValueFactory<T> valueFactory;
 
     /**
      * Cryptographic computation transformers in use for data processing.
@@ -55,17 +55,17 @@ public final class RowUnmarshaller<T extends Value> {
     /**
      * Creates a {@code RowUnmarshaller}. See {@link #unmarshal} for primary functionality.
      *
-     * @param rowFactory   Creates new rows for writing out unmarshalled data
+     * @param valueFactory   Creates new rows for writing out unmarshalled data
      * @param inputReader  Where marshalled records are read from
      * @param outputWriter Where unmarshalled records are written to
      * @param transformers The transformers for unmarshalling data
      */
     @Builder(access = AccessLevel.PACKAGE)
-    private RowUnmarshaller(@NonNull final RowFactory<T> rowFactory,
+    private RowUnmarshaller(@NonNull final ValueFactory<T> valueFactory,
                             @NonNull final RowReader<T> inputReader,
                             @NonNull final RowWriter<T> outputWriter,
                             @NonNull final Map<ColumnType, Transformer> transformers) {
-        this.rowFactory = rowFactory;
+        this.valueFactory = valueFactory;
         this.inputReader = inputReader;
         this.outputWriter = outputWriter;
         this.transformers = Collections.unmodifiableMap(transformers);
@@ -79,7 +79,7 @@ public final class RowUnmarshaller<T extends Value> {
     public void unmarshal() {
         while (inputReader.hasNext()) {
             final Row<T> marshalledRow = inputReader.next();
-            final Row<T> unmarshalledRow = rowFactory.newRow();
+            final Row<T> unmarshalledRow = valueFactory.newRow();
             for (ColumnHeader header : marshalledRow.getHeaders()) {
                 final byte[] valueBytes = marshalledRow.getValue(header).getBytes();
                 Transformer transformer = transformers.get(ColumnType.CLEARTEXT); // Default to pass through

@@ -13,9 +13,9 @@ import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.TableSchema;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.data.Row;
-import com.amazonaws.c3r.data.RowFactory;
 import com.amazonaws.c3r.data.Value;
 import com.amazonaws.c3r.data.ValueConverter;
+import com.amazonaws.c3r.data.ValueFactory;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.internal.Nonce;
@@ -121,7 +121,7 @@ public final class RowMarshaller<T extends Value> {
     /**
      * Creates an empty row to be filled with data.
      */
-    private final RowFactory<T> rowFactory;
+    private final ValueFactory<T> valueFactory;
 
     /**
      * Cryptographic computation transformers in use for data processing.
@@ -138,7 +138,7 @@ public final class RowMarshaller<T extends Value> {
      *
      * @param settings     User-provided clean room settings
      * @param schema       User-provided table-specific schema
-     * @param rowFactory   Creates new rows for the marshalled data
+     * @param valueFactory   Creates new rows for the marshalled data
      * @param inputReader  Where records are derived from
      * @param outputWriter Where records are stored after being marshalled
      * @param tempDir      Location where temp files may be created while processing the input
@@ -147,7 +147,7 @@ public final class RowMarshaller<T extends Value> {
     @Builder(access = AccessLevel.PACKAGE)
     private RowMarshaller(@NonNull final ClientSettings settings,
                           @NonNull final TableSchema schema,
-                          @NonNull final RowFactory<T> rowFactory,
+                          @NonNull final ValueFactory<T> valueFactory,
                           @NonNull final RowReader<T> inputReader,
                           @NonNull final RowWriter<T> outputWriter,
                           @NonNull final String tempDir,
@@ -161,7 +161,7 @@ public final class RowMarshaller<T extends Value> {
                 .collect(Collectors.toMap(ColumnSchema::getTargetHeader, Function.identity()));
         this.inputReader = inputReader;
         this.nonceHeader = TableGenerator.generateUniqueHeader(schema.getSourceAndTargetHeaders(), "row_nonce");
-        this.rowFactory = rowFactory;
+        this.valueFactory = valueFactory;
         this.outputWriter = outputWriter;
         populateColumnSpecPositions();
         this.sqlTable = TableGenerator.initTable(schema, this.nonceHeader, tempDir);
@@ -290,7 +290,7 @@ public final class RowMarshaller<T extends Value> {
      */
     private void writeInputBatchToSql(final RowWriter<T> sqlRowWriter, final List<Row<T>> batchedRows) {
         for (Row<T> sourceRow : batchedRows) {
-            final Row<T> targetRow = rowFactory.newRow();
+            final Row<T> targetRow = valueFactory.newRow();
             final Nonce nonce = Nonce.nextNonce();
             sourceRow.forEach((column, value) -> {
                 // Map source values to each target.
@@ -392,10 +392,10 @@ public final class RowMarshaller<T extends Value> {
         log.debug("Emitting encrypted data.");
         startTime = System.currentTimeMillis();
 
-        final RowReader<T> sqlRowReader = new SqlRowReader<>(columnInsights, nonceHeader, rowFactory, sqlTable);
+        final RowReader<T> sqlRowReader = new SqlRowReader<>(columnInsights, nonceHeader, valueFactory, sqlTable);
         while (sqlRowReader.hasNext()) {
             final Row<T> rowOut = sqlRowReader.next();
-            final Row<T> marshalledRow = rowFactory.newRow();
+            final Row<T> marshalledRow = valueFactory.newRow();
             final Nonce nonce = new Nonce(rowOut.getValue(nonceHeader).getBytes());
             // Nonces don't get written to final output
             rowOut.removeColumn(nonceHeader);

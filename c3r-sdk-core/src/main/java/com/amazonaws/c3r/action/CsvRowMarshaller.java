@@ -10,8 +10,8 @@ import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.TableSchema;
-import com.amazonaws.c3r.data.CsvRowFactory;
 import com.amazonaws.c3r.data.CsvValue;
+import com.amazonaws.c3r.data.CsvValueFactory;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.io.CsvRowReader;
 import com.amazonaws.c3r.io.CsvRowWriter;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * Used to instantiate an instance of {@link RowMarshaller} that handles CSV data. {@link RowMarshaller} provides all the functionality
- * except for creating the CSV file reader ({@link CsvRowReader}), writer ({@link CsvRowWriter}) and {@link CsvRowFactory} which is done
+ * except for creating the CSV file reader ({@link CsvRowReader}), writer ({@link CsvRowWriter}) and {@link CsvValueFactory} which is done
  * here.
  */
 @Slf4j
@@ -103,7 +103,7 @@ public final class CsvRowMarshaller {
                 .schema(schema)
                 .tempDir(tempDir)
                 .inputReader(reader)
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .outputWriter(writer)
                 .transformers(transforms)
                 .build();

@@ -6,7 +6,7 @@ package com.amazonaws.c3r.io.parquet;
 import com.amazonaws.c3r.data.ParquetSchema;
 import com.amazonaws.c3r.data.ParquetValue;
 import com.amazonaws.c3r.data.Row;
-import com.amazonaws.c3r.data.RowFactory;
+import com.amazonaws.c3r.data.ValueFactory;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.RecordMaterializer;
 
@@ -23,11 +23,11 @@ public class ParquetRowMaterializer extends RecordMaterializer<Row<ParquetValue>
      * Set up a converter for a given schema specification along with a row generator for Parquet data.
      *
      * @param schema     Description of how data maps to columns, including associated metadata for each type
-     * @param rowFactory Generate new empty rows to store Parquet data in
+     * @param valueFactory Generate new empty rows to store Parquet data in
      */
-    public ParquetRowMaterializer(final ParquetSchema schema, final RowFactory<ParquetValue> rowFactory) {
+    public ParquetRowMaterializer(final ParquetSchema schema, final ValueFactory<ParquetValue> valueFactory) {
         // Creates a new row for Parquet values to be stored in
-        root = new ParquetRowConverter(schema, rowFactory);
+        root = new ParquetRowConverter(schema, valueFactory);
     }
 
     /**

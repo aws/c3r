@@ -9,8 +9,8 @@ import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.TableSchema;
-import com.amazonaws.c3r.data.CsvRowFactory;
 import com.amazonaws.c3r.data.CsvValue;
+import com.amazonaws.c3r.data.CsvValueFactory;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.io.sql.SqlTable;
@@ -73,7 +73,7 @@ public class SqlRowReaderTest {
         final SqlRowReader<CsvValue> sqlRowReader = new SqlRowReader<>(
                 columnInsights,
                 NONCE_HEADER_DEFAULT,
-                mock(CsvRowFactory.class),
+                mock(CsvValueFactory.class),
                 sqlTable);
         assertEquals(
                 sqlRowReader.getHeaders(),
@@ -85,7 +85,7 @@ public class SqlRowReaderTest {
         final SqlRowReader<CsvValue> sqlRowReader = new SqlRowReader<>(
                 columnInsights,
                 NONCE_HEADER_DEFAULT,
-                mock(CsvRowFactory.class),
+                mock(CsvValueFactory.class),
                 sqlTable);
         assertEquals(
                 sqlTable.getConnection().getCatalog(),
@@ -123,7 +123,7 @@ public class SqlRowReaderTest {
         assertThrows(C3rRuntimeException.class, () -> new SqlRowReader<>(
                 columnInsights,
                 NONCE_HEADER_DEFAULT,
-                mock(CsvRowFactory.class),
+                mock(CsvValueFactory.class),
                 sqlTable));
     }
 
@@ -132,7 +132,7 @@ public class SqlRowReaderTest {
         final SqlRowReader<CsvValue> sqlRowReader = new SqlRowReader<>(
                 columnInsights,
                 NONCE_HEADER_DEFAULT,
-                mock(CsvRowFactory.class),
+                mock(CsvValueFactory.class),
                 sqlTable);
         assertFalse(sqlTable.getConnection().isClosed());
         sqlRowReader.close();
@@ -163,7 +163,7 @@ public class SqlRowReaderTest {
         final SqlRowReader<CsvValue> sqlRowReader = new SqlRowReader<>(
                 columnInsights,
                 NONCE_HEADER_DEFAULT,
-                new CsvRowFactory(),
+                new CsvValueFactory(),
                 sqlTable);
         byte[] largestNonce = new byte[]{};
         while (sqlRowReader.hasNext()) {

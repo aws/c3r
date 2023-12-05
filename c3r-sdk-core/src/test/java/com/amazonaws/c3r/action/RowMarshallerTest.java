@@ -17,8 +17,8 @@ import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.TableSchema;
-import com.amazonaws.c3r.data.CsvRowFactory;
 import com.amazonaws.c3r.data.CsvValue;
+import com.amazonaws.c3r.data.CsvValueFactory;
 import com.amazonaws.c3r.data.Row;
 import com.amazonaws.c3r.encryption.Encryptor;
 import com.amazonaws.c3r.encryption.providers.SymmetricStaticProvider;
@@ -117,7 +117,7 @@ public class RowMarshallerTest {
                 .settings(TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .schema(TEST_CONFIG_DATA_SAMPLE.getSchema())
                 .inputReader(CsvRowReader.builder().sourceName(TEST_CONFIG_DATA_SAMPLE.getInput()).build())
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .outputWriter(rowWriter)
                 .transformers(transformers)
                 .tempDir(tempDir)
@@ -162,7 +162,7 @@ public class RowMarshallerTest {
         final SqlRowReader<CsvValue> reader = new SqlRowReader<>(
                 marshaller.getColumnInsights(),
                 marshaller.getNonceHeader(),
-                new CsvRowFactory(),
+                new CsvValueFactory(),
                 marshaller.getSqlTable());
         // Ensure columns were encrypted/HMACed where appropriate.
         while (reader.hasNext()) {
@@ -200,7 +200,7 @@ public class RowMarshallerTest {
         final SqlRowReader<CsvValue> reader = new SqlRowReader<>(
                 marshaller.getColumnInsights(),
                 marshaller.getNonceHeader(),
-                new CsvRowFactory(),
+                new CsvValueFactory(),
                 marshaller.getSqlTable());
         while (reader.hasNext()) {
             assertFalse(reader.next().hasColumn(toOmit.getTargetHeader()));
@@ -241,7 +241,7 @@ public class RowMarshallerTest {
                 .settings(TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .schema(TEST_CONFIG_DATA_SAMPLE.getSchema())
                 .inputReader(CsvRowReader.builder().sourceName(TEST_CONFIG_DATA_SAMPLE.getInput()).build())
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .outputWriter(rowWriter)
                 .transformers(transformers)
                 .tempDir(tempDir)
@@ -260,7 +260,7 @@ public class RowMarshallerTest {
                 .settings(TEST_CONFIG_DATA_SAMPLE.getSettings())
                 .schema(TEST_CONFIG_DATA_SAMPLE.getSchema())
                 .inputReader(CsvRowReader.builder().sourceName(TEST_CONFIG_DATA_SAMPLE.getInput()).build())
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .outputWriter(rowWriter)
                 .transformers(transformers)
                 .tempDir(tempDir)
@@ -384,7 +384,7 @@ public class RowMarshallerTest {
                 .outputWriter(mockWriter)
                 .tempDir(FileUtil.TEMP_DIR)
                 .schema(schema)
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .transformers(transformers)
                 .settings(ClientSettings.lowAssuranceMode())
                 .build();
@@ -416,7 +416,7 @@ public class RowMarshallerTest {
                 .outputWriter(mockWriter)
                 .tempDir(FileUtil.TEMP_DIR)
                 .schema(schema)
-                .rowFactory(new CsvRowFactory())
+                .valueFactory(new CsvValueFactory())
                 .transformers(transformers)
                 .settings(clientSettings)
                 .build();
