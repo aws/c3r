@@ -6,6 +6,7 @@ package com.amazonaws.c3r.spark.action;
 import com.amazonaws.c3r.Transformer;
 import com.amazonaws.c3r.action.RowMarshaller;
 import com.amazonaws.c3r.config.ColumnType;
+import com.amazonaws.c3r.data.ValueConverter;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.spark.config.SparkDecryptConfig;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Spark orchestration of the C3R SDK for decryption.
@@ -112,12 +114,17 @@ public abstract class SparkUnmarshaller {
                     final String data = row.getString(i);
                     final byte[] dataBytes = data == null ? null : data.getBytes(StandardCharsets.UTF_8);
                     Transformer transformer = transformers.get(ColumnType.CLEARTEXT); // Default to pass through
+                    Function<byte[], byte[]> decode = x -> x;
                     if (Transformer.hasDescriptor(transformers.get(ColumnType.SEALED), dataBytes)) {
                         transformer = transformers.get(ColumnType.SEALED);
+                        decode = x -> {
+                            final String str = ValueConverter.String.decode(x);
+                            return str == null ? null : str.getBytes(StandardCharsets.UTF_8);
+                        };
                     } else if (Transformer.hasDescriptor(transformers.get(ColumnType.FINGERPRINT), dataBytes)) {
                         transformer = transformers.get(ColumnType.FINGERPRINT);
                     }
-                    final byte[] unmarshalledBytes = transformer.unmarshal(dataBytes);
+                    final byte[] unmarshalledBytes = decode.apply(transformer.unmarshal(dataBytes));
                     unmarshalledValues.add(unmarshalledBytes == null ? null : new String(unmarshalledBytes, StandardCharsets.UTF_8));
                 }
 

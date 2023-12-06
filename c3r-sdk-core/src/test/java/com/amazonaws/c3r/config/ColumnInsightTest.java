@@ -14,6 +14,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ColumnInsightTest {
+    private static final ClientSettings PRESERVE_NULLS_SETTINGS = ClientSettings.lowAssuranceMode();
+
     private ColumnInsight createTestSealedColumnInsight(final PadType type, final Integer length) {
         return new ColumnInsight(
                 ColumnSchema.builder()
@@ -21,7 +23,8 @@ public class ColumnInsightTest {
                         .sourceHeader(new ColumnHeader("source"))
                         .targetHeader(new ColumnHeader("target"))
                         .type(ColumnType.SEALED)
-                        .build());
+                        .build(),
+                PRESERVE_NULLS_SETTINGS);
     }
 
     @Test
@@ -39,7 +42,7 @@ public class ColumnInsightTest {
         columnInsight.observe(len9);
         columnInsight.observe(len10);
         columnInsight.observe(len8);
-        assertEquals(columnInsight.getMaxValueLength(), 10);
+        assertEquals(columnInsight.getMaxValueLength(), 11);
     }
 
     @Test

@@ -132,7 +132,7 @@ public final class SparkExample {
 
         final ClientSettings clientSettings = ClientSettings.lowAssuranceMode();
 
-        columnInsights = schema.getColumns().stream().map(ColumnInsight::new)
+        columnInsights = schema.getColumns().stream().map(x -> new ColumnInsight(x, clientSettings))
                 .collect(Collectors.toList());
 
         Dataset<Row> rawInputData = readInput(source, spark);

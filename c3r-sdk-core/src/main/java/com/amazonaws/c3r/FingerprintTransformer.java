@@ -4,8 +4,6 @@
 package com.amazonaws.c3r;
 
 import com.amazonaws.c3r.config.ClientSettings;
-import com.amazonaws.c3r.data.ClientDataInfo;
-import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.encryption.keys.SaltedHkdf;
@@ -20,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -65,16 +62,6 @@ public class FingerprintTransformer extends Transformer {
      * done on decryption as bytes.
      */
     static final byte[] DESCRIPTOR_PREFIX = DESCRIPTOR_PREFIX_STRING.getBytes(StandardCharsets.UTF_8);
-
-    /**
-     * Used to create random bytes when {@link ClientSettings#isPreserveNulls} is false.
-     */
-    private static final SecureRandom RANDOM = new SecureRandom();
-
-    /**
-     * Number of bytes of random data when not preserving NULLs.
-     */
-    private static final int NULL_RANDOM_SIZE_BYTES = 32;
 
     /**
      * Number of bytes in the HMAC key.
@@ -173,9 +160,6 @@ public class FingerprintTransformer extends Transformer {
             }
         }
 
-        // Create final value to be HMAC'd
-        final byte[] normalizedCleartext = buildFinalizedValue(cleartext, encryptionContext.getClientDataType());
-
         final byte[] key;
         if (clientSettings.isAllowJoinsOnColumnsWithDifferentNames()) {
             key = hkdf.deriveKey(HKDF_INFO_BYTES, HMAC_KEY_SIZE);
@@ -192,7 +176,7 @@ public class FingerprintTransformer extends Transformer {
             throw new C3rRuntimeException("Initialization of hmac failed for target column `"
                     + encryptionContext.getColumnLabel() + "`.", e);
         }
-        final byte[] hmacBase64 = Base64.getEncoder().encode(mac.doFinal(normalizedCleartext));
+        final byte[] hmacBase64 = Base64.getEncoder().encode(mac.doFinal(cleartext));
         final byte[] marshalledBytes = ByteBuffer.allocate(DESCRIPTOR_PREFIX.length + hmacBase64.length)
                 .put(DESCRIPTOR_PREFIX)
                 .put(hmacBase64)
@@ -241,28 +225,4 @@ public class FingerprintTransformer extends Transformer {
     byte[] getEncryptionDescriptor() {
         return ENCRYPTION_DESCRIPTOR.clone();
     }
-
-    /**
-     * Build the bytes to be HMAC'd. This includes replacing {@code null} values with a random string and adding the
-     * equivalence class information to the value.
-     *
-     * @param cleartext The data to be HMAC'd
-     * @param type      The equivalence class for the data
-     * @return          The value with the equivalence class information and {@code null}s replaced with random data
-     */
-    private byte[] buildFinalizedValue(final byte[] cleartext, final ClientDataType type) {
-        final byte[] typedCleartext;
-        if (cleartext == null) {
-            typedCleartext = new byte[NULL_RANDOM_SIZE_BYTES + 1];
-            RANDOM.nextBytes(typedCleartext);
-            typedCleartext[NULL_RANDOM_SIZE_BYTES] = ClientDataInfo.builder().type(type).isNull(true).build().encode();
-        } else {
-            typedCleartext = ByteBuffer.allocate(cleartext.length + 1)
-                    .put(cleartext)
-                    .put(ClientDataInfo.builder().type(type).isNull(false).build().encode())
-                    .array();
-        }
-        return typedCleartext;
-    }
-
 }

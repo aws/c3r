@@ -153,7 +153,7 @@ public final class RowMarshaller<T extends Value> {
                           @NonNull final String tempDir,
                           @NonNull final Map<ColumnType, Transformer> transformers) {
         this.settings = settings;
-        this.columnInsights = schema.getColumns().stream().map(ColumnInsight::new)
+        this.columnInsights = schema.getColumns().stream().map(x -> new ColumnInsight(x, settings))
                 .collect(Collectors.toList());
         this.sourceMappedColumnInsights = this.columnInsights.stream()
                 .collect(Collectors.groupingBy(ColumnSchema::getSourceHeader));
@@ -300,7 +300,7 @@ public final class RowMarshaller<T extends Value> {
                         // re-encrypting when being sent to the final output. In the interim, it is based on the running max byte length,
                         // sampled in batches.
                         final Transformer transformer = transformers.get(columnInsight.getType());
-                        final byte[] bytesToMarshall = ValueConverter.getBytesForColumn(value, columnInsight.getType());
+                        final byte[] bytesToMarshall = ValueConverter.getBytesForColumn(value, columnInsight.getType(), settings);
                         final ClientDataType finalType = Objects.requireNonNullElse(columnInsight.getClientDataType(),
                                 ClientDataType.STRING);
 

@@ -4,7 +4,6 @@
 package com.amazonaws.c3r;
 
 import com.amazonaws.c3r.config.ClientSettings;
-import com.amazonaws.c3r.data.ClientDataInfo;
 import com.amazonaws.c3r.data.ClientDataType;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.encryption.Encryptor;
@@ -31,7 +30,7 @@ public class SealedTransformer extends Transformer {
     /**
      * The version of the {@code SealedTransformer} for compatability support.
      */
-    static final byte[] FORMAT_VERSION = "01:".getBytes(StandardCharsets.UTF_8);
+    static final byte[] FORMAT_VERSION = "02:".getBytes(StandardCharsets.UTF_8);
 
     /**
      * Indicating what type of cryptographic transformation was applied to the data and how it should be handled during decryption.
@@ -93,7 +92,7 @@ public class SealedTransformer extends Transformer {
      *     <li>AUTH_TAG = 16 byte AES-GCM tag.</li>
      * </ul>
      *
-     * @param cleartext         The data to be encrypted, or null
+     * @param cleartext         The data to be encrypted (a value's metadata followed by the underlying bytes) or {@code null}
      * @param encryptionContext The EncryptionContext for the data to be encrypted
      * @return Base64 encoded ciphertext with prefixed encryption data,
      *         or null if {@code cleartext == null} and {@code ClientSettings.preserveNull() == true}.
@@ -108,23 +107,20 @@ public class SealedTransformer extends Transformer {
             throw new C3rIllegalArgumentException("EncryptionContext missing ClientDataType when encrypting data for column `"
                     + encryptionContext.getColumnLabel() + "`.");
         }
-        if (encryptionContext.getClientDataType() != ClientDataType.STRING) {
-            throw new C3rIllegalArgumentException("Only string columns can be encrypted, but encountered non-string column `"
+        if (encryptionContext.getClientDataType() == ClientDataType.UNKNOWN) {
+            throw new C3rIllegalArgumentException("Unknown column type cannot be encrypted `"
                     + encryptionContext.getColumnLabel() + "`.");
         }
 
         if (cleartext == null && clientSettings.isPreserveNulls()) {
             return null;
+        } else if (cleartext == null) {
+            throw new C3rIllegalArgumentException("Cleartext must be non-null if preserve nulls is false.");
         }
-        final var valueInfo = ClientDataInfo.builder()
-                .type(encryptionContext.getClientDataType())
-                .isNull(cleartext == null)
-                .build();
 
         final byte[] paddedMessage = PadUtil.padMessage(cleartext, encryptionContext);
         final InitializationVector iv = InitializationVector.deriveIv(encryptionContext.getColumnLabel(), encryptionContext.getNonce());
-        final byte[] fullPayload = ByteBuffer.allocate(ClientDataInfo.BYTE_LENGTH + paddedMessage.length)
-                .put(valueInfo.encode())
+        final byte[] fullPayload = ByteBuffer.allocate(paddedMessage.length)
                 .put(paddedMessage).array();
         final byte[] ciphertext = encryptor.encrypt(fullPayload, iv, AAD, encryptionContext);
         final byte[] base64EncodedCiphertext = buildBase64EncodedMessage(ciphertext, encryptionContext.getNonce(), iv);
@@ -140,7 +136,7 @@ public class SealedTransformer extends Transformer {
      * Unmarshalls Base64 encoded ciphertext data into cleartext.
      *
      * @param content The Base64 encoded ciphertext with corresponding prefixed encryption data to be decrypted
-     * @return The decoded cleartext
+     * @return The decoded cleartext (metadata followed by the underlying value's bytes)
      * @throws C3rIllegalArgumentException If data type is not a string
      * @throws C3rRuntimeException         If the ciphertext couldn't be decoded from Base64
      */
@@ -184,19 +180,9 @@ public class SealedTransformer extends Transformer {
 
         // Decipher ciphertext
         final byte[] payload = encryptor.decrypt(ciphertext, iv, AAD, encryptionContext);
-
-        final ClientDataInfo clientDataInfo = ClientDataInfo.decode(payload[0]);
-        if (clientDataInfo.getType() != ClientDataType.STRING) {
-            throw new C3rIllegalArgumentException("Expected encrypted data to be of type string, but found unsupported data type: "
-                    + clientDataInfo.getType());
-        }
-        if (clientDataInfo.isNull()) {
-            return null;
-        }
-
-        final byte[] paddedCleartext = Arrays.copyOfRange(payload, ClientDataInfo.BYTE_LENGTH, payload.length);
+        
         // Remove padding
-        return PadUtil.removePadding(paddedCleartext);
+        return PadUtil.removePadding(payload);
     }
 
     @Override

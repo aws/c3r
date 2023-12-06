@@ -27,6 +27,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
@@ -59,12 +60,15 @@ import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT64_TIMESTAMP_UTC_NANOS_TYPE;
 import static com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility.SupportedTypes.REQUIRED_INT64_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ParquetEquivalenceTypesTest {
+    private static final ClientSettings PRESERVE_NULLS_SETTINGS = ClientSettings.lowAssuranceMode();
+
     private static final ColumnInsight EMPTY_COLUMN_INSIGHT = new ColumnInsight(ColumnSchema.builder().type(ColumnType.FINGERPRINT)
-            .sourceHeader(ColumnHeader.ofRaw("Empty")).build());
+            .sourceHeader(ColumnHeader.ofRaw("Empty")).build(), PRESERVE_NULLS_SETTINGS);
 
     private static final ParquetValue.Binary NULL_STRING_VALUE =
             new ParquetValue.Binary(ParquetDataType.fromType(OPTIONAL_BINARY_STRING_TYPE), null);
@@ -187,27 +191,30 @@ public class ParquetEquivalenceTypesTest {
     @ParameterizedTest
     @MethodSource("supportedTypes")
     public void validTypesTest(final ParquetValue value, final int length, final Function toString) {
-        final byte[] bytes = ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType());
-        assertEquals(length, bytes.length);
-        assertEquals(value.toString(), toString.apply(bytes));
+        final byte[] bytes = ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS);
+        assertEquals(length + ClientDataInfo.BYTE_LENGTH, bytes.length);
+        assertEquals(value.toString(), toString.apply(Arrays.copyOfRange(bytes, 0, length)));
     }
 
     @ParameterizedTest
     @MethodSource("nullSupportedTypes")
     public void nullValueTest(final ParquetValue value) {
-        assertNull(ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType()));
+        assertNotNull(ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType(), ClientSettings.highAssuranceMode()));
+        assertNull(ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS));
     }
 
     @ParameterizedTest
     @MethodSource("unsupportedTypes")
     public void invalidTypesTest(final ParquetValue value) {
-        assertThrows(C3rRuntimeException.class, () -> ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType()));
+        assertThrows(C3rRuntimeException.class,
+                () -> ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS));
     }
 
     @ParameterizedTest
     @MethodSource("nullUnsupportedTypes")
     public void nullInvalidTypesTest(final ParquetValue value) {
-        assertThrows(C3rRuntimeException.class, () -> ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType()));
+        assertThrows(C3rRuntimeException.class,
+                () -> ValueConverter.getBytesForColumn(value, EMPTY_COLUMN_INSIGHT.getType(), ClientSettings.highAssuranceMode()));
     }
 
     @Test

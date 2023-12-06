@@ -5,6 +5,7 @@ package com.amazonaws.c3r.internal;
 
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
+import lombok.NonNull;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -51,27 +52,26 @@ public abstract class PadUtil {
      * @param encryptionContext The EncryptionContext for the column
      * @param message           The message to be padded
      * @return The message padded with a random byte sequence followed by a byte containing the padding size
-     * @throws C3rIllegalArgumentException If the padding could not be created with provided data and info
+     * @throws C3rIllegalArgumentException If the padding could not fit within the contextual length limit for this column and value
      */
-    public static byte[] padMessage(final byte[] message, final EncryptionContext encryptionContext) {
+    public static byte[] padMessage(@NonNull final byte[] message, final EncryptionContext encryptionContext) {
         if (encryptionContext == null) {
             throw new C3rIllegalArgumentException("An EncryptionContext must be provided when padding.");
         }
-        final byte[] nullSafeMessage = (message == null) ? new byte[0] : message;
         final int paddingLength;
         switch (encryptionContext.getPadType()) {
             // MAX and FIXED use the same logic here, as the EncryptionContext
             // reasons differently in `getTargetPaddedLength` on how much to pad.
             case MAX:
             case FIXED:
-                paddingLength = encryptionContext.getTargetPaddedLength() - nullSafeMessage.length;
+                paddingLength = encryptionContext.getTargetPaddedLength() - message.length;
                 final String baseError = "Error padding values for target column `" + encryptionContext.getColumnLabel() + "`:";
                 if (paddingLength < 0) {
                     // The message to be padded doesn't have the room to be padded to the fixed length
                     throw new C3rIllegalArgumentException(
                             baseError + " No room for padding! Target padding length is "
                                     + encryptionContext.getTargetPaddedLength()
-                                    + " bytes but message is already " + nullSafeMessage.length + " bytes long.");
+                                    + " bytes but message is already " + message.length + " bytes long.");
                 }
                 if (encryptionContext.getTargetPaddedLength() > MAX_PADDED_CLEARTEXT_BYTES) {
                     // The target message size exceeds the maximum
@@ -93,11 +93,11 @@ public abstract class PadUtil {
                 paddingLength = 0;
         }
         final byte[] pad = generatePad(paddingLength);
-        final ByteBuffer paddedMessage = ByteBuffer.allocate(nullSafeMessage.length + pad.length + PAD_LENGTH_BYTES);
-        paddedMessage.put(nullSafeMessage);
-        paddedMessage.put(pad);
-        paddedMessage.putShort((short) paddingLength);
-        return paddedMessage.array();
+        return ByteBuffer.allocate(message.length + pad.length + PAD_LENGTH_BYTES)
+                .put(message)
+                .put(pad)
+                .putShort((short) paddingLength)
+                .array();
     }
 
     /**

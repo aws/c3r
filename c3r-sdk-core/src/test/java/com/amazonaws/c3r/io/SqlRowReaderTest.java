@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.io;
 
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
@@ -60,7 +61,8 @@ public class SqlRowReaderTest {
         columnSchemas.add(GeneralTestUtility.cleartextColumn("level", "level"));
         columnSchemas.add(GeneralTestUtility.sealedColumn("notes", "notes", PadType.MAX, 100));
 
-        columnInsights = columnSchemas.stream().map(ColumnInsight::new).collect(Collectors.toList());
+        columnInsights = columnSchemas.stream().map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode()))
+                .collect(Collectors.toList());
 
         columnNames = columnInsights.stream().map(ColumnSchema::getTargetHeader).collect(Collectors.toList());
 

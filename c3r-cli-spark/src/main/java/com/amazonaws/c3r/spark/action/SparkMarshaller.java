@@ -11,7 +11,9 @@ import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.PadType;
+import com.amazonaws.c3r.data.ClientDataInfo;
 import com.amazonaws.c3r.data.ClientDataType;
+import com.amazonaws.c3r.data.ValueConverter;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
@@ -27,7 +29,9 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import scala.jdk.CollectionConverters;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -72,6 +76,15 @@ import java.util.stream.Collectors;
  * Instead of sorting on Nonces created using Java's {@code SecureRandom}, Spark is using its own {@code rand()} function for the shuffle.
  */
 public abstract class SparkMarshaller {
+    /**
+     * Number of bytes of random data when not preserving {@code null} values.
+     */
+    private static final int NULL_RANDOM_BYTE_SIZE = 32;
+
+    /**
+     * Used to create random bytes when {@link ClientSettings#isPreserveNulls()} is {@code false}.
+     */
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
      * Spark orchestration of C3R encryption.
@@ -84,8 +97,8 @@ public abstract class SparkMarshaller {
      * @return The encrypted Dataset
      */
     public static Dataset<Row> encrypt(final Dataset<Row> inputData, final SparkEncryptConfig encryptConfig) {
-        final List<ColumnInsight> columnInsights = encryptConfig.getTableSchema().getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> columnInsights = encryptConfig.getTableSchema().getColumns().stream()
+                .map(x -> new ColumnInsight(x, encryptConfig.getSettings())).collect(Collectors.toList());
 
         Dataset<Row> dataset = filterSourceColumnsBySchema(inputData, columnInsights);
 
@@ -159,7 +172,13 @@ public abstract class SparkMarshaller {
             final int maxBitLength = (longestValueRow.get(0) == null) ? 0 : longestValueRow.getInt(0);
             final int maxByteLength = maxBitLength / Byte.SIZE;
             for (ColumnInsight insight : sourceMappedColumnInsights.get(columnHeader)) {
-                insight.setMaxValueLength(maxByteLength);
+                // NOTE: This is essentially a custom in-place version of ValueConverter.getBytesForColumn
+                // since the Spark client can't use the Value infrastructure
+                if (insight.getType() == ColumnType.SEALED) {
+                    insight.setMaxValueLength(maxByteLength + ClientDataInfo.BYTE_LENGTH);
+                } else {
+                    insight.setMaxValueLength(maxByteLength);
+                }
             }
         });
     }
@@ -271,7 +290,38 @@ public abstract class SparkMarshaller {
                             }
                             final Transformer transformer = transformers.get(column.getType());
                             final String data = row.getString(column.getSourceColumnPosition());
-                            final byte[] dataBytes = data == null ? null : data.getBytes(StandardCharsets.UTF_8);
+                            // NOTE: This is essentially a custom in-place version of ValueConverter.getBytesForColumn
+                            // since the Spark client can't use the Value infrastructure
+                            final byte[] dataBytes;
+                            if (column.getType() == ColumnType.SEALED) {
+                                if (data == null && settings.isPreserveNulls()) {
+                                    dataBytes = null;
+                                } else {
+                                    dataBytes = ValueConverter.String.encode(data);
+                                }
+                            } else if (column.getType() == ColumnType.FINGERPRINT) {
+                                if (data == null) {
+                                    if (settings.isPreserveNulls()) {
+                                        dataBytes = null;
+                                    } else {
+                                        dataBytes = new byte[NULL_RANDOM_BYTE_SIZE + ClientDataInfo.BYTE_LENGTH];
+                                        RANDOM.nextBytes(dataBytes);
+                                        dataBytes[NULL_RANDOM_BYTE_SIZE] = ClientDataInfo.builder()
+                                                .type(ClientDataType.STRING)
+                                                .isNull(true)
+                                                .build()
+                                                .encode();
+                                    }
+                                } else {
+                                    final byte[] utf8Bytes = data.getBytes(StandardCharsets.UTF_8);
+                                    dataBytes = ByteBuffer.allocate(utf8Bytes.length + ClientDataInfo.BYTE_LENGTH)
+                                            .put(utf8Bytes)
+                                            .put(ClientDataInfo.builder().type(ClientDataType.STRING).isNull(false).build().encode())
+                                            .array();
+                                }
+                            } else {
+                                dataBytes = data == null ? null : data.getBytes(StandardCharsets.UTF_8);
+                            }
                             final EncryptionContext encryptionContext = new EncryptionContext(column, nonce, ClientDataType.STRING);
                             final byte[] marshalledBytes = transformer.marshal(dataBytes, encryptionContext);
                             return (marshalledBytes == null ? null : new String(marshalledBytes, StandardCharsets.UTF_8));

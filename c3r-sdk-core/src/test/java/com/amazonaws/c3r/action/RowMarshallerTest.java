@@ -17,6 +17,7 @@ import com.amazonaws.c3r.config.EncryptConfig;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.PadType;
 import com.amazonaws.c3r.config.TableSchema;
+import com.amazonaws.c3r.data.ClientDataInfo;
 import com.amazonaws.c3r.data.CsvValue;
 import com.amazonaws.c3r.data.CsvValueFactory;
 import com.amazonaws.c3r.data.Row;
@@ -145,7 +146,7 @@ public class RowMarshallerTest {
         }
 
         assertEquals(
-                longestNoteValueByteLength,
+                longestNoteValueByteLength + ClientDataInfo.BYTE_LENGTH,
                 targetHeaderMappedColumnInsights.get(notesTargetHeader).getMaxValueLength());
     }
 

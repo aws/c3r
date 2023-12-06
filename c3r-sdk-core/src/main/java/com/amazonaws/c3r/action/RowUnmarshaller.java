@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Interface for loading and processing records for decryption.
@@ -83,15 +84,17 @@ public final class RowUnmarshaller<T extends Value> {
             for (ColumnHeader header : marshalledRow.getHeaders()) {
                 final byte[] valueBytes = marshalledRow.getValue(header).getBytes();
                 Transformer transformer = transformers.get(ColumnType.CLEARTEXT); // Default to pass through
+                Function<byte[], byte[]> decode = x -> x;
                 if (Transformer.hasDescriptor(transformers.get(ColumnType.SEALED), valueBytes)) {
                     transformer = transformers.get(ColumnType.SEALED);
+                    decode = valueFactory::getValueBytesFromEncodedBytes;
                 } else if (Transformer.hasDescriptor(transformers.get(ColumnType.FINGERPRINT), valueBytes)) {
                     transformer = transformers.get(ColumnType.FINGERPRINT);
                 }
                 try {
                     unmarshalledRow.putBytes(
                             header,
-                            transformer.unmarshal(valueBytes));
+                            decode.apply(transformer.unmarshal(valueBytes)));
                 } catch (Exception e) {
                     throw new C3rRuntimeException("Failed while unmarshalling data for column `"
                             + header + "` on row " + inputReader.getReadRowCount() + ". Error message received: " + e.getMessage(), e);

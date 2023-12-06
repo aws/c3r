@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.data;
 
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
@@ -15,6 +16,7 @@ import java.math.BigInteger;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -31,6 +33,16 @@ import java.util.function.Function;
  * </p>
  */
 public final class ValueConverter {
+    /**
+     * Number of bytes of random data when not preserving {@code null} values.
+     */
+    private static final int NULL_RANDOM_BYTE_SIZE = 32;
+
+    /**
+     * Used to create random bytes when {@link ClientSettings#isPreserveNulls()} is {@code false}.
+     */
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     /**
      * Private utility class constructor.
      */
@@ -366,14 +378,52 @@ public final class ValueConverter {
     }
 
     /**
-     * Find the equivalence class super type for the value and return the value represented in that byte format.
+     * Find the equivalence class super type for the value and return the value represented in that byte format if the
+     * value is non-null. If the value is null, leave is as-is or replace it with random bytes per the client settings.
      *
      * @param value Value to convert to equivalence class super type
-     * @return byte representation of value in super class
+     * @param settings Client settings impacting encryption
+     * @return byte representation of value in super class or {@code null}
      */
-    private static byte[] getBytesForFingerprint(@NonNull final Value value) {
-        final ClientDataType superType = value.getClientDataType().getRepresentativeType();
-        return value.getBytesAs(superType);
+    private static byte[] getBytesForFingerprint(@NonNull final Value value, @NonNull final ClientSettings settings) {
+        final byte[] bytes;
+        if (value.isNull()) {
+            if (settings.isPreserveNulls()) {
+                bytes = null;
+            } else {
+                bytes = new byte[NULL_RANDOM_BYTE_SIZE + ClientDataInfo.BYTE_LENGTH];
+                RANDOM.nextBytes(bytes);
+                bytes[NULL_RANDOM_BYTE_SIZE] = ClientDataInfo.builder()
+                        .type(value.getClientDataType().getRepresentativeType())
+                        .isNull(true)
+                        .build()
+                        .encode();
+            }
+        } else {
+            final ClientDataType superType = value.getClientDataType().getRepresentativeType();
+            final byte[] superTypeBytes = value.getBytesAs(superType);
+            bytes = ByteBuffer.allocate(superTypeBytes.length + ClientDataInfo.BYTE_LENGTH)
+                    .put(superTypeBytes)
+                    .put(ClientDataInfo.builder().type(superType).isNull(false).build().encode())
+                    .array();
+        }
+        return bytes;
+    }
+
+    /**
+     * If a value is non-null, encodes the metadata for that value followed by the underlying bytes for the value.
+     * Otherwise, return {@code null} or only the metadata per the client settings.
+     *
+     * @param value Value to encode
+     * @param settings Client settings impacting encryption
+     * @return byte representation of metadata and value or {@code null}
+     */
+    private static byte[] getBytesForSealed(@NonNull final Value value, @NonNull final ClientSettings settings) {
+        if (value.isNull() && settings.isPreserveNulls()) {
+            return null;
+        } else {
+            return value.getEncodedBytes();
+        }
     }
 
     /**
@@ -381,13 +431,22 @@ public final class ValueConverter {
      *
      * @param value      Value to get bytes from
      * @param columnType Type of column being written
+     * @param settings Client settings impacting encryption
      * @return byte representation of value in the form of the desired {@code ClientDataType}
+     * @throws C3rIllegalArgumentException if an unexpected column type is encountered
      */
-    public static byte[] getBytesForColumn(@NonNull final Value value, @NonNull final ColumnType columnType) {
-        if (columnType == ColumnType.FINGERPRINT) {
-            return getBytesForFingerprint(value);
-        } else {
-            return value.getBytes();
+    public static byte[] getBytesForColumn(@NonNull final Value value,
+                                           @NonNull final ColumnType columnType,
+                                           @NonNull final ClientSettings settings) {
+        switch (columnType) {
+            case FINGERPRINT:
+                return getBytesForFingerprint(value, settings);
+            case SEALED:
+                return getBytesForSealed(value, settings);
+            case CLEARTEXT:
+                return value.getBytes();
+            default:
+                throw new C3rIllegalArgumentException("Unexpected column type: " + columnType);
         }
     }
 

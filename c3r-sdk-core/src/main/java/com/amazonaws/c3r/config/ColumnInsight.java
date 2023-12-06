@@ -46,12 +46,19 @@ public class ColumnInsight extends ColumnSchema {
     private ClientDataType clientDataType = null;
 
     /**
+     * Security settings in use for this collaboration.
+     */
+    private final ClientSettings settings;
+
+    /**
      * Create metadata wrapper around a {@link ColumnSchema}.
      *
      * @param columnSchema Column to wrap with metadata
+     * @param settings Security settings
      */
-    public ColumnInsight(final ColumnSchema columnSchema) {
+    public ColumnInsight(final ColumnSchema columnSchema, @NonNull final ClientSettings settings) {
         super(columnSchema);
+        this.settings = settings;
     }
 
     /**
@@ -67,7 +74,8 @@ public class ColumnInsight extends ColumnSchema {
             seenNull = true;
             return;
         }
-        final var length = value.byteLength();
+        final byte[] bytes = ValueConverter.getBytesForColumn(value, getType(), settings);
+        final int length = (bytes == null) ? 0 : bytes.length;
         if (getPad() != null && getPad().getType() == PadType.MAX && maxValueLength < length) {
             maxValueLength = length;
         }
