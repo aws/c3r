@@ -33,8 +33,7 @@ def latest_spark_version() -> str:
     versions.sort()
     return '.'.join(versions[-1])
 
-# spark_version=latest_spark_version()
-spark_version="3.4.1"
+spark_version=latest_spark_version()
 spark_dir:str = f'spark-{spark_version}-bin-hadoop3-scala2.13'
 """Apache Spark directory."""
 spark_tgz:str = f'{spark_dir}.tgz'
