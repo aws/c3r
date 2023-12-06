@@ -11,6 +11,7 @@ import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.config.MappedTableSchema;
 import com.amazonaws.c3r.config.ParquetConfig;
 import com.amazonaws.c3r.config.TableSchema;
+import com.amazonaws.c3r.data.ClientDataInfo;
 import com.amazonaws.c3r.encryption.keys.KeyUtil;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
@@ -69,7 +70,7 @@ public class SparkMarshallerTest {
     @BeforeAll
     public static void setupDataset() throws IOException {
         schema = GsonUtil.fromJson(FileUtil.readBytes("../samples/schema/config_sample.json"), TableSchema.class);
-        columnInsights = schema.getColumns().stream().map(ColumnInsight::new)
+        columnInsights = schema.getColumns().stream().map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode()))
                 .collect(Collectors.toList());
         session = SparkSessionTestUtility.initSparkSession();
         config = SparkEncryptConfig.builder()
@@ -108,9 +109,9 @@ public class SparkMarshallerTest {
 
     @Test
     public void filterSourceColumnsBySchemaSomeMatchesTest() {
-        final List<ColumnInsight> trimmedColumnInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .filter(columnInsight -> columnInsight.getType() == ColumnType.CLEARTEXT)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> trimmedColumnInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode()))
+                .filter(columnInsight -> columnInsight.getType() == ColumnType.CLEARTEXT).collect(Collectors.toList());
         final Dataset<Row> filteredDataset = SparkMarshaller.filterSourceColumnsBySchema(dataset, trimmedColumnInsights);
         assertNotEquals(trimmedColumnInsights.size(), columnInsights.size());
         assertEquals(trimmedColumnInsights.size(), filteredDataset.columns().length);
@@ -148,21 +149,22 @@ public class SparkMarshallerTest {
 
         assertEquals(longestFirstnameByteLength, targetToColumnInsight.get("firstname").getMaxValueLength());
         assertEquals(longestPhonenumberByteLength, targetToColumnInsight.get("phonenumber_cleartext").getMaxValueLength());
-        assertEquals(longestPhonenumberByteLength, targetToColumnInsight.get("phonenumber_sealed").getMaxValueLength());
-        assertEquals(longestNoteValueByteLength, targetToColumnInsight.get("notes").getMaxValueLength());
+        assertEquals(longestPhonenumberByteLength + ClientDataInfo.BYTE_LENGTH,
+                targetToColumnInsight.get("phonenumber_sealed").getMaxValueLength());
+        assertEquals(longestNoteValueByteLength + ClientDataInfo.BYTE_LENGTH, targetToColumnInsight.get("notes").getMaxValueLength());
     }
 
     @Test
     public void updateMaxValuesPerColumnEmptyDatasetTest() {
         final TableSchema schema = GsonUtil.fromJson(FileUtil.readBytes("../samples/schema/6column.json"), TableSchema.class);
-        final List<ColumnInsight> columnInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> columnInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
         final Dataset<Row> emptyDataset = readDataset("../samples/csv/null5by6.csv", schema.getPositionalColumnHeaders());
 
         SparkMarshaller.updateMaxValuesPerColumn(emptyDataset, columnInsights);
 
         // Assert all have a max length of 0
-        assertFalse(columnInsights.stream().anyMatch(insight -> insight.getMaxValueLength() != 0));
+        assertFalse(columnInsights.stream().anyMatch(insight -> insight.getMaxValueLength() > ClientDataInfo.BYTE_LENGTH));
     }
 
     @Test
@@ -182,8 +184,8 @@ public class SparkMarshallerTest {
                 .sourceHeader(new ColumnHeader("lastname")) // Column has duplicate last names
                 .type(ColumnType.FINGERPRINT).build();
         final TableSchema schema = new MappedTableSchema(List.of(lastNameSchema));
-        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
         assertDoesNotThrow(() -> SparkMarshaller.validateDuplicates(ClientSettings.lowAssuranceMode(), dataset, lastNameInsights));
     }
 
@@ -193,8 +195,8 @@ public class SparkMarshallerTest {
                 .sourceHeader(new ColumnHeader("lastname")) // Column has duplicate last names
                 .type(ColumnType.CLEARTEXT).build();
         final TableSchema schema = new MappedTableSchema(List.of(lastNameSchema));
-        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
         assertDoesNotThrow(() -> SparkMarshaller.validateDuplicates(ClientSettings.highAssuranceMode(), dataset, lastNameInsights));
     }
 
@@ -204,8 +206,8 @@ public class SparkMarshallerTest {
                 .sourceHeader(new ColumnHeader("lastname")) // Column has duplicate last names
                 .type(ColumnType.FINGERPRINT).build();
         final TableSchema schema = new MappedTableSchema(List.of(lastNameSchema));
-        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
         assertThrows(C3rRuntimeException.class, () -> SparkMarshaller.validateDuplicates(ClientSettings.highAssuranceMode(), dataset,
                 lastNameInsights));
     }
@@ -216,8 +218,8 @@ public class SparkMarshallerTest {
                 .sourceHeader(new ColumnHeader("notes")) // Column has duplicate nulls
                 .type(ColumnType.FINGERPRINT).build();
         final TableSchema schema = new MappedTableSchema(List.of(lastNameSchema));
-        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
         assertThrows(C3rRuntimeException.class, () -> SparkMarshaller.validateDuplicates(ClientSettings.highAssuranceMode(), dataset,
                 lastNameInsights));
     }
@@ -257,8 +259,8 @@ public class SparkMarshallerTest {
                         .type(ColumnType.FINGERPRINT).build();
 
         final TableSchema schema = new MappedTableSchema(List.of(lastNameSchema));
-        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> lastNameInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
         final Dataset<Row> mappedDataset = SparkMarshaller.mapSourceToTargetColumns(dataset, lastNameInsights);
 
         // Ensure that SparkSQL handles the longest headers that are permitted and doesn't introduce shorter limits.
@@ -328,7 +330,7 @@ public class SparkMarshallerTest {
         final List<Row> mappedDataList = mappedDataset.collectAsList();
 
         // Marshalling doesn't shuffle, so we can compare each row
-        compareValues(mappedDataList, marshalledData, columnInsights);
+        compareValues(mappedDataList, marshalledData, columnInsights, config.getSettings().isPreserveNulls());
     }
 
     @Test
@@ -344,7 +346,7 @@ public class SparkMarshallerTest {
         final List<Row> mappedDataList = mappedDataset.collectAsList();
 
         // Marshalling doesn't shuffle, so we can compare each row
-        compareValues(mappedDataList, marshalledData, columnInsights);
+        compareValues(mappedDataList, marshalledData, columnInsights, config.getSettings().isPreserveNulls());
     }
 
     @Test
@@ -359,8 +361,8 @@ public class SparkMarshallerTest {
                 .sourceHeader(new ColumnHeader("level")) // Column is classified as an int
                 .type(ColumnType.FINGERPRINT).build();
         final TableSchema schema = new MappedTableSchema(List.of(levelSchema));
-        final List<ColumnInsight> levelInsights = schema.getColumns().stream().map(ColumnInsight::new)
-                .collect(Collectors.toList());
+        final List<ColumnInsight> levelInsights = schema.getColumns().stream()
+                .map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode())).collect(Collectors.toList());
 
         final Dataset<Row> mappedDataset = SparkMarshaller.mapSourceToTargetColumns(mixedDataset, levelInsights);
         SparkMarshaller.populateColumnPositions(mappedDataset, levelInsights);
@@ -384,10 +386,13 @@ public class SparkMarshallerTest {
             return d2.getString(0).compareTo(d1.getString(0)); //compare on first names
         });
 
-        compareValues(mappedDataList, encryptedData, columnInsights);
+        compareValues(mappedDataList, encryptedData, columnInsights, config.getSettings().isPreserveNulls());
     }
 
-    private void compareValues(final List<Row> expected, final List<Row> actual, final List<ColumnInsight> columnInsights) {
+    private void compareValues(final List<Row> expected,
+                               final List<Row> actual,
+                               final List<ColumnInsight> columnInsights,
+                               final boolean isPreserveNulls) {
         assertEquals(expected.size(), actual.size());
 
         final List<Integer> ciphertextCols =
@@ -401,11 +406,13 @@ public class SparkMarshallerTest {
 
         for (int i = 0; i < actual.size(); i++) {
             for (Integer ciphertextPos : ciphertextCols) {
-                if (expected.get(i).get(ciphertextPos) == null) {
-                    assertNull(actual.get(i).get(ciphertextPos));
+                final Object expectedValue = expected.get(i).get(ciphertextPos);
+                final Object actualValue = actual.get(i).get(ciphertextPos);
+                if (isPreserveNulls && expectedValue == null) {
+                    assertNull(actualValue);
                 } else {
-                    assertNotEquals(expected.get(i).get(ciphertextPos),
-                            actual.get(i).get(ciphertextPos));
+                    assertNotEquals(expectedValue,
+                            actualValue);
                 }
             }
             for (Integer cleartextPos : cleartextCols) {

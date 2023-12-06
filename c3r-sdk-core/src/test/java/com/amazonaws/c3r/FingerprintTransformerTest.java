@@ -86,7 +86,7 @@ public class FingerprintTransformerTest {
                 FingerprintTransformer.DESCRIPTOR_PREFIX,
                 getDescriptorPrefix(hmacText));
 
-        final byte[] expectedText = "02:hmac:WRtZMlbn+zFNU5YAR0UT1S9v128kUMhV2PAJSdjGzqw=".getBytes(StandardCharsets.UTF_8);
+        final byte[] expectedText = "02:hmac:qpQRixU/cftGhMGkt0G+cy/bKyvui15spVTEk5YYOA8=".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, hmacText);
 
         final byte[] differentColumnHmacText = fingerprintTransformer.marshal(cleartext, differentColumnContext);
@@ -103,7 +103,7 @@ public class FingerprintTransformerTest {
                 FingerprintTransformer.DESCRIPTOR_PREFIX,
                 getDescriptorPrefix(hmacText));
 
-        final byte[] expectedText = "02:hmac:7YchN4H6pV0CxfGNX51VXRjCNx0/V43fMkV0lkTfAeE=".getBytes(StandardCharsets.UTF_8);
+        final byte[] expectedText = "02:hmac:S2WgUaexdXJ1wbgJ829QYUfEioKyF+soXJCQuH/p020=".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, hmacText);
 
         final byte[] differentColumnHmacText = fingerprintTransformer.marshal(cleartext, differentColumnContext);
@@ -131,7 +131,7 @@ public class FingerprintTransformerTest {
                 FingerprintTransformer.DESCRIPTOR_PREFIX,
                 getDescriptorPrefix(hmacText));
 
-        final byte[] expectedText = "02:hmac:+UJjyBG1kJXUe4u0C5FTM7WaEhGl9+PB5blhAURDvnQ=".getBytes(StandardCharsets.UTF_8);
+        final byte[] expectedText = "02:hmac:zQOr/XFsJQCQ+rkEmBw5F8u9yTs/48vLFadq2cQ5fbs=".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, hmacText);
     }
 

@@ -3,6 +3,7 @@
 
 package com.amazonaws.c3r.data;
 
+import com.amazonaws.c3r.config.ClientSettings;
 import com.amazonaws.c3r.config.ColumnHeader;
 import com.amazonaws.c3r.config.ColumnInsight;
 import com.amazonaws.c3r.config.ColumnSchema;
@@ -39,14 +40,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 public class ValueConverterTest {
+    private static final ClientSettings PRESERVE_NULLS_SETTINGS = ClientSettings.lowAssuranceMode();
+
     private static final ColumnInsight SEALED_COLUMN_INSIGHT = new ColumnInsight(ColumnSchema.builder().type(ColumnType.SEALED)
-            .sourceHeader(ColumnHeader.ofRaw("source")).pad(Pad.DEFAULT).build());
+            .sourceHeader(ColumnHeader.ofRaw("source")).pad(Pad.DEFAULT).build(), PRESERVE_NULLS_SETTINGS);
 
     private static final ColumnInsight CLEARTEXT_COLUMN_INSIGHT = new ColumnInsight(ColumnSchema.builder().type(ColumnType.CLEARTEXT)
-            .sourceHeader(ColumnHeader.ofRaw("source")).build());
+            .sourceHeader(ColumnHeader.ofRaw("source")).build(), PRESERVE_NULLS_SETTINGS);
 
     private static final ColumnInsight FINGERPRINT_COLUMN_INSIGHT = new ColumnInsight(ColumnSchema.builder().type(ColumnType.FINGERPRINT)
-            .sourceHeader(ColumnHeader.ofRaw("source")).build());
+            .sourceHeader(ColumnHeader.ofRaw("source")).build(), PRESERVE_NULLS_SETTINGS);
 
     @ParameterizedTest
     @EnumSource(value = ClientDataType.class)
@@ -58,20 +61,15 @@ public class ValueConverterTest {
                 .thenReturn(ByteBuffer.allocate(ClientDataType.BIGINT_BYTE_SIZE).putLong(2L).array());
         when(value.getBytesAs(ArgumentMatchers.eq(ClientDataType.STRING))).thenReturn("hello".getBytes(StandardCharsets.UTF_8));
         when(value.getBytes()).thenReturn(testVal);
-        assertEquals(value.getBytes(), ValueConverter.getBytesForColumn(value, CLEARTEXT_COLUMN_INSIGHT.getType()));
+        assertEquals(value.getBytes(),
+                ValueConverter.getBytesForColumn(value, CLEARTEXT_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS));
     }
 
-    @ParameterizedTest
-    @EnumSource(value = ClientDataType.class)
-    public void sealedMapsToSameValueTest(final ClientDataType type) {
-        final byte[] testVal = new byte[]{1, 2, 3};
-        final Value value = org.mockito.Mockito.mock(Value.class);
-        when(value.getClientDataType()).thenReturn(type);
-        when(value.getBytesAs(ArgumentMatchers.eq(ClientDataType.BIGINT)))
-                .thenReturn(ByteBuffer.allocate(ClientDataType.BIGINT_BYTE_SIZE).putLong(2L).array());
-        when(value.getBytesAs(ArgumentMatchers.eq(ClientDataType.STRING))).thenReturn("hello".getBytes(StandardCharsets.UTF_8));
-        when(value.getBytes()).thenReturn(testVal);
-        assertEquals(value.getBytes(), ValueConverter.getBytesForColumn(value, SEALED_COLUMN_INSIGHT.getType()));
+    @Test
+    public void sealedMapsToSameValueTest() {
+        final Value value = new CsvValue("hello");
+        final byte[] bytes = ValueConverter.getBytesForColumn(value, SEALED_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS);
+        assertArrayEquals(value.getBytes(), Arrays.copyOfRange(bytes, ClientDataInfo.BYTE_LENGTH, bytes.length));
     }
 
     @ParameterizedTest
@@ -82,7 +80,8 @@ public class ValueConverterTest {
         when(value.getClientDataType()).thenReturn(type);
         when(value.getBytesAs(ArgumentMatchers.eq(ClientDataType.STRING))).thenReturn(string.getBytes(StandardCharsets.UTF_8));
         when(value.getBytes()).thenReturn(string.getBytes(StandardCharsets.UTF_8));
-        assertArrayEquals(value.getBytes(), ValueConverter.getBytesForColumn(value, FINGERPRINT_COLUMN_INSIGHT.getType()));
+        final byte[] fingerprint = ValueConverter.getBytesForColumn(value, FINGERPRINT_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS);
+        assertArrayEquals(value.getBytes(), Arrays.copyOfRange(fingerprint, 0, fingerprint.length - 1));
     }
 
     @ParameterizedTest
@@ -97,10 +96,11 @@ public class ValueConverterTest {
                         ByteBuffer.allocate(ClientDataType.BIGINT_BYTE_SIZE).putLong(2L).array() :
                         ByteBuffer.allocate(com.amazonaws.c3r.data.ClientDataType.INT_BYTE_SIZE).putInt(2).array()
         );
+        final byte[] fingerprint = ValueConverter.getBytesForColumn(value, FINGERPRINT_COLUMN_INSIGHT.getType(), PRESERVE_NULLS_SETTINGS);
         if (type == ClientDataType.BIGINT) {
-            assertArrayEquals(value.getBytes(), ValueConverter.getBytesForColumn(value, FINGERPRINT_COLUMN_INSIGHT.getType()));
+            assertArrayEquals(value.getBytes(), Arrays.copyOfRange(fingerprint, 0, fingerprint.length - 1));
         } else {
-            assertFalse(Arrays.equals(value.getBytes(), ValueConverter.getBytesForColumn(value, FINGERPRINT_COLUMN_INSIGHT.getType())));
+            assertFalse(Arrays.equals(value.getBytes(), Arrays.copyOfRange(fingerprint, 0, fingerprint.length - 1)));
         }
     }
 

@@ -115,7 +115,7 @@ public class SealedTransformerTest {
                 getDescriptorPrefix(encryptedText));
 
         final byte[] expectedText =
-                "01:enc:bm9uY2UwMTIzNDU2Nzg5MG5vbmNlMDEyMzQ1Njc4OTBqfRYZ98t5KU6aWfthhMkpZDNxYAOeL9RWSNX8J7ByuBScwbxT/7vpSoRnTVWu0kXmHA=="
+                "02:enc:bm9uY2UwMTIzNDU2Nzg5MG5vbmNlMDEyMzQ1Njc4OTBqfRYZ98t5KU6aWfsQmMshIXB+aQeNKcVLRIG4IqVn2RSlGoabQoytMye/pDz15Oas"
                         .getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, encryptedText);
 
@@ -163,10 +163,7 @@ public class SealedTransformerTest {
 
     @Test
     public void marshalNullDataPreserveNullsFalseTest() {
-        final byte[] encryptedBytes = sealedTransformer.marshal(null, context);
-        final byte[] expectedBytes = ("01:enc:bm9uY2UwMTIzNDU2Nzg5MG5vbmNlMDEyMzQ1Njc4OTBqfRYZ98t5KU6aWftg96a4yADdecnBVZYmd8IxXr30")
-                .getBytes(StandardCharsets.UTF_8);
-        assertArrayEquals(expectedBytes, encryptedBytes);
+        assertThrows(C3rIllegalArgumentException.class, () -> sealedTransformer.marshal(null, context));
     }
 
     @Test
@@ -184,7 +181,7 @@ public class SealedTransformerTest {
     public void marshalEmptyDataTest() {
         final byte[] encryptedText = sealedTransformer.marshal("".getBytes(StandardCharsets.UTF_8), context);
         // Strictly prefix and encrypted padding
-        final byte[] expectedText = "01:enc:bm9uY2UwMTIzNDU2Nzg5MG5vbmNlMDEyMzQ1Njc4OTBqfRYZ98t5KU6aWfth96bE3B6pNqPzS3k9XRM+joTw"
+        final byte[] expectedText = "02:enc:bm9uY2UwMTIzNDU2Nzg5MG5vbmNlMDEyMzQ1Njc4OTBqfRYZ98t5KU6aWftj95yDN+G/A0Lx0zJ7ED5/Mfo="
                 .getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expectedText, encryptedText);
 
@@ -242,13 +239,7 @@ public class SealedTransformerTest {
 
     @Test
     public void unmarshalNullTest() {
-        final byte[] encryptedText = sealedTransformer.marshal(null, context);
-        // Strictly prefix and encrypted padding
-        final byte[] expectedText = "01:enc:bm9uY2UwMTIzNDU2Nzg5MG5vbmNlMDEyMzQ1Njc4OTBqfRYZ98t5KU6aWftg96a4yADdecnBVZYmd8IxXr30"
-                .getBytes(StandardCharsets.UTF_8);
-        assertArrayEquals(expectedText, encryptedText);
-
-        final byte[] unmarshalledText = sealedTransformer.unmarshal(encryptedText);
+        final byte[] unmarshalledText = sealedTransformer.unmarshal(null);
         assertArrayEquals(null, unmarshalledText);
     }
 

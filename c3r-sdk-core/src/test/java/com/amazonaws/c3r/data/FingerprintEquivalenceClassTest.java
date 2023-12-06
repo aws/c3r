@@ -5,6 +5,7 @@ package com.amazonaws.c3r.data;
 
 import com.amazonaws.c3r.FingerprintTransformer;
 import com.amazonaws.c3r.config.ClientSettings;
+import com.amazonaws.c3r.config.ColumnType;
 import com.amazonaws.c3r.encryption.EncryptionContext;
 import com.amazonaws.c3r.exception.C3rIllegalArgumentException;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
@@ -19,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class FingerprintEquivalenceClassTest {
     private final byte[] secret = "SomeFakeSecretKey".getBytes(StandardCharsets.UTF_8);
@@ -45,14 +48,14 @@ public class FingerprintEquivalenceClassTest {
     public void bigintIsAccepted() {
         final byte[] lVal = ValueConverter.BigInt.toBytes(Long.MAX_VALUE);
         final var results = fingerprintTransformer.marshal(lVal, context(ClientDataType.BIGINT));
-        assertArrayEquals("02:hmac:tJkxHwIHIj0kN9fOGfMmqRlHm7JSJukZ0+KLiUCPaWM=".getBytes(StandardCharsets.UTF_8), results);
+        assertArrayEquals("02:hmac:kjXoghmHSYZn5nBkoWZpyAlIyBmao03MAVIdHp4rSy4=".getBytes(StandardCharsets.UTF_8), results);
     }
 
     @Test
     public void booleanIsAccepted() {
         final byte[] bVal = ValueConverter.Boolean.toBytes(true);
         final var results = fingerprintTransformer.marshal(bVal, context(ClientDataType.BOOLEAN));
-        assertArrayEquals("02:hmac:Tzupi3wWfO1KjWtrbHQ1QS/uYZMPcqcBOJQ7oW7XPzg=".getBytes(StandardCharsets.UTF_8), results);
+        assertArrayEquals("02:hmac:YK+q8evdVH86XycuCkXvpzCQIXdyCiMRB+ggXieNI6o=".getBytes(StandardCharsets.UTF_8), results);
     }
 
     @Test
@@ -64,7 +67,7 @@ public class FingerprintEquivalenceClassTest {
     public void dateIsAccepted() {
         final byte[] bytes = ValueConverter.Int.toBytes(100);
         final var results = fingerprintTransformer.marshal(bytes, context(ClientDataType.DATE));
-        assertArrayEquals("02:hmac:8sqW9guEZZM5Yp4ZrPHg5os8s0j+m2odoieHGVto2eg=".getBytes(StandardCharsets.UTF_8), results);
+        assertArrayEquals("02:hmac:D4lN29HIikYxdDsiSqgs0+LRTmZiWBCptsJ59yKubB0=".getBytes(StandardCharsets.UTF_8), results);
     }
 
     @Test
@@ -96,7 +99,7 @@ public class FingerprintEquivalenceClassTest {
     public void stringIsAccepted() {
         final byte[] sVal = ValueConverter.String.toBytes("12345");
         final var results = fingerprintTransformer.marshal(sVal, context(ClientDataType.STRING));
-        assertArrayEquals("02:hmac:31wVfl2/f1AUWduklYARibTmLE0P4/99MtNJ14W7qO8=".getBytes(StandardCharsets.UTF_8), results);
+        assertArrayEquals("02:hmac:qAYEgUqI8GW2S0+1uZiYl2EWlaaPZrcHfvclC1yAQqo=".getBytes(StandardCharsets.UTF_8), results);
     }
 
     @Test
@@ -116,10 +119,20 @@ public class FingerprintEquivalenceClassTest {
 
     @Test
     public void differentEquivalenceClassesDoNotMatchTest() {
-        final byte[] bytes = ValueConverter.BigInt.toBytes(100);
-        final var resultsAsBigInt = new String(fingerprintTransformer.marshal(bytes, context(ClientDataType.BIGINT)),
+        final CsvValue nonStringCsv = mock(CsvValue.class);
+        when(nonStringCsv.getClientDataType()).thenReturn(ClientDataType.BIGINT);
+        when(nonStringCsv.getBytes()).thenReturn(ValueConverter.BigInt.toBytes(100L));
+        when(nonStringCsv.getBytesAs(ClientDataType.BIGINT)).thenReturn(ValueConverter.BigInt.toBytes(100L));
+        final byte[] nonStringBytes = ValueConverter.getBytesForColumn(nonStringCsv, ColumnType.FINGERPRINT,
+                ClientSettings.lowAssuranceMode());
+        final var resultsAsBigInt = new String(fingerprintTransformer.marshal(nonStringBytes, context(ClientDataType.BIGINT)),
                 StandardCharsets.UTF_8);
         assertEquals("02:hmac:XxBlrpT1ndd+Jk12ya7Finb9I9rOCzBO3ivb/inZ0eo=", resultsAsBigInt);
+        final CsvValue stringCsv = mock(CsvValue.class);
+        when(stringCsv.getClientDataType()).thenReturn(ClientDataType.STRING);
+        when(stringCsv.getBytes()).thenReturn(ValueConverter.BigInt.toBytes(100L));
+        when(stringCsv.getBytesAs(ClientDataType.STRING)).thenReturn(ValueConverter.BigInt.toBytes(100L));
+        final byte[] bytes = ValueConverter.getBytesForColumn(stringCsv, ColumnType.FINGERPRINT, ClientSettings.lowAssuranceMode());
         final var resultsAsString = new String(fingerprintTransformer.marshal(bytes, context(ClientDataType.STRING)),
                 StandardCharsets.UTF_8);
         assertEquals("02:hmac:1Mv2rjn0cWRjXl5nWA3dNP0hT6PXDbcDbZhayZMgNMU=", resultsAsString);

@@ -55,7 +55,7 @@ public class SparkUnmarshallerTest {
     @BeforeAll
     public static void setupDataset() throws IOException {
         final TableSchema schema = GsonUtil.fromJson(FileUtil.readBytes("../samples/schema/config_sample.json"), TableSchema.class);
-        columnInsights = schema.getColumns().stream().map(ColumnInsight::new)
+        columnInsights = schema.getColumns().stream().map(x -> new ColumnInsight(x, ClientSettings.lowAssuranceMode()))
                 .collect(Collectors.toList());
         session = SparkSessionTestUtility.initSparkSession();
         encryptConfig = SparkEncryptConfig.builder()
