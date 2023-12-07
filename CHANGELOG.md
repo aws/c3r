@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.0.0] - 2023-12-06
+
+### Added
+- Sealed column support for non-string types
+
+### Changed
+- RowFactory renamed to ValueFactory, CsvRowFactory to CsvValueFactory, and ParquetRowFactory to ParquetValueFactory 
+  and classes create a value or groups of values
+- Bump spark_version from 3.4.1 to 3.5.0
+- Bump software.amazon.awssdk:cleanrooms from 2.21.15 to 2.21.40
+- Bump org.xerial:sqlite-jdbc from 3.43.2.2 to 3.44.1.0
+- Bump log4j_version from 2.21.1 to 2.22.0
+- Bump io.github.hakky54:logcaptor from 2.9.0 to 2.9.2
+- Bump com.github.spotbugs:spotbugs-annotations from 4.8.0 to 4.8.2
+- Bump trufflesecurity/trufflehog from 3.62.1 to 3.63.2
+- Bump actions/setup-java from 3 to 4
+- Bump actions/github-script from 6 to 7
+
 ## [2.0.0] - 2023-11-06
 
 ### Added
