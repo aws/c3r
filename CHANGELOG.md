@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1] - 2024-01-16
+
+### Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.21.40 to 2.23.3
+- Bump log4j_version from 2.22.0 to 2.22.1
+- Bump com.github.spotbugs:spotbugs-annotations from 4.8.2 to 4.8.3
+
 ## [3.0.0] - 2023-12-06
 
 ### Added
