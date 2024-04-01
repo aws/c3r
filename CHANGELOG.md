@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.0.2] - 2024-04-01
+
+## Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.23.10 to 2.25.10 (#546)
+- Bump org.xerial:sqlite-jdbc from 3.44.1.0 to 3.45.2.0 (#543)
+- Bump log4j_version from 2.22.1 to 2.23.1 (#540)
+- Bump hadoop_version from 3.3.6 to 3.4.0 (#550)
+- Bump freefair_version from 8.4 to 8.6 (#516)
+
 ## [3.0.1] - 2024-01-16
 
 ### Changed
