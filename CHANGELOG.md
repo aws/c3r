@@ -1,8 +1,17 @@
 # Changelog
 
+## [3.0.3] - 2024-07-10
+
+### Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.25.21 to 2.26.10 (#646)
+- Bump org.xerial:sqlite-jdbc from 3.45.2.0 to 3.46.0.0 (#618)
+- Bump org.apache.parquet:parquet-hadoop from 1.13.1 to 1.14.1 (#634)
+- Bump info.picocli:picocli from 4.7.5 to 4.7.6 (#600)
+- Bump com.google.code.gson:gson from 2.10.1 to 2.11.0 (#612)
+
 ## [3.0.2] - 2024-04-01
 
-## Changed
+### Changed
 - Bump software.amazon.awssdk:cleanrooms from 2.23.10 to 2.25.10 (#546)
 - Bump org.xerial:sqlite-jdbc from 3.44.1.0 to 3.45.2.0 (#543)
 - Bump log4j_version from 2.22.1 to 2.23.1 (#540)
