@@ -15,6 +15,7 @@ from typing import Literal
 # without needing reoccuring `..` in the path.
 repo_dir=Path(os.path.dirname(__file__)).parent.parent.parent.absolute()
 
+# Currently disabled as the newer version of Spark is in preview. Locking to version 3.5.1 for the time being
 def latest_spark_version() -> str:
     """
     Use the Maven Central Repository REST API to get the latest version of the spark-core_2.13 package.
@@ -33,7 +34,7 @@ def latest_spark_version() -> str:
     versions.sort()
     return '.'.join(versions[-1])
 
-spark_version=latest_spark_version()
+spark_version="3.5.1"
 spark_dir:str = f'spark-{spark_version}-bin-hadoop3-scala2.13'
 """Apache Spark directory."""
 spark_tgz:str = f'{spark_dir}.tgz'
