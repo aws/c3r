@@ -223,8 +223,10 @@ The equivalence classes are:
 - `STRING` containing data types: `CHAR`, `STRING`, `VARCHAR`
 
 ### Does the C3R encryption client implement any non-standard cryptography?
-
 The C3R encryption client uses only NIST-standardized algorithms and-- with one exception-- only by calling their implementation in the Java standard cryptographic library. The sole exception is that the client has its own implementation of HKDF (from RFC5869), but using MAC algorithms from the Java standard cryptographic library.
+
+### Does the C3R encryption client support FIPS?
+Yes, the C3R encryption client supports FIPS endpoints. For more information, see the AWS documentation on [Dual-stack and FIPS endpoints](https://docs.aws.amazon.com/sdkref/latest/guide/feature-endpoints.html).
 
 ## License
 
