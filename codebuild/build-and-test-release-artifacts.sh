@@ -34,7 +34,7 @@ C3R_CLI_SPARK_DIR=c3r-cli-spark/build/libs
 ./gradlew build -x checkFileUtilTest --parallel
 
 # Get the version from the CLI
-C3R_VERSION=$(java -jar $C3R_CLI_DIR/c3r-cli-all.jar --version)
+C3R_VERSION=$(java -jar $C3R_CLI_DIR/c3r-cli-all.jar --version | tail -1)
 echo "JAR version found: $C3R_VERSION"
 
 # Test CLI JAR
