@@ -12,7 +12,7 @@ from typing import Literal
 
 # Directory at the top of the git repository, from which we can
 # easily grab any desired files directly from the `samples` dir
-# without needing reoccuring `..` in the path.
+# without needing recurring `..` in the path.
 repo_dir=Path(os.path.dirname(__file__)).parent.parent.parent.absolute()
 
 # Currently disabled as the newer version of Spark is in preview. Locking to version 3.5.1 for the time being
@@ -34,7 +34,7 @@ def latest_spark_version() -> str:
     versions.sort()
     return '.'.join(versions[-1])
 
-spark_version="3.5.1"
+spark_version="3.5.3"
 spark_dir:str = f'spark-{spark_version}-bin-hadoop3-scala2.13'
 """Apache Spark directory."""
 spark_tgz:str = f'{spark_dir}.tgz'
