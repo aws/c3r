@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.0.5] - 2025-01-07
+
+### Changed
+- Bump software.amazon.awssdk:cleanrooms from 2.28.16 to 2.29.46 (#835)
+- Bump org.xerial:sqlite-jdbc from 3.46.1.3 to 3.47.2.0 (#831)
+- Bump org.apache.parquet:parquet-hadoop from 1.14.1 to 1.15.0 (#806)
+- Bump log4j_version from 2.24.1 to 2.24.3 (#817)
+- Bump hadoop_version from 3.4.0 to 3.4.1 (#760)
+- Bump freefair_version from 8.10.2 to 8.11 (#788)
+
 ## [3.0.4] - 2024-10-07
 
 ### Changed
@@ -7,7 +17,7 @@
 - Bump org.xerial:sqlite-jdbc from 3.46.0.0 to 3.46.1.3 (#730)
 - Bump log4j_version from 2.23.1 to 2.24.1 (#734)
 - Bump freefair_version from 8.6 to 8.10.2 (#741)
--
+
 ## [3.0.3] - 2024-07-10
 
 ### Changed
