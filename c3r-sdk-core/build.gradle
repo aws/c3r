@@ -47,7 +47,7 @@ dependencies {
     implementation 'com.github.spotbugs:spotbugs-annotations:4.8.6'
 
     // Logging test tools
-    testImplementation 'io.github.hakky54:logcaptor:2.10.0'
+    testImplementation 'io.github.hakky54:logcaptor:2.10.1'
 }
 
 test {
