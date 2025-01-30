@@ -41,7 +41,7 @@ dependencies {
     implementation 'com.univocity:univocity-parsers:2.9.1'
 
     // Parsing - JSON
-    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.code.gson:gson:2.12.0'
 
     // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
     implementation 'com.github.spotbugs:spotbugs-annotations:4.9.0'
