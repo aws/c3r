@@ -11,7 +11,7 @@ on:
     - cron: '0 6 * * *' # Run daily @ 6AM UTC/2AM EST
   pull_request:
   push:
-    branches: main
+    branches: [ main ]
 
 permissions:
   actions: read
@@ -21,8 +21,8 @@ jobs:
   gradle:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        java-version: ['11', '17']
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        java-version: [ '11', '17' ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up repository
@@ -43,14 +43,14 @@ jobs:
         run: |
           echo "HADOOP_HOME=${{ github.workspace }}\hadoop\hadoop-3.3.1" >> $env:GITHUB_ENV;
           echo "${{ github.workspace }}\hadoop\hadoop-3.3.1\bin" >> $env:GITHUB_PATH;
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: build --parallel
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Run Gradle build
+        run: ./gradlew build --parallel
 
   # Here we wait on all builds and then check if any included "failure"
   # in the result. This should mean `gradle-no-failures` is successful
-  # if and only if all builds either succed or are skipped (e.g., due to
+  # if and only if all builds either succeed or are skipped (e.g., due to
   # the `skip-duplicate-actions` action).
   gradle-no-failures:
     runs-on: ubuntu-latest
