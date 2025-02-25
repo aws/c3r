@@ -44,8 +44,7 @@ subprojects {
 
         // Test infrastructure
         testImplementation "org.junit.jupiter:junit-jupiter:$junit_version"
-        testImplementation "org.junit.jupiter:junit-jupiter-api:$junit_version"
-        testImplementation "org.junit.jupiter:junit-jupiter-params:$junit_version"
+        testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
         // Test mocking
         testImplementation "org.mockito:mockito-core:$mockito_version"

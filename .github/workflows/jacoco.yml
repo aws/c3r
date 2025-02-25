@@ -31,10 +31,10 @@ jobs:
         with:
           java-version: '11'
           distribution: 'corretto'
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: build
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Run Gradle build
+        run: ./gradlew build --parallel
       - name: jacoco-badge-generator
         id: jacoco
         uses: cicirello/jacoco-badge-generator@v2
