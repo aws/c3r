@@ -29,7 +29,7 @@ subprojects {
     ext.c3r_version = rootProject.file('version.txt').text.trim()
 
     // Shared dependency versions
-    ext.freefair_version = '8.13'
+    ext.freefair_version = '8.13.1'
     ext.junit_version = '5.12.1'
     ext.log4j_version = '2.24.3'
     ext.mockito_version = '5.2.0'
