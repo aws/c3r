@@ -43,7 +43,7 @@ dependencies {
     implementation 'software.amazon.awssdk:cleanrooms:2.31.24'
 
     // CLI
-    implementation 'info.picocli:picocli:4.7.6'
+    implementation 'info.picocli:picocli:4.7.7'
 
     // Parsing - JSON
     implementation 'com.google.code.gson:gson:2.13.0'
