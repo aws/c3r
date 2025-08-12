@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -34,7 +34,7 @@ jobs:
           distribution: 'corretto'
       - name: Set up Hadoop repository
         if: startsWith(matrix.os, 'windows')
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: 'kontext-tech/winutils'
           path: 'hadoop'
