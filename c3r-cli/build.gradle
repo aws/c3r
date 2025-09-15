@@ -56,7 +56,7 @@ dependencies {
     testImplementation 'com.univocity:univocity-parsers:2.9.1'
 
     // Logging test tools
-    testImplementation 'io.github.hakky54:logcaptor:2.12.0'
+    testImplementation 'io.github.hakky54:logcaptor:2.12.1'
 }
 
 application {
