@@ -32,7 +32,7 @@ spotbugs {
 
 dependencies {
     // AWS Clean Rooms
-    implementation 'software.amazon.awssdk:cleanrooms:2.33.12'
+    implementation 'software.amazon.awssdk:cleanrooms:2.33.13'
 
     // SQL
     implementation 'org.xerial:sqlite-jdbc:3.50.3.0'
