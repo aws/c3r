@@ -44,7 +44,7 @@ jobs:
           echo "HADOOP_HOME=${{ github.workspace }}\hadoop\hadoop-3.3.1" >> $env:GITHUB_ENV;
           echo "${{ github.workspace }}\hadoop\hadoop-3.3.1\bin" >> $env:GITHUB_PATH;
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
       - name: Run Gradle build
         run: ./gradlew build --parallel
 
