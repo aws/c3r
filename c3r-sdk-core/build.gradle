@@ -44,7 +44,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.13.2'
 
     // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.6'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.9.7'
 
     // Logging test tools
     testImplementation 'io.github.hakky54:logcaptor:2.12.1'
