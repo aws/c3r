@@ -11,6 +11,9 @@ on:
       - edited
       - synchronize
 
+permissions:
+  pull-requests: write
+
 jobs:
   main:
     name: Validate PR title
