@@ -1,6 +1,10 @@
 name: JaCoCo Report
 on: [ pull_request ]
 
+
+permissions:
+  contents: read
+
 jobs:
   # Adds the following filters:
   # Only run when files that influence the build are updated.
