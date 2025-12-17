@@ -31,7 +31,7 @@ subprojects {
     // Shared dependency versions
     ext.freefair_version = '8.14.2'
     ext.junit_version = '5.14.0'
-    ext.log4j_version = '2.25.2'
+    ext.log4j_version = '2.25.3'
     ext.mockito_version = '5.2.0'
     ext.spark_version = '3.5.0'
     ext.spotbugs_version = '5.1.4'
