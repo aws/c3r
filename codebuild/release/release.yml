@@ -12,32 +12,32 @@ batch:
       buildspec: codebuild/release/release-staging.yml
 
     # Validate CodeArtifact with supported JDK and Corretto
-    #- identifier: validate_staging_release_openjdk11
+    #- identifier: validate_staging_release_openjdk17
     #  depend-on:
     #    - release_staging
     #  buildspec: codebuild/release/validate-staging.yml
     #  env:
     #    variables:
-    #      JAVA_ENV_VERSION: openjdk11
-    #      JAVA_NUMERIC_VERSION: 11
+    #      JAVA_ENV_VERSION: openjdk17
+    #      JAVA_NUMERIC_VERSION: 17
     #    image: aws/codebuild/standard:3.0
 
-    #- identifier: validate_staging_release_corretto11
+    #- identifier: validate_staging_release_corretto17
     #  depend-on:
     #    - release_staging
     #  buildspec: codebuild/release/validate-staging.yml
     #  env:
     #    variables:
-    #      JAVA_ENV_VERSION: corretto11
-    #      JAVA_NUMERIC_VERSION: 11
+    #      JAVA_ENV_VERSION: corretto17
+    #      JAVA_NUMERIC_VERSION: 17
     #    image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
 
     # Version Project
     - identifier: version
       depend-on:
         - release_staging
-        - validate_staging_release_openjdk11
-        - validate_staging_release_corretto11
+        - validate_staging_release_openjdk17
+        - validate_staging_release_corretto17
       buildspec: codebuild/release/version.yml
       env:
         image: aws/codebuild/standard:5.0
@@ -55,31 +55,31 @@ batch:
     #  buildspec: codebuild/release/artifact-hunt.yml
 
     # Validate Maven Central with supported JDK and Corretto
-    #- identifier: validate_prod_release_openjdk11
+    #- identifier: validate_prod_release_openjdk17
     #  depend-on:
     #    - artifact_hunt
     #  buildspec: codebuild/release/validate-prod.yml
     #  env:
     #    variables:
-    #      JAVA_ENV_VERSION: openjdk11
-    #      JAVA_NUMERIC_VERSION: 11
+    #      JAVA_ENV_VERSION: openjdk17
+    #      JAVA_NUMERIC_VERSION: 17
     #    image: aws/codebuild/standard:3.0
 
-    #- identifier: validate_prod_release_corretto11
+    #- identifier: validate_prod_release_corretto17
     #  depend-on:
     #    - artifact_hunt
     #  buildspec: codebuild/release/validate-prod.yml
     #  env:
     #    variables:
-    #      JAVA_ENV_VERSION: corretto11
-    #      JAVA_NUMERIC_VERSION: 11
+    #      JAVA_ENV_VERSION: corretto17
+    #      JAVA_NUMERIC_VERSION: 17
     #    image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
 
     # Upload Artifacts
     - identifier: upload_artifacts
       depend-on:
-        - validate_prod_release_openjdk11
-        - validate_prod_release_corretto11
+        - validate_prod_release_openjdk17
+        - validate_prod_release_corretto17
       buildspec: codebuild/release/upload-artifacts.yml
       env:
         # Changing to standard:5.0 because we are able to install gh cli on ubuntu but
@@ -93,6 +93,6 @@ batch:
     #  buildspec: codebuild/release/javadoc.yml
     #  env:
     #    variables:
-    #      JAVA_ENV_VERSION: coretto11
-    #      JAVA_NUMERIC_VERSION: 11
+    #      JAVA_ENV_VERSION: corretto17
+    #      JAVA_NUMERIC_VERSION: 17
     #    image: aws/codebuild/amazonlinux2-x86_64-standard:3.0

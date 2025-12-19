@@ -27,7 +27,7 @@ To reduce the risk of developer errors, we encapsulate our data types, even if i
 ### Unchecked Exceptions
 As a practice, we do not include unchecked exceptions (`java.lang.RuntimeException` and any subclasses) as part of the 
 method or constructor's `throws` clause which is 
-[standard practice](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/RuntimeException.html). They
+[standard practice](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/RuntimeException.html). They
 are included as part of the Javadoc for the method or constructor, however. Checked exceptions should always be part of 
 the `throws` clause and the Javadoc.
 
