@@ -40,7 +40,7 @@ The C3R encryption client command line interface and related JARs can be downloa
 
 ### System Requirements
 
-1. Java Runtime Environment version 11 or newer.
+1. Java Runtime Environment version 17 or newer.
 
 2. Enough disk storage to hold cleartext data, temporary files, and the encrypted output. See the "[Guidelines for the C3R encryption client](https://docs.aws.amazon.com/clean-rooms/latest/userguide/crypto-computing-guidelines.html)" section of the user guide for details on how settings affect storage needs.
 

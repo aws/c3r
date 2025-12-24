@@ -33,7 +33,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'corretto'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
