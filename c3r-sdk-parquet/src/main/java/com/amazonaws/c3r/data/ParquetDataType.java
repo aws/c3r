@@ -67,7 +67,7 @@ public final class ParquetDataType implements Validatable {
     }
 
     /**
-     * Convert a Parquet schema type to a C3R Parquet data type after verifying compatability.
+     * Convert a Parquet schema type to a C3R Parquet data type after verifying compatibility.
      *
      * @param type Parquet type associated with a column
      * @return Instance of the associated {@code ParquetDataTy[e}
