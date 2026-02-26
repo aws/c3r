@@ -46,7 +46,7 @@ public class FingerprintTransformer extends Transformer {
     private static final byte[] ENCRYPTION_DESCRIPTOR = "hmac:".getBytes(StandardCharsets.UTF_8);
 
     /**
-     * The version of the {@code FingerprintTransformer} for compatability support.
+     * The version of the {@code FingerprintTransformer} for compatibility support.
      */
     private static final byte[] FORMAT_VERSION = "02:".getBytes(StandardCharsets.UTF_8);
 
