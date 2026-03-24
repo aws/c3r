@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
       - name: Run Gradle build
         run: ./gradlew build --parallel
       - name: jacoco-badge-generator
