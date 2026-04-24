@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class CleartextTransformer extends Transformer {
     /**
-     * The version of the {@code CleartextTransformer} for compatability support.
+     * The version of the {@code CleartextTransformer} for compatibility support.
      */
     private static final byte[] FORMAT_VERSION = "01:".getBytes(StandardCharsets.UTF_8);
 
