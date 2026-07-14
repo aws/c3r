@@ -28,7 +28,7 @@ import java.util.Base64;
  */
 public class SealedTransformer extends Transformer {
     /**
-     * The version of the {@code SealedTransformer} for compatability support.
+     * The version of the {@code SealedTransformer} for compatibility support.
      */
     static final byte[] FORMAT_VERSION = "02:".getBytes(StandardCharsets.UTF_8);
 
