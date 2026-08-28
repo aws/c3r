@@ -76,6 +76,7 @@ subprojects {
     you want to skip these checks and report generation.
     */
     checkstyle {
+        toolVersion = '8.45.1'
         sourceSets = [sourceSets.main, sourceSets.test]
         configFile = file('../config/checkstyle/checkstyle.xml')
         configProperties.put('checkstyle.suppression.filter', '../config/checkstyle/suppressions.xml')
