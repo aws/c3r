@@ -3,7 +3,7 @@ plugins {
     id 'application'
 
     // Build jumbo jar for distribution
-    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "com.gradleup.shadow" version "8.3.11"
 
     // SpotBugs for quality checks and reports of source files. Read more at:
     // https://spotbugs.readthedocs.io/en/stable/gradle.html
@@ -21,7 +21,7 @@ plugins {
 // SpotBugs for quality checks and reports of source files. Read more at:
 // https://spotbugs.readthedocs.io/en/stable/gradle.html
 apply plugin: 'com.github.spotbugs'
-apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.gradleup.shadow'
 
 /*
  Configures the SpotBugs "com.github.spotbugs" plugin. Remove this and the
