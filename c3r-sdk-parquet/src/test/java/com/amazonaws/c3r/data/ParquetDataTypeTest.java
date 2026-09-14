@@ -6,8 +6,10 @@ package com.amazonaws.c3r.data;
 import com.amazonaws.c3r.exception.C3rRuntimeException;
 import com.amazonaws.c3r.utils.ParquetTypeDefsTestUtility;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.schema.ColumnOrder;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Types;
 import org.junit.jupiter.api.Test;
 
@@ -188,6 +190,22 @@ public class ParquetDataTypeTest {
         );
 
         assertThrows(C3rRuntimeException.class, () -> ParquetDataType.fromType(REPEATED_BINARY_STRING_TYPE).toTypeWithName("FOO"));
+    }
+
+    @Test
+    public void toTypeWithNamePreservesColumnOrderTest() {
+        // Float and double default to IEEE_754_TOTAL_ORDER, so a source column using TYPE_DEFINED_ORDER must not
+        // pick up the default.
+        final Type source = Types.optional(PrimitiveType.PrimitiveTypeName.FLOAT)
+                .columnOrder(ColumnOrder.typeDefined())
+                .named("SOURCE_FLOAT_TYPE");
+
+        assertEquals(
+                Types.optional(PrimitiveType.PrimitiveTypeName.FLOAT)
+                        .columnOrder(ColumnOrder.typeDefined())
+                        .named("FOO"),
+                ParquetDataType.fromType(source).toTypeWithName("FOO")
+        );
     }
 
     @Test

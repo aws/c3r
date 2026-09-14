@@ -332,11 +332,13 @@ public final class ParquetDataType implements Validatable {
     public org.apache.parquet.schema.Type toTypeWithName(final String name) {
         final var primType = parquetType.asPrimitiveType().getPrimitiveTypeName();
         final var logicalAnn = parquetType.getLogicalTypeAnnotation();
+        // Carried over so a column keeps the statistics ordering the source declared, not the Parquet default.
+        final var columnOrder = parquetType.asPrimitiveType().columnOrder();
         switch (parquetType.getRepetition()) {
             case OPTIONAL:
-                return Types.optional(primType).as(logicalAnn).named(name);
+                return Types.optional(primType).as(logicalAnn).columnOrder(columnOrder).named(name);
             case REQUIRED:
-                return Types.required(primType).as(logicalAnn).named(name);
+                return Types.required(primType).as(logicalAnn).columnOrder(columnOrder).named(name);
             default:
                 throw new C3rIllegalArgumentException("Unsupported parquet type: " + parquetType + ".");
         }
