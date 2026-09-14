@@ -216,10 +216,11 @@ public class ParquetValueFactory implements ValueFactory<ParquetValue> {
     private ParquetValue.Int64 getTimestamp(final byte[] bytes) {
         final ClientValueWithMetadata.Timestamp timestamp = ValueConverter.Timestamp.decode(bytes);
         if (timestamp.getValue() == null && timestamp.getUnit() == null) {
+            // Parquet requires a unit on the annotation. Any unit will do here since the value itself is NULL.
             return new ParquetValue.Int64(
                     ParquetDataType.fromType(
                             Types.optional(PrimitiveType.PrimitiveTypeName.INT64)
-                                    .as(LogicalTypeAnnotation.timestampType(false, null))
+                                    .as(LogicalTypeAnnotation.timestampType(false, LogicalTypeAnnotation.TimeUnit.MILLIS))
                                     .named("")),
                     null);
         }
