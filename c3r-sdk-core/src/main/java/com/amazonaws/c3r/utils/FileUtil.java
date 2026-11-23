@@ -48,10 +48,13 @@ public final class FileUtil {
      *
      * @param file source filename
      * @return source file content
-     * @throws C3rIllegalArgumentException If the filepath is invalid
+     * @throws C3rIllegalArgumentException If the filepath is null or invalid
      * @throws C3rRuntimeException         If there's an error while reading file
      */
     public static String readBytes(final String file) {
+        if (file == null) {
+            throw new C3rIllegalArgumentException("Failed to open file: " + file + ".");
+        }
         final Path p;
         try {
             p = FileSystems.getDefault().getPath(file);
@@ -77,10 +80,10 @@ public final class FileUtil {
      * Checks if a location is readable and a file.
      *
      * @param location Filepath
-     * @throws C3rIllegalArgumentException If the filepath is empty, points to an invalid location or is not readable
+     * @throws C3rIllegalArgumentException If the filepath is null, empty, points to an invalid location or is not readable
      */
     public static void verifyReadableFile(final String location) {
-        if (location.isBlank()) {
+        if (location == null || location.isBlank()) {
             throw new C3rIllegalArgumentException("File path is empty.");
         }
 
@@ -99,10 +102,10 @@ public final class FileUtil {
      * Checks if a location is readable and a directory.
      *
      * @param location Filepath
-     * @throws C3rIllegalArgumentException If the filepath is empty, points to an invalid location or is not readable
+     * @throws C3rIllegalArgumentException If the filepath is null, empty, points to an invalid location or is not readable
      */
     public static void verifyReadableDirectory(final String location) {
-        if (location.isBlank()) {
+        if (location == null || location.isBlank()) {
             throw new C3rIllegalArgumentException("File path is empty.");
         }
 
@@ -123,10 +126,10 @@ public final class FileUtil {
      *
      * @param location  Filepath to check
      * @param overwrite Indicates if we can overwrite an existing file
-     * @throws C3rIllegalArgumentException If the filepath is empty, points to an invalid location or is not a writable location
+     * @throws C3rIllegalArgumentException If the filepath is null, empty, points to an invalid location or is not a writable location
      */
     public static void verifyWritableFile(final String location, final boolean overwrite) {
-        if (location.isBlank()) {
+        if (location == null || location.isBlank()) {
             throw new C3rIllegalArgumentException("File path is empty.");
         }
 
@@ -146,7 +149,7 @@ public final class FileUtil {
      * Checks if a location is a writable directory. Directory must already exist.
      *
      * @param location Filepath to check
-     * @throws C3rIllegalArgumentException If the filepath is empty, not a directory or is not a writable location
+     * @throws C3rIllegalArgumentException If the filepath is null, empty, not a directory or is not a writable location
      */
     public static void verifyWritableDirectory(final String location) {
         verifyWritableDirectory(location, true);
@@ -157,10 +160,10 @@ public final class FileUtil {
      *
      * @param location Filepath to check
      * @param overwrite Indicates if we can overwrite an existing path
-     * @throws C3rIllegalArgumentException If the filepath is empty, not a directory or is not a writable location
+     * @throws C3rIllegalArgumentException If the filepath is null, empty, not a directory or is not a writable location
      */
     public static void verifyWritableDirectory(final String location, final boolean overwrite) {
-        if (location.isBlank()) {
+        if (location == null || location.isBlank()) {
             throw new C3rIllegalArgumentException("File path is empty.");
         }
         // Check that it's a writeable directory

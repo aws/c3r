@@ -23,6 +23,7 @@ import static com.amazonaws.c3r.utils.FileUtil.isWindows;
 import static com.amazonaws.c3r.utils.FileUtil.setWindowsFilePermissions;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -33,6 +34,20 @@ public class FileUtilTest {
     @Test
     public void verifyBlankLocationRejectedByVerifyReadableFile() {
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyReadableFile(""));
+    }
+
+    @Test
+    public void verifyNullLocationRejectedByVerifyReadableFile() {
+        final var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyReadableFile(null));
+        assertEquals("File path is empty.", exception.getMessage());
+    }
+
+    @Test
+    public void verifyWhitespaceLocationRejectedByVerifyReadableFile() {
+        final var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyReadableFile("   \t\n"));
+        assertEquals("File path is empty.", exception.getMessage());
     }
 
     @Test
@@ -71,6 +86,20 @@ public class FileUtilTest {
     @Test
     public void verifyBlankLocationRejectedByVerifyReadableDirectory() {
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyReadableDirectory(""));
+    }
+
+    @Test
+    public void verifyNullLocationRejectedByVerifyReadableDirectory() {
+        final var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyReadableDirectory(null));
+        assertEquals("File path is empty.", exception.getMessage());
+    }
+
+    @Test
+    public void verifyWhitespaceLocationRejectedByVerifyReadableDirectory() {
+        final var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyReadableDirectory("   \t\n"));
+        assertEquals("File path is empty.", exception.getMessage());
     }
 
     @Test
@@ -114,6 +143,26 @@ public class FileUtilTest {
     }
 
     @Test
+    public void verifyNullLocationRejectedByVerifyWritableFile() {
+        var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableFile(null, false));
+        assertEquals("File path is empty.", exception.getMessage());
+        exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableFile(null, true));
+        assertEquals("File path is empty.", exception.getMessage());
+    }
+
+    @Test
+    public void verifyWhitespaceLocationRejectedByVerifyWritableFile() {
+        var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableFile("   \t\n", false));
+        assertEquals("File path is empty.", exception.getMessage());
+        exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableFile("   \t\n", true));
+        assertEquals("File path is empty.", exception.getMessage());
+    }
+
+    @Test
     public void verifyDirectoryRejectedByVerifyFileWriteable() {
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableFile(FileUtil.TEMP_DIR, false));
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableFile(FileUtil.TEMP_DIR, true));
@@ -153,6 +202,32 @@ public class FileUtilTest {
     @Test
     public void verifyBlankLocationRejectedByVerifyWriteableDirectory() {
         assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.verifyWritableDirectory(""));
+    }
+
+    @Test
+    public void verifyNullLocationRejectedByVerifyWriteableDirectory() {
+        var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableDirectory(null));
+        assertEquals("File path is empty.", exception.getMessage());
+        exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableDirectory(null, false));
+        assertEquals("File path is empty.", exception.getMessage());
+        exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableDirectory(null, true));
+        assertEquals("File path is empty.", exception.getMessage());
+    }
+
+    @Test
+    public void verifyWhitespaceLocationRejectedByVerifyWriteableDirectory() {
+        var exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableDirectory("   \t\n"));
+        assertEquals("File path is empty.", exception.getMessage());
+        exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableDirectory("   \t\n", false));
+        assertEquals("File path is empty.", exception.getMessage());
+        exception = assertThrowsExactly(C3rIllegalArgumentException.class,
+                () -> FileUtil.verifyWritableDirectory("   \t\n", true));
+        assertEquals("File path is empty.", exception.getMessage());
     }
 
     @Test
@@ -259,6 +334,21 @@ public class FileUtilTest {
             final String longFilePath = new String(filePathBytes, StandardCharsets.UTF_8);
             assertThrows(C3rRuntimeException.class, () -> FileUtil.initFileIfNotExists(longFilePath));
         }
+    }
+
+    @Test
+    public void readBytesNullFileThrowsC3rIllegalArgumentException() {
+        final var exception = assertThrowsExactly(C3rIllegalArgumentException.class, () -> FileUtil.readBytes(null));
+        assertEquals("Failed to open file: null.", exception.getMessage());
+    }
+
+    @Test
+    public void readBytesValidFileReturnsContent() throws IOException {
+        final Path tempFile = FileTestUtility.createTempFile();
+        final String content = "hello world\nsecond line";
+        Files.writeString(tempFile, content, StandardCharsets.UTF_8);
+        final String readContent = FileUtil.readBytes(tempFile.toString());
+        assertEquals(content, readContent);
     }
 
     @SuppressWarnings("unchecked")
